@@ -4,8 +4,6 @@
 #include <fstream>
 #include <stdlib.h>
 #include <stdio.h>
-#include <unsupported/Eigen/MatrixFunctions>
-#include <assert.h>
 
 struct LogRegSet {
 	MatrixXf w;
@@ -41,9 +39,8 @@ LRTrainingSet propegate(LogRegSet set, MatrixXf X, MatrixXf Y) {
 	return Result;
 }
 
-
 MatrixXf predict(LogRegSet lrs, MatrixXf X) {
-	return Round(GetModelOutput(lrs, X));
+	return (GetModelOutput(lrs, X)).array().round();
 }
 
 void optimize(LogRegSet *lrsPtr, LRTrainingSet *trainSetPtr, MatrixXf X, MatrixXf Y, int iterations, float learnRate) {
@@ -53,13 +50,13 @@ void optimize(LogRegSet *lrsPtr, LRTrainingSet *trainSetPtr, MatrixXf X, MatrixX
 		lrsPtr->b = lrsPtr->b - (learnRate * trainSetPtr->db);
 		Assert(trainSetPtr->dw.rows() == lrsPtr->w.rows() && trainSetPtr->dw.cols() == lrsPtr->w.cols());
 		if(i % 100 == 0) {
-			cout << "Cost: " << (float)trainSetPtr->Cost << " //==// train accuracy: " << 100 - (Abs(predict(*lrsPtr, X) - Y).sum() / Y.cols() * 100) << "%\n";
+			cout << "Cost: " << (float)trainSetPtr->Cost << " //==// train accuracy: " << 100 - ((predict(*lrsPtr, X) - Y).array().abs().sum() / Y.cols() * 100) << "%\n";
 		}
 	}
 }
 
 MatrixXf BuildMatFromFile(string fName, MatrixXf mat) {
-	cout << "Loading File : " << fName << endl;
+	cout << "Loading File : " << fName;
 	MatrixXf tempMat = mat;
 	ifstream file(fName);
 	for(int row = 0; row < mat.rows(); ++row) {
@@ -76,12 +73,8 @@ MatrixXf BuildMatFromFile(string fName, MatrixXf mat) {
 			std::stringstream convertor(val);
 			convertor>> tempMat(row,col);
 		}
-		if(row % 50 == 0) {
-			cout << "Percent: " << (float)row / (float)mat.rows() * 100.f << "%... \r";
-		}
 	}
-	cout << "Percent: 100.0% \r";
-	cout << endl;
+	cout << " : 100.0%" << endl;
 	return tempMat;
 }
 
@@ -118,8 +111,8 @@ int main() {
 	LRTrainingSet lrts;
 	optimize(&lrs, &lrts, train_set_x, train_set_y, 1500, 0.005f);
 	cout << "//=============================//" << endl;
-	cout << "train accuracy: " << 100 - (Abs(predict(lrs, train_set_x) - train_set_y).sum() / train_set_x.cols() * 100) << endl;
-	cout << "test accuracy: " << 100 - (Abs(predict(lrs, test_set_x) - test_set_y).sum() / test_set_x.cols() * 100) << endl;
+	cout << "train accuracy: " << 100 - ((predict(lrs, train_set_x) - train_set_y).array().abs().sum() / train_set_x.cols() * 100) << endl;
+	cout << "test accuracy: " << 100 - ((predict(lrs, test_set_x) - test_set_y).array().abs().sum() / test_set_x.cols() * 100) << endl;
 
 	int imageIndex = 0;
 	auto preds = predict(lrs, test_set_x);
