@@ -1,5 +1,6 @@
 
-#include "stdafx.h"
+#include "stdMat.h"
+#include "stdDraw.h"
 #include <iostream>
 #include <fstream>
 #include <stdlib.h>
@@ -47,35 +48,6 @@ MatrixXf predict(LogRegSet lrs, MatrixXf X) {
 	return (GetModelOutput(lrs, X)).array().round();
 }
 
-void drawLine(SDL_Renderer *ren, int x, int y, int x1, int y1) {
-	int dx = x1 - x;
-	int dy = y1 - y;
-	if(dx == 0 || dy == 0) {
-		//return;
-	}
-	if(abs(dx) > abs(dy) && dx) {
-		if(dx) dy /= abs(dx);
-		else dy = 0;
-		if(dx >= 0) dx = 1;
-		else dx = -1;
-		do { //for(;x<x1; x++){
-			SDL_RenderDrawPoint(ren, x, y);
-			y += dy;
-			x += dx;
-		} while(x != x1);
-	} else if(dy) {
-		if(dy) dx /= abs(dy);
-		else dx = 0;
-		if(dy > 0) dy = 1;
-		else dy = -1;
-		do { //for(;y<y1; y++){
-			SDL_RenderDrawPoint(ren, x, y);
-			x += dx;
-			y += dy;
-		} while(y != y1);
-	}
-}
-
 void optimize(SDL_Renderer *ren, LogRegSet *lrsPtr, LRTrainingSet *trainSetPtr, MatrixXf X, MatrixXf Y, int iterations, float learnRate) {
 	vector<float> Xplots;
 	vector<float> tXplots;
@@ -86,10 +58,12 @@ void optimize(SDL_Renderer *ren, LogRegSet *lrsPtr, LRTrainingSet *trainSetPtr, 
 		lrsPtr->w = lrsPtr->w - (learnRate * trainSetPtr->dw);
 		lrsPtr->b = lrsPtr->b - (learnRate * trainSetPtr->db);
 		Assert(trainSetPtr->dw.rows() == lrsPtr->w.rows() && trainSetPtr->dw.cols() == lrsPtr->w.cols());
-		if(i % 2 == 0) {
+		if(i % 10 == 0) {
 			SDL_SetRenderDrawColor(ren, 0, 0, 0, 0);
 			SDL_RenderClear(ren);
-			Xplots.push_back(((predict(*lrsPtr, X) - Y).array().abs().sum() / Y.cols() * WINHEIGHT));
+			float Accuracy = 1 - (predict(*lrsPtr, X) - Y).array().abs().sum() / Y.cols() ;
+			cout << "Accuracy: " <<  Accuracy << "\r";
+			Xplots.push_back((1-Accuracy)*WINHEIGHT);
 			int slider = Xplots.size() >= WINWIDTH ? Xplots.size() - WINWIDTH : 0;
 			for(int p = slider + 1; p < (int)Xplots.size(); p++) {
 				SDL_SetRenderDrawColor(ren, 0, 0, 255, 255);
@@ -114,17 +88,19 @@ void LogisticRegression(SDL_Renderer *ren) {
 	Assert(train_set_y.rows() == 1 && train_set_y.cols() == 209);
 	Assert(test_set_x.rows() == 12288 && test_set_x.cols() == 50);
 	Assert(test_set_y.rows() == 1 && test_set_y.cols() == 50);
+
 	LRTrainingSet lrts;
 	optimize(ren, &lrs, &lrts, train_set_x, train_set_y, 1500, 0.005f);
-
 	SDL_SetRenderDrawColor(ren, 0, 0, 0, 0);
 	SDL_RenderClear(ren);
 	int imageIndex = 0;
 	int offset = 0;
 	int offsetIndex = 0;
 	auto preds = predict(lrs, test_set_x);
+	cout << "Rendering failed predictions." << endl;
 	while(imageIndex < test_set_y.cols()) {
 		if(preds(imageIndex) != test_set_y(imageIndex)) {
+			cout << imageIndex << " predicted incorrectly." << endl;
 			for(int x = 0; x < 64; x++) {
 				for(int y = 0; y < 192; y += 3) {
 					SDL_SetRenderDrawColor(ren, test_set_x(x * 192 + y, imageIndex) * 255,
