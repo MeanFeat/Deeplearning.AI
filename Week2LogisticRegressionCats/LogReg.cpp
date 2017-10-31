@@ -61,7 +61,7 @@ void optimize(SDL_Renderer *ren, LogRegSet *lrsPtr, LRTrainingSet *trainSetPtr, 
 		if(i % 10 == 0) {
 			SDL_SetRenderDrawColor(ren, 0, 0, 0, 0);
 			SDL_RenderClear(ren);
-			float Accuracy = 1 - (predict(*lrsPtr, X) - Y).array().abs().sum() / Y.cols() ;
+			float Accuracy = 1 - ((predict(*lrsPtr, X) - Y).array().abs().sum() / Y.cols()) ;
 			cout << "Accuracy: " <<  Accuracy << "\r";
 			Xplots.push_back((1-Accuracy)*WINHEIGHT);
 			int slider = Xplots.size() >= WINWIDTH ? Xplots.size() - WINWIDTH : 0;
@@ -90,7 +90,7 @@ void LogisticRegression(SDL_Renderer *ren) {
 	Assert(test_set_y.rows() == 1 && test_set_y.cols() == 50);
 
 	LRTrainingSet lrts;
-	optimize(ren, &lrs, &lrts, train_set_x, train_set_y, 1500, 0.005f);
+	optimize(ren, &lrs, &lrts, train_set_x, train_set_y, 2000, 0.005f);
 	SDL_SetRenderDrawColor(ren, 0, 0, 0, 0);
 	SDL_RenderClear(ren);
 	int imageIndex = 0;
@@ -98,19 +98,20 @@ void LogisticRegression(SDL_Renderer *ren) {
 	int offsetIndex = 0;
 	auto preds = predict(lrs, test_set_x);
 	cout << "Rendering failed predictions." << endl;
+	cout << 1 - (preds - test_set_y).array().abs().sum() / test_set_y.cols() << endl;
 	while(imageIndex < test_set_y.cols()) {
 		if(preds(imageIndex) != test_set_y(imageIndex)) {
 			cout << imageIndex << " predicted incorrectly." << endl;
 			for(int x = 0; x < 64; x++) {
 				for(int y = 0; y < 192; y += 3) {
-					SDL_SetRenderDrawColor(ren, test_set_x(x * 192 + y, imageIndex) * 255,
-										   test_set_x(x * 192 + y + 1, imageIndex) * 255,
-										   test_set_x(x * 192 + y + 2, imageIndex) * 255,
+					SDL_SetRenderDrawColor(ren, Uint8(test_set_x(x * 192 + y, imageIndex)) * 255, 
+										   Uint8(test_set_x(x * 192 + y + 1, imageIndex)) * 255,
+										   Uint8(test_set_x(x * 192 + y + 2, imageIndex)) * 255,
 										   255);
 					SDL_RenderDrawPoint(ren, offset + y / 3, offsetIndex * 64 + x);
 				}
 			}
-			offsetIndex++;
+			offsetIndex++; 
 		}
 		imageIndex++;
 		if(offsetIndex >= 8) {
@@ -129,8 +130,17 @@ int main(int argc, char *argv[]) {
 	LogisticRegression(ren);
 	SDL_Event localEvent;
 	SDL_PollEvent(&localEvent);
-	while(localEvent.type != SDL_MOUSEBUTTONDOWN) {
+	bool running = true;
+	while(running) {
 		SDL_PollEvent(&localEvent);
+		if(localEvent.type == SDL_WINDOWEVENT) {
+			switch(localEvent.window.event) {
+			case SDL_WINDOWEVENT_CLOSE:
+				running = false;
+				SDL_Log("Window %d closed", localEvent.window.windowID);
+				break;
+			}
+		}
 	}
 	SDL_DestroyRenderer(ren);
 	SDL_DestroyWindow(win);

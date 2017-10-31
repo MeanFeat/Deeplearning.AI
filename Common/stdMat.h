@@ -59,9 +59,9 @@ namespace Eigen {
 			}
 			tempMat.push_back(row);
 		}
-		MatrixXf outMat(tempMat.size(), tempMat[0].size());
-		for (int i =0; i < tempMat.size(); i++){
-			for(int j = 0; j < tempMat[i].size(); j++) {
+		MatrixXf outMat(tempMat.size(), tempMat[0].size()); 
+		for (int i =0; i < (int)tempMat.size(); i++){
+			for(int j = 0; j < (int)tempMat[i].size(); j++) {
 				outMat(i, j) = tempMat[i][j];
 			}
 		}
