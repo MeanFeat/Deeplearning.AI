@@ -11,20 +11,20 @@
 #define WINHEIGHT 800
 #define SCALE 80
 
-void Plot(SDL_Renderer *ren, MatrixXd X, MatrixXd Y) {
+void Plot(SDL_Renderer *ren, MatrixXf X, MatrixXf Y) {
 	for (int i = 0; i < X.cols(); i++) {
 		Assert(X(1, i) != X(0, i));
 		SDL_SetRenderDrawColor(ren, 255, 255, 255, 255);
-		DrawFilledCircle(ren, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), 14.0, Color(0, 0, 0, 255));
-		DrawFilledCircle(ren, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), 13.0, 
+		DrawFilledCircle(ren, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), 14.0f, Color(0, 0, 0, 255));
+		DrawFilledCircle(ren, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), 13.0f, 
 						 Y(i) == 1 ? Color(0, 255, 255, 255) : Color(255, 0, 0, 255));
 	}
 	SDL_RenderPresent(ren);
 }
 
 int main(int argc, char *argv[]) {
-	MatrixXd X;// = (MatrixXd)BuildMatFromFile("new.txt"); write_binary("planar.dat", X);
-	MatrixXd Y;// = (MatrixXd)BuildMatFromFile("newL.txt"); write_binary("planarLabels.dat", Y);
+	MatrixXf X;// = (MatrixXf)BuildMatFromFile("new.txt"); write_binary("planar.dat", X);
+	MatrixXf Y;// = (MatrixXf)BuildMatFromFile("newL.txt"); write_binary("planarLabels.dat", Y);
 	read_binary("planar.dat", X);
 	read_binary("planarLabels.dat", Y);	
 	SDL_Window *win;

@@ -11,46 +11,46 @@
 #define WINHEIGHT 600
 
 struct LogRegSet {
-	MatrixXd w;
-	double b;
+	MatrixXf w;
+	float b;
 };
 
 struct LRTrainingSet {
-	MatrixXd dw;
-	double db;
-	double Cost;
+	MatrixXf dw;
+	float db;
+	float Cost;
 };
 
 LogRegSet InitToZero(int dim) {
 	LogRegSet Result;
-	Result.w = MatrixXd::Zero(dim, 1);
-	Result.b = 0.0;
+	Result.w = MatrixXf::Zero(dim, 1);
+	Result.b = 0.0f;
 	return Result;
 }
 
-MatrixXd GetModelOutput(LogRegSet set, MatrixXd X) {
-	MatrixXd biases = MatrixXd::Ones(1, X.cols()) * set.b;
+MatrixXf GetModelOutput(LogRegSet set, MatrixXf X) {
+	MatrixXf biases = MatrixXf::Ones(1, X.cols()) * set.b;
 	return Sigmoid(set.w.transpose() * X + biases);
 }
 
-LRTrainingSet propegate(LogRegSet set, MatrixXd X, MatrixXd Y) {
+LRTrainingSet propegate(LogRegSet set, MatrixXf X, MatrixXf Y) {
 	LRTrainingSet Result;
 	int m = (int)Y.cols();
-	double coeff = 1.0 / m;
-	MatrixXd A = GetModelOutput(set, X);
-	Result.Cost = -((Y.cwiseProduct(Log(A))) + (MatrixXd::Ones(1, m) - Y).cwiseProduct((Log(MatrixXd::Ones(1, m) - A)))).sum() * coeff;
+	float coeff = 1.0f / m;
+	MatrixXf A = GetModelOutput(set, X);
+	Result.Cost = -((Y.cwiseProduct(Log(A))) + (MatrixXf::Ones(1, m) - Y).cwiseProduct((Log(MatrixXf::Ones(1, m) - A)))).sum() * coeff;
 	Result.dw = (X * (A - Y).transpose()) * coeff;
 	Result.db = (A - Y).sum()*coeff;
 	return Result;
 }
 
-MatrixXd predict(LogRegSet lrs, MatrixXd X) {
+MatrixXf predict(LogRegSet lrs, MatrixXf X) {
 	return (GetModelOutput(lrs, X)).array().round();
 }
 
-void optimize(SDL_Renderer *ren, LogRegSet *lrsPtr, LRTrainingSet *trainSetPtr, MatrixXd X, MatrixXd Y, int iterations, double learnRate) {
-	vector<double> Xplots;
-	vector<double> tXplots;
+void optimize(SDL_Renderer *ren, LogRegSet *lrsPtr, LRTrainingSet *trainSetPtr, MatrixXf X, MatrixXf Y, int iterations, float learnRate) {
+	vector<float> Xplots;
+	vector<float> tXplots;
 	SDL_SetRenderDrawColor(ren, 0, 0, 0, 0);
 	SDL_RenderClear(ren);
 	for(int i = 0; i < iterations; i++) {
@@ -61,7 +61,7 @@ void optimize(SDL_Renderer *ren, LogRegSet *lrsPtr, LRTrainingSet *trainSetPtr, 
 		if(i % 10 == 0) {
 			SDL_SetRenderDrawColor(ren, 0, 0, 0, 0);
 			SDL_RenderClear(ren);
-			double Accuracy = 1 - ((predict(*lrsPtr, X) - Y).array().abs().sum() / Y.cols()) ;
+			float Accuracy = 1 - ((predict(*lrsPtr, X) - Y).array().abs().sum() / Y.cols()) ;
 			cout << "Accuracy: " <<  Accuracy << "\r";
 			Xplots.push_back((1-Accuracy)*WINHEIGHT);
 			int slider = Xplots.size() >= WINWIDTH ? Xplots.size() - WINWIDTH : 0;
@@ -76,13 +76,13 @@ void optimize(SDL_Renderer *ren, LogRegSet *lrsPtr, LRTrainingSet *trainSetPtr, 
 
 void LogisticRegression(SDL_Renderer *ren) {
 	LogRegSet lrs = InitToZero(12288);
-	MatrixXd train_set_x;
+	MatrixXf train_set_x;
 	read_binary("catTrain.dat", train_set_x);
-	MatrixXd test_set_x;
+	MatrixXf test_set_x;
 	read_binary("catTest.dat", test_set_x);
-	MatrixXd train_set_y;
+	MatrixXf train_set_y;
 	read_binary("catTrainLabels.dat", train_set_y);
-	MatrixXd test_set_y;
+	MatrixXf test_set_y;
 	read_binary("catTestLabels.dat", test_set_y);
 	Assert(train_set_x.rows() == 12288 && train_set_x.cols() == 209);
 	Assert(train_set_y.rows() == 1 && train_set_y.cols() == 209);
@@ -104,9 +104,9 @@ void LogisticRegression(SDL_Renderer *ren) {
 			cout << imageIndex << " predicted incorrectly." << endl;
 			for(int x = 0; x < 64; x++) {
 				for(int y = 0; y < 192; y += 3) {
-					SDL_SetRenderDrawColor(ren, Uint8(test_set_x(x * 192 + y, imageIndex)) * 255, 
-										   Uint8(test_set_x(x * 192 + y + 1, imageIndex)) * 255,
-										   Uint8(test_set_x(x * 192 + y + 2, imageIndex)) * 255,
+					SDL_SetRenderDrawColor(ren, Uint8((test_set_x(x * 192 + y, imageIndex)) * 255), 
+										   Uint8((test_set_x(x * 192 + y + 1, imageIndex)) * 255),
+										   Uint8((test_set_x(x * 192 + y + 2, imageIndex)) * 255),
 										   255);
 					SDL_RenderDrawPoint(ren, offset + y / 3, offsetIndex * 64 + x);
 				}

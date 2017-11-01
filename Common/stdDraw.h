@@ -33,7 +33,7 @@ void drawLine(SDL_Renderer *ren, int x, int y, int x1, int y1) {
 	}
 }
 
-void DrawCircle(SDL_Renderer *ren, int x, int y, double d, Color c ) {
+void DrawCircle(SDL_Renderer *ren, int x, int y, float d, Color c ) {
 	SDL_SetRenderDrawColor(ren,c);
 	double rad = d / 2.0;
 	for(int n = 0; n < 32; n++) {
@@ -43,9 +43,9 @@ void DrawCircle(SDL_Renderer *ren, int x, int y, double d, Color c ) {
 	}
 }
 
-void DrawFilledCircle(SDL_Renderer *ren, int x, int y, double d, Color c) {
+void DrawFilledCircle(SDL_Renderer *ren, int x, int y, float d, Color c) {
 	SDL_SetRenderDrawColor(ren, c);
-	int r = int(d*0.5f);
+	int r = int(d*0.5);
 	for(int h = -r; h < r; h++) {
 		int height = (int)sqrt(r * r - h * h);
 		for(int v = -height; v < height; v++)
