@@ -8,3 +8,5 @@ Release/
 *.db
 *.opendb
 *.dll
+
+*.ipch

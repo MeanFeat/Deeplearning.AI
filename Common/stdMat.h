@@ -8,15 +8,15 @@
 using namespace Eigen;
 using namespace std;
 
-inline MatrixXf Sigmoid(MatrixXf in) {
+inline MatrixXd Sigmoid(MatrixXd in) {
 	return ((-1.0*in).array().exp() + 1 ).cwiseInverse(); //faster than unary
 }
 
-inline MatrixXf Log(MatrixXf in) { 
+inline MatrixXd Log(MatrixXd in) { 
 	return in.array().log();
 }
 
-typedef Matrix<float, Dynamic, Dynamic> MatrixDynamic;
+typedef Matrix<double, Dynamic, Dynamic> MatrixDynamic;
 namespace Eigen {
 
 	template<class Matrix>
@@ -39,15 +39,15 @@ namespace Eigen {
 		in.close();
 	}
 
-	MatrixXf BuildMatFromFile(string fName) {
-		vector<vector<float>> tempMat;
+	MatrixXd BuildMatFromFile(string fName) {
+		vector<vector<double>> tempMat;
 		ifstream file(fName);
 		std::string line;
 		int count = 0;
-		float temp;
+		double temp;
 		int row = 0;
 		while (file.good()) {
-			vector<float> row;
+			vector<double> row;
 			std::getline(file, line);
 			std::stringstream iss(line); 
 			std::string val;
@@ -59,7 +59,7 @@ namespace Eigen {
 			}
 			tempMat.push_back(row);
 		}
-		MatrixXf outMat(tempMat.size(), tempMat[0].size()); 
+		MatrixXd outMat(tempMat.size(), tempMat[0].size()); 
 		for (int i =0; i < (int)tempMat.size(); i++){
 			for(int j = 0; j < (int)tempMat[i].size(); j++) {
 				outMat(i, j) = tempMat[i][j];

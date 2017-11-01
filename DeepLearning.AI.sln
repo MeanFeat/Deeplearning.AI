@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Week2LogisticRegressionCats
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Week3PlanarClassification", "Week3PlanarClassification\Week3PlanarClassification.vcxproj", "{A650B83E-E55E-4542-819D-59E6449867C0}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Week2UnitTest", "Week2UnitTest\Week2UnitTest.vcxproj", "{936CBA67-AC19-40A9-8126-BDC45A0ACADA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,14 @@ Global
 		{A650B83E-E55E-4542-819D-59E6449867C0}.Release|x64.Build.0 = Release|x64
 		{A650B83E-E55E-4542-819D-59E6449867C0}.Release|x86.ActiveCfg = Release|Win32
 		{A650B83E-E55E-4542-819D-59E6449867C0}.Release|x86.Build.0 = Release|Win32
+		{936CBA67-AC19-40A9-8126-BDC45A0ACADA}.Debug|x64.ActiveCfg = Debug|x64
+		{936CBA67-AC19-40A9-8126-BDC45A0ACADA}.Debug|x64.Build.0 = Debug|x64
+		{936CBA67-AC19-40A9-8126-BDC45A0ACADA}.Debug|x86.ActiveCfg = Debug|Win32
+		{936CBA67-AC19-40A9-8126-BDC45A0ACADA}.Debug|x86.Build.0 = Debug|Win32
+		{936CBA67-AC19-40A9-8126-BDC45A0ACADA}.Release|x64.ActiveCfg = Release|x64
+		{936CBA67-AC19-40A9-8126-BDC45A0ACADA}.Release|x64.Build.0 = Release|x64
+		{936CBA67-AC19-40A9-8126-BDC45A0ACADA}.Release|x86.ActiveCfg = Release|Win32
+		{936CBA67-AC19-40A9-8126-BDC45A0ACADA}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
