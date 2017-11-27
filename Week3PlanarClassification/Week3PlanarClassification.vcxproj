@@ -76,7 +76,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalOptions>/WX %(AdditionalOptions)</AdditionalOptions>
@@ -127,10 +127,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="OneLayerNetwork.cpp" />
     <ClCompile Include="win32_DeepLearning.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Common\color.h" />
+    <ClInclude Include="..\Common\stdDraw.h" />
     <ClInclude Include="..\Common\stdMat.h" />
     <ClInclude Include="win32_DeepLearning.h" />
   </ItemGroup>

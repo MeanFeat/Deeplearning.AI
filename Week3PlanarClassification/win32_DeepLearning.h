@@ -7,7 +7,17 @@
 #include <iostream>
 #include <fstream>
 #include <stdlib.h>
-#define Pi32 3.14159265359f
+#include <Eigen/dense>
+#include "stdDraw.h"
+#include "stdMat.h"
+
+#define WINWIDTH 300
+#define WINHEIGHT 300
+#define WINHALFWIDTH WINWIDTH * 0.5f
+#define WINHALFHEIGHT WINHEIGHT * 0.5f
+#define SCALE 30
+
+using namespace Eigen;
 
 typedef int8_t int8;
 typedef int16_t int16;

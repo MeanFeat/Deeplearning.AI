@@ -67,7 +67,7 @@ void optimize(SDL_Renderer *ren, LogRegSet *lrsPtr, LRTrainingSet *trainSetPtr, 
 			int slider = Xplots.size() >= WINWIDTH ? Xplots.size() - WINWIDTH : 0;
 			for(int p = slider + 1; p < (int)Xplots.size(); p++) {
 				SDL_SetRenderDrawColor(ren, 0, 0, 255, 255);
-				drawLine(ren, (p - 1) - slider, int(Xplots[p - 1]), p - slider, int(Xplots[p]));
+				//drawLine(ren, (p - 1) - slider, int(Xplots[p - 1]), p - slider, int(Xplots[p]));
 			}
 			SDL_RenderPresent(ren);
 		}

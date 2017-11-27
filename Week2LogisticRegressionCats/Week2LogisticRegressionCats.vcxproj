@@ -132,7 +132,6 @@
     <ClCompile Include="LogReg.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Common\color.h" />
     <ClInclude Include="..\Common\stdDraw.h" />
     <ClInclude Include="..\Common\stdMat.h" />
   </ItemGroup>
