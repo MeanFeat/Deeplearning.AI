@@ -1,14 +1,9 @@
 
-#include "stdMat.h"
-#include "stdDraw.h"
-#include <iostream>
-#include <fstream>
-#include <stdlib.h>
-#include <stdio.h>
+#include "win32_DeepLearning.h"
 #include <SDL.h>
 
 #define WINWIDTH 800
-#define WINHEIGHT 600
+#define WINHEIGHT 800
 
 struct LogRegSet {
 	MatrixXf w;
@@ -48,6 +43,35 @@ MatrixXf predict(LogRegSet lrs, MatrixXf X) {
 	return (GetModelOutput(lrs, X)).array().round();
 }
 
+void drawLine(SDL_Renderer *ren, int x, int y, int x1, int y1) {
+	int dx = x1 - x;
+	int dy = y1 - y;
+	if(dx == 0 || dy == 0) {
+		//return;
+	}
+	if(abs(dx) > abs(dy) && dx) {
+		if(dx) dy /= abs(dx);
+		else dy = 0;
+		if(dx >= 0) dx = 1;
+		else dx = -1;
+		do { //for(;x<x1; x++){
+			SDL_RenderDrawPoint(ren, x, y);
+			y += dy;
+			x += dx;
+		} while(x != x1);
+	} else if(dy) {
+		if(dy) dx /= abs(dy);
+		else dx = 0;
+		if(dy > 0) dy = 1;
+		else dy = -1;
+		do { //for(;y<y1; y++){
+			SDL_RenderDrawPoint(ren, x, y);
+			x += dx;
+			y += dy;
+		} while(y != y1);
+	}
+}
+
 void optimize(SDL_Renderer *ren, LogRegSet *lrsPtr, LRTrainingSet *trainSetPtr, MatrixXf X, MatrixXf Y, int iterations, float learnRate) {
 	vector<float> Xplots;
 	vector<float> tXplots;
@@ -67,7 +91,7 @@ void optimize(SDL_Renderer *ren, LogRegSet *lrsPtr, LRTrainingSet *trainSetPtr, 
 			int slider = Xplots.size() >= WINWIDTH ? Xplots.size() - WINWIDTH : 0;
 			for(int p = slider + 1; p < (int)Xplots.size(); p++) {
 				SDL_SetRenderDrawColor(ren, 0, 0, 255, 255);
-				//drawLine(ren, (p - 1) - slider, int(Xplots[p - 1]), p - slider, int(Xplots[p]));
+				drawLine(ren, (p - 1) - slider, int(Xplots[p - 1]),  p - slider, int(Xplots[p]));
 			}
 			SDL_RenderPresent(ren);
 		}
@@ -121,6 +145,7 @@ void LogisticRegression(SDL_Renderer *ren) {
 	}
 	SDL_RenderPresent(ren);
 }
+
 
 int main(int argc, char *argv[]) {
 	SDL_Window *win;

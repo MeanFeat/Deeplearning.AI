@@ -11,11 +11,10 @@
 #include "stdDraw.h"
 #include "stdMat.h"
 
-#define WINWIDTH 300
-#define WINHEIGHT 300
-#define WINHALFWIDTH WINWIDTH * 0.5f
-#define WINHALFHEIGHT WINHEIGHT * 0.5f
-#define SCALE 30
+
+#define internal static 
+#define local_persist static 
+#define global_variable static
 
 using namespace Eigen;
 
@@ -32,7 +31,6 @@ typedef uint64_t uint64;
 
 typedef float real32;
 typedef double real64;
-#define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
 
 struct win32_offscreen_buffer {
 	BITMAPINFO Info;
@@ -47,6 +45,8 @@ struct win32_window_dimension {
 	int Width;
 	int Height;
 };
+
+#define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
 
 #define WIN32_DEEPLEARNING_H
 #endif

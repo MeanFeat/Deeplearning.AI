@@ -133,7 +133,7 @@
     <ClInclude Include="..\Common\color.h" />
     <ClInclude Include="..\Common\stdDraw.h" />
     <ClInclude Include="..\Common\stdMat.h" />
-    <ClInclude Include="win32_DeepLearning.h" />
+    <ClInclude Include="..\Common\win32_DeepLearning.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

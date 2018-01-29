@@ -1,8 +1,11 @@
 #include "win32_DeepLearning.h"
 
-#define internal static 
-#define local_persist static 
-#define global_variable static
+
+#define WINWIDTH 300
+#define WINHEIGHT 300
+#define WINHALFWIDTH WINWIDTH * 0.5f
+#define WINHALFHEIGHT WINHEIGHT * 0.5f
+#define SCALE 30
 
 global_variable bool globalRunning = true;
 static win32_offscreen_buffer GlobalBackbuffer;
@@ -84,19 +87,6 @@ internal void Win32ProcessPendingMessages() {
 	}
 }
 
-internal void RenderWeirdGradient(win32_offscreen_buffer *Buffer, int BlueOffset, int GreenOffset) {
-	uint8 *Row = (uint8 *)Buffer->Memory;
-	for(int Y = 0; Y < Buffer->Height; ++Y) {
-		uint32 *Pixel = (uint32 *)Row;
-		for(int X = 0; X < Buffer->Width; ++X) {
-			uint8 Blue = (uint8)(X + BlueOffset);
-			uint8 Green = (uint8)(Y + GreenOffset);
-			*Pixel++ = ((Green << 8) | Blue);
-		}
-		Row += Buffer->Pitch;
-	}
-}
-
 
 void PlotData(HDC *hdc, MatrixXf X, MatrixXf Y) {
 	for(int i = 0; i < X.cols(); i++) {
@@ -144,11 +134,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		while(globalRunning) {
 
 			Win32ProcessPendingMessages();
-			HDC hDCMem = CreateCompatibleDC(DeviceContext); 
+			HDC hDCMem = CreateCompatibleDC(DeviceContext);
 			HBITMAP Membitmap = CreateCompatibleBitmap(DeviceContext, WINWIDTH, WINHEIGHT);
 			SelectObject(hDCMem, Membitmap);			int randColor = int(rand() % 255);
 			for(int i = 0; i < temp.rows(); i++) {
-				SetPixelV(hDCMem, int(temp(i, 0) + WINHALFHEIGHT), int((temp(i, 1)) + WINHALFWIDTH), RGB(randColor, 150, 255));
+				SetPixel(hDCMem, int(temp(i, 0) + WINHALFHEIGHT), int((temp(i, 1)) + WINHALFWIDTH), RGB(int(rand() % 255), int(rand() % 255), int(rand() % 255)));
 			}
 			PlotData(&hDCMem, X, Y);
 			BitBlt(DeviceContext, 0, 0, WINWIDTH, WINHEIGHT, hDCMem, 0, 0, SRCCOPY);
