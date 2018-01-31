@@ -43,11 +43,13 @@ void DrawCircle(HDC *hdc, int x, int y, float d, Color c ) {
 	}
 }
 
-void DrawFilledCircle(HDC *hdc, int x, int y, float d, Color c) {
+void DrawFilledCircle(void *buffer, int bufferWidth, int x, int y, float d, Color c) {
 	int r = int(d*0.5);
 	for(int h = -r; h < r; h++) {
 		int height = (int)sqrt(r * r - h * h);
-		for(int v = -height; v < height; v++)
-			SetPixelV(*hdc, x + h, y + v, RGB(c.r,c.g,c.b));
+		for(int v = -height; v < height; v++) {
+			int *pixel = (int *)buffer + int(((x)+h) + ((y + v)* bufferWidth));
+			*pixel = ((c.r << 16) | (c.g << 8) | c.b);
+		}
 	}
 }

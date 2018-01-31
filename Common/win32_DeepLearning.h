@@ -1,3 +1,4 @@
+#pragma  once
 #if !defined(WIN32_DEEPLEARNING_H)
 #include <math.h>
 #include <stdint.h>
@@ -31,20 +32,6 @@ typedef uint64_t uint64;
 
 typedef float real32;
 typedef double real64;
-
-struct win32_offscreen_buffer {
-	BITMAPINFO Info;
-	void *Memory;
-	int Width;
-	int Height;
-	int Pitch;
-	int BytesPerPixel;
-};
-
-struct win32_window_dimension {
-	int Width;
-	int Height;
-};
 
 #define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
 

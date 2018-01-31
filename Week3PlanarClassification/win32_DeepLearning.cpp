@@ -1,49 +1,17 @@
 #include "win32_DeepLearning.h"
-
-
-#define WINWIDTH 300
-#define WINHEIGHT 300
+#define WINWIDTH 500
+#define WINHEIGHT 500
 #define WINHALFWIDTH WINWIDTH * 0.5f
 #define WINHALFHEIGHT WINHEIGHT * 0.5f
-#define SCALE 30
+#define SCALE 50
 
 global_variable bool globalRunning = true;
-static win32_offscreen_buffer GlobalBackbuffer;
+void *backBuffer;
+BITMAPINFO bitmapInfo = {0};
 
-internal win32_window_dimension Win32GetWindowDimension(HWND Window) {
-	win32_window_dimension Result;
-	RECT ClientRect;
-	GetClientRect(Window, &ClientRect);
-	Result.Width = ClientRect.right - ClientRect.left;
-	Result.Height = ClientRect.bottom - ClientRect.top;
-	return Result;
-}
 
-internal void Win32ResizeDIBSection(win32_offscreen_buffer *Buffer, int Width, int Height) {
-	if(Buffer->Memory) {
-		VirtualFree(Buffer->Memory, 0, MEM_RELEASE);
-	}
-	Buffer->Width = Width;
-	Buffer->Height = Height;
-	int BytesPerPixel = 4;
-	Buffer->BytesPerPixel = BytesPerPixel;
-	Buffer->Info.bmiHeader.biWidth = Buffer->Width;
-	Buffer->Info.bmiHeader.biHeight = -Buffer->Height;
-	Buffer->Info.bmiHeader.biPlanes = 1;
-	Buffer->Info.bmiHeader.biBitCount = 32;
-	Buffer->Info.bmiHeader.biCompression = BI_RGB;
-	int BitmapMemorySize = (Buffer->Width*Buffer->Height)*BytesPerPixel;
-	Buffer->Memory = VirtualAlloc(0, BitmapMemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	Buffer->Pitch = Width*BytesPerPixel;
-}
-
-internal void Win32DisplayBufferInWindow(win32_offscreen_buffer *Buffer, HDC DeviceContext, int WindowWidth, int WindowHeight) {
-	StretchDIBits(DeviceContext,
-				  0, 0, WindowWidth, WindowHeight,
-				  0, 0, Buffer->Width, Buffer->Height,
-				  Buffer->Memory,
-				  &Buffer->Info,
-				  DIB_RGB_COLORS, SRCCOPY);
+internal void Win32DisplayBufferInWindow(void *Buffer, HDC DeviceContext) {
+	StretchDIBits(DeviceContext, 0, 0, WINWIDTH, WINWIDTH, 0, 0, WINWIDTH, WINHEIGHT, Buffer, &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
 }
 
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam) {
@@ -52,15 +20,6 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 		case WM_ACTIVATEAPP:
 		{
 			OutputDebugStringA("WM_ACTIVATEAPP\n");
-		} break;
-		case WM_PAINT:
-		{
-			PAINTSTRUCT Paint;
-			HDC DeviceContext = BeginPaint(Window, &Paint);
-			win32_window_dimension Dimension = Win32GetWindowDimension(Window);
-			Win32DisplayBufferInWindow(&GlobalBackbuffer, DeviceContext, Dimension.Width, Dimension.Height);
-			EndPaint(Window, &Paint);
-
 		} break;
 		default:
 		{
@@ -87,13 +46,11 @@ internal void Win32ProcessPendingMessages() {
 	}
 }
 
-
-void PlotData(HDC *hdc, MatrixXf X, MatrixXf Y) {
+void PlotData(MatrixXf X, MatrixXf Y) {
 	for(int i = 0; i < X.cols(); i++) {
 		Assert(X(1, i) != X(0, i));
-		DrawFilledCircle(hdc, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.275f, Color(0, 0, 0, 255));
-		DrawFilledCircle(hdc, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.2f,
-						 Y(i) == 1 ? Color(0, 255, 255, 255) : Color(255, 0, 0, 255));
+		DrawFilledCircle(backBuffer, WINWIDTH, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.275f, Color(0, 0, 0, 255));
+		DrawFilledCircle(backBuffer, WINWIDTH, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.2f, Y(i) == 1 ? Color(0, 255, 255, 255) : Color(255, 0, 0, 255));
 	}
 }
 
@@ -113,35 +70,39 @@ MatrixXf BuildDisplayCoords() {
 	return out;
 }
 
+void InitializeWindow(WNDCLASSA *winclass, HINSTANCE instance) {
+	bitmapInfo.bmiHeader.biSize = sizeof(bitmapInfo.bmiHeader);
+	bitmapInfo.bmiHeader.biHeight = WINHEIGHT;
+	bitmapInfo.bmiHeader.biWidth = WINWIDTH;
+	bitmapInfo.bmiHeader.biPlanes = 1;
+	bitmapInfo.bmiHeader.biBitCount = 32;
+	bitmapInfo.bmiHeader.biCompression = BI_RGB;
+	backBuffer = malloc(bitmapInfo.bmiHeader.biHeight * bitmapInfo.bmiHeader.biWidth * 4);
+	winclass->style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+	winclass->lpfnWndProc = Win32MainWindowCallback;
+	winclass->hInstance = instance;
+	winclass->lpszClassName = "HPlanarClassificationClass";
+}
+
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode) {
 	MatrixXf X;// = (MatrixXf)BuildMatFromFile("new.txt"); write_binary("planar.dat", X);
 	MatrixXf Y;// = (MatrixXf)BuildMatFromFile("newL.txt"); write_binary("planarLabels.dat", Y);
 	read_binary("planar.dat", X);
 	read_binary("planarLabels.dat", Y);
 	WNDCLASSA winClass = {};
-	Win32ResizeDIBSection(&GlobalBackbuffer, WINWIDTH, WINHEIGHT);
-	winClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-	winClass.lpfnWndProc = Win32MainWindowCallback;
-	winClass.hInstance = Instance;
-	winClass.lpszClassName = "HPlanarClassificationClass";
-	int randColor = 0;
+	InitializeWindow(&winClass, Instance);
+	MatrixXf temp = BuildDisplayCoords();
 	if(RegisterClassA(&winClass)) {
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "PlanarClassification",
-									  WS_OVERLAPPEDWINDOW | WS_VISIBLE, CW_USEDEFAULT,CW_USEDEFAULT,
+									  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH, WINHEIGHT, 0, 0, Instance, 0);
-		HDC DeviceContext = GetDC(window);
-		MatrixXf temp = BuildDisplayCoords();
+		
 		while(globalRunning) {
-
 			Win32ProcessPendingMessages();
-			HDC hDCMem = CreateCompatibleDC(DeviceContext);
-			HBITMAP Membitmap = CreateCompatibleBitmap(DeviceContext, WINWIDTH, WINHEIGHT);
-			SelectObject(hDCMem, Membitmap);			int randColor = int(rand() % 255);
-			for(int i = 0; i < temp.rows(); i++) {
-				SetPixel(hDCMem, int(temp(i, 0) + WINHALFHEIGHT), int((temp(i, 1)) + WINHALFWIDTH), RGB(int(rand() % 255), int(rand() % 255), int(rand() % 255)));
-			}
-			PlotData(&hDCMem, X, Y);
-			BitBlt(DeviceContext, 0, 0, WINWIDTH, WINHEIGHT, hDCMem, 0, 0, SRCCOPY);
+			PlotData(X, Y);
+			HDC deviceContext = GetDC(window);
+			Win32DisplayBufferInWindow(backBuffer, deviceContext);
+			DeleteDC(deviceContext);
 		}
 	}
 	return EXIT_SUCCESS;
