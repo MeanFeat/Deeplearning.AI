@@ -4,7 +4,6 @@
 #include <iostream>
 #include <fstream>
 
-#define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
 using namespace Eigen;
 using namespace std;
 
