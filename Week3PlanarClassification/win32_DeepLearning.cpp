@@ -8,7 +8,7 @@
 
 global_variable bool globalRunning = true;
 void *backBuffer;
-BITMAPINFO bitmapInfo = {0};
+BITMAPINFO bitmapInfo = { 0 };
 global_variable Color positiveColor = Color(0, 0, 255, 255);
 global_variable Color negativeColor = Color(255, 0, 255, 255);
 
@@ -19,14 +19,19 @@ internal void Win32DisplayBufferInWindow(void *Buffer, HDC DeviceContext) {
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam) {
 	LRESULT Result = 0;
 	switch(Message) {
-		case WM_ACTIVATEAPP:
-		{
-			OutputDebugStringA("WM_ACTIVATEAPP\n");
-		} break;
-		default:
-		{
-			Result = DefWindowProcA(Window, Message, WParam, LParam);
-		} break;
+	case WM_DESTROY:
+	case WM_CLOSE:
+	{
+		globalRunning = false;
+	} break;
+	case WM_ACTIVATEAPP:
+	{
+		OutputDebugStringA("WM_ACTIVATEAPP\n");
+	} break;
+	default:
+	{
+		Result = DefWindowProcA(Window, Message, WParam, LParam);
+	} break;
 	}
 	return Result;
 }
@@ -34,18 +39,8 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 internal void Win32ProcessPendingMessages() {
 	MSG Message;
 	while(PeekMessage(&Message, 0, 0, 0, PM_REMOVE)) {
-		switch(Message.message) {
-			case WM_DESTROY:
-			case WM_QUIT:
-			{
-				globalRunning = false;
-			} break;
-			default:
-			{
-				TranslateMessage(&Message);
-				DispatchMessageA(&Message);
-			} break;
-		}
+		TranslateMessage(&Message);
+		DispatchMessageA(&Message);
 	}
 }
 
