@@ -7,14 +7,6 @@
 using namespace Eigen;
 using namespace std;
 
-inline MatrixXf Sigmoid(MatrixXf in) {
-	return ((-1.0f*in).array().exp() + 1 ).cwiseInverse(); //faster than unary
-}
-
-inline MatrixXf Log(MatrixXf in) { 
-	return in.array().log();
-}
-
 typedef Matrix<float, Dynamic, Dynamic> MatrixDynamic;
 namespace Eigen {
 

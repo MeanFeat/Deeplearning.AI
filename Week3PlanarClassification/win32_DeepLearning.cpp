@@ -1,14 +1,16 @@
 #include "win32_DeepLearning.h"
-#define WINWIDTH 500
-#define WINHEIGHT 500
+#include "stdMat.h"
+#define WINWIDTH 800
+#define WINHEIGHT 800
 #define WINHALFWIDTH WINWIDTH * 0.5f
 #define WINHALFHEIGHT WINHEIGHT * 0.5f
-#define SCALE 50
+#define SCALE 80
 
 global_variable bool globalRunning = true;
 void *backBuffer;
 BITMAPINFO bitmapInfo = {0};
-
+global_variable Color positiveColor = Color(0, 0, 255, 255);
+global_variable Color negativeColor = Color(255, 0, 255, 255);
 
 internal void Win32DisplayBufferInWindow(void *Buffer, HDC DeviceContext) {
 	StretchDIBits(DeviceContext, 0, 0, WINWIDTH, WINWIDTH, 0, 0, WINWIDTH, WINHEIGHT, Buffer, &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
@@ -33,6 +35,7 @@ internal void Win32ProcessPendingMessages() {
 	MSG Message;
 	while(PeekMessage(&Message, 0, 0, 0, PM_REMOVE)) {
 		switch(Message.message) {
+			case WM_DESTROY:
 			case WM_QUIT:
 			{
 				globalRunning = false;
@@ -50,7 +53,7 @@ void PlotData(MatrixXf X, MatrixXf Y) {
 	for(int i = 0; i < X.cols(); i++) {
 		Assert(X(1, i) != X(0, i));
 		DrawFilledCircle(backBuffer, WINWIDTH, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.275f, Color(0, 0, 0, 255));
-		DrawFilledCircle(backBuffer, WINWIDTH, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.2f, Y(i) == 1 ? Color(0, 255, 255, 255) : Color(255, 0, 0, 255));
+		DrawFilledCircle(backBuffer, WINWIDTH, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.2f, Y(i) == 1 ? positiveColor : negativeColor);
 	}
 }
 
@@ -91,19 +94,33 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	read_binary("planarLabels.dat", Y);
 	WNDCLASSA winClass = {};
 	InitializeWindow(&winClass, Instance);
-	MatrixXf temp = BuildDisplayCoords();
+	MatrixXf screenCoords = BuildDisplayCoords().transpose();
 	if(RegisterClassA(&winClass)) {
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "PlanarClassification",
-									  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
+									  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH, WINHEIGHT, 0, 0, Instance, 0);
-		
+		Net neural;
+		neural.InitializeParameters(X.rows(), 4, Y.rows());		
 		while(globalRunning) {
 			Win32ProcessPendingMessages();
+			for(int epoch = 0; epoch < 1000; epoch++) {
+				neural.UpdateSingleStep(X, Y);
+			}
+			MatrixXf h = neural.GetHypothesis(screenCoords);
+			int *pixel = (int *)backBuffer;
+
+			for(int i = 0; i < h.cols(); i++) {
+				float percent = *(h.data() + i);
+				Color blended = positiveColor.Blend(negativeColor, percent);
+				*pixel++ = blended.ToBit();
+			}
+
 			PlotData(X, Y);
 			HDC deviceContext = GetDC(window);
 			Win32DisplayBufferInWindow(backBuffer, deviceContext);
 			DeleteDC(deviceContext);
 		}
+		
 	}
 	return EXIT_SUCCESS;
 }
