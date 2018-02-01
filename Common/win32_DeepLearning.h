@@ -11,6 +11,7 @@
 #include <Eigen/dense>
 #include "stdDraw.h"
 #include "stdMat.h"
+#include "stdNet.h"
 
 
 #define internal static 

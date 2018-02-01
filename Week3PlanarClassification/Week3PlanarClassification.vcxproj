@@ -126,12 +126,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="stdNet.cpp" />
     <ClCompile Include="win32_DeepLearning.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\color.h" />
     <ClInclude Include="..\Common\stdDraw.h" />
     <ClInclude Include="..\Common\stdMat.h" />
+    <ClInclude Include="..\Common\stdNet.h" />
     <ClInclude Include="..\Common\win32_DeepLearning.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
