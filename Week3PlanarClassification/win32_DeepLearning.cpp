@@ -103,10 +103,10 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		neural.InitializeParameters(X.rows(), 4, Y.rows());		
 		while(globalRunning) {
 			Win32ProcessPendingMessages();
-			for(int epoch = 0; epoch < 1000; epoch++) {
+			for(int epoch = 0; epoch < 10; epoch++) {
 				neural.UpdateSingleStep(X, Y);
 			}
-			MatrixXf h = neural.GetHypothesis(screenCoords);
+			MatrixXf h = neural.ForwardPropagation(screenCoords, false);
 			int *pixel = (int *)backBuffer;
 
 			for(int i = 0; i < h.cols(); i++) {

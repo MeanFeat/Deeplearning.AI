@@ -51,8 +51,7 @@ public:
 	NetCache GetCache();
 	void InitializeParameters(int inputSize, int hiddenSize, int outputSize);
 	
-	MatrixXf ForwardPropagation(MatrixXf X);
-	MatrixXf GetHypothesis(MatrixXf input);
+	MatrixXf ForwardPropagation(MatrixXf X, bool training);
 	float ComputeCost(MatrixXf A2, MatrixXf Y);
 	void BackwardPropagation(MatrixXf X, MatrixXf Y);
 	void UpdateParameters();

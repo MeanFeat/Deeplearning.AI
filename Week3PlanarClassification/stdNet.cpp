@@ -24,28 +24,22 @@ void Net::InitializeParameters(int inputSize, int hiddenSize, int outputSize) {
 	return ;
 }
 
-MatrixXf Net::ForwardPropagation(MatrixXf X) {
+MatrixXf Net::ForwardPropagation(MatrixXf X, bool training) {
 	MatrixXf broadB1 = params.b1;
 	MatrixXf broadB2 = params.b2;
 	broadB1.conservativeResize(Eigen::NoChange, X.cols());
 	broadB2.conservativeResize(Eigen::NoChange, X.cols());
-	cache.Z1 = (params.W1 * X) + broadB1;
-	cache.A1 = Tanh(cache.Z1);
-	cache.Z2 = (params.W2 * cache.A1) + broadB2;
-	cache.A2 = Sigmoid(cache.Z2);
-	return cache.A2;
-}
-
-MatrixXf Net::GetHypothesis(MatrixXf input) {
-	MatrixXf broadB1 = params.b1;
-	MatrixXf broadB2 = params.b2;
-	broadB1.conservativeResize(Eigen::NoChange, input.cols());
-	broadB2.conservativeResize(Eigen::NoChange, input.cols());
-	MatrixXf Z1 = (params.W1 * input) + broadB1;
-	MatrixXf A1 = Sigmoid(Z1);
+	MatrixXf Z1 = (params.W1 * X) + broadB1;
+	MatrixXf A1 = Tanh(Z1);
 	MatrixXf Z2 = (params.W2 * A1) + broadB2;
 	MatrixXf A2 = Sigmoid(Z2);
-	return A2; //TODO: multiple outputs?
+	if(training) {
+		cache.Z1 = Z1;
+		cache.A1 = A1;
+		cache.Z2 = Z2;
+		cache.A2 = A2;
+	}
+	return A2;
 }
 
 float Net::ComputeCost(MatrixXf A2, MatrixXf Y) {
@@ -77,7 +71,7 @@ void Net::UpdateParameters() {
 }
 
 void Net::UpdateSingleStep(MatrixXf X, MatrixXf Y) {
-	ForwardPropagation(X);
+	ForwardPropagation(X, true);
 	cache.cost = ComputeCost(cache.A2, Y);
 	BackwardPropagation(X, Y);
 	UpdateParameters();
