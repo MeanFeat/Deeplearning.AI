@@ -57,11 +57,11 @@ MatrixXf BuildDisplayCoords() {
 	VectorXf row(WINWIDTH);
 	VectorXf cols(WINWIDTH * WINHEIGHT);
 	for(int x = 0; x < WINWIDTH; x++) {
-		row(x) = float(x - WINHALFWIDTH);
+		row(x) = float((x - WINHALFWIDTH) / SCALE);
 	}
 	for(int y = 0; y < WINHEIGHT; y++) {
 		for(int x = 0; x < WINWIDTH; x++) {
-			cols(y*WINWIDTH + x) = float((y - WINHALFWIDTH));;
+			cols(y*WINWIDTH + x) = float((y - WINHALFWIDTH)/SCALE);;
 		}
 	}
 	out << row.replicate(WINHEIGHT, 1), cols;
@@ -98,7 +98,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		neural.InitializeParameters(X.rows(), 4, Y.rows());		
 		while(globalRunning) {
 			Win32ProcessPendingMessages();
-			for(int epoch = 0; epoch < 10; epoch++) {
+			for(int epoch = 0; epoch < 100; epoch++) {
 				neural.UpdateSingleStep(X, Y);
 			}
 			MatrixXf h = neural.ForwardPropagation(screenCoords, false);
