@@ -7,39 +7,46 @@
 using namespace Eigen;
 using namespace std;
 
-inline MatrixXf Sigmoid(MatrixXf in) {
+enum Activation {
+	Linear,
+	Sigmoid,
+	Tanh,
+	ReLU
+};
+
+inline MatrixXf CalcSigmoid( const MatrixXf &in) {
 	return ((-1.0f*in).array().exp() + 1).cwiseInverse();
 }
 
-inline MatrixXf Tanh(MatrixXf in) {
+inline MatrixXf CalcTanh(const MatrixXf &in) {
 	return (in.array().tanh());
 }
 
-inline MatrixXf Log(MatrixXf in) {
+inline MatrixXf CalcReLU(const MatrixXf &in) {
+	return (in.cwiseMax(0));
+}
+
+
+inline MatrixXf Log(const MatrixXf &in) {
 	return in.array().log();
 }
 
 struct NetGradients{
-	MatrixXf dW1;
-	VectorXf db1;
-	MatrixXf dW2;
-	VectorXf db2;
+	vector<MatrixXf> dW;
+	vector<MatrixXf> db;
 };
 
 struct NetCache {
-	MatrixXf Z1;
-	MatrixXf A1;
-	MatrixXf Z2;
-	MatrixXf A2;
+	vector<MatrixXf> Z;
+	vector<MatrixXf> A;
 	float cost;
 };
 
 struct NetParameters {
 	vector<int> layerSizes;
-	MatrixXf W1;
-	MatrixXf b1;
-	MatrixXf W2;
-	MatrixXf b2;
+	vector<Activation> layerActivations;
+	vector<MatrixXf> W;
+	vector<MatrixXf> b;
 	float learningRate;
 };
 
@@ -49,13 +56,25 @@ public:
 	~Net();
 	NetParameters GetParams();
 	NetCache GetCache();
-	void InitializeParameters(int inputSize, int hiddenSize, int outputSize);
+	void AddLayer(int A, int B);
+	void InitializeParameters(int inputSize, std::vector<int> hiddenLayers, int outputSize, vector<Activation> activations, float learningRate);
+
+	MatrixXf Activate(Activation act, const MatrixXf &In);
 	
-	MatrixXf ForwardPropagation(MatrixXf X, bool training);
-	float ComputeCost(MatrixXf A2, MatrixXf Y);
-	void BackwardPropagation(MatrixXf X, MatrixXf Y);
+	MatrixXf ForwardPropagation(const MatrixXf &X, bool training);
+	float ComputeCost( const MatrixXf &Y);
+	void BackwardPropagation(const MatrixXf &X, const MatrixXf &Y);
 	void UpdateParameters();
-	void UpdateSingleStep(MatrixXf X, MatrixXf Y);
+	void UpdateSingleStep(const MatrixXf &X, const MatrixXf &Y);
+
+	inline MatrixXf BackSigmoid(const MatrixXf &dZ, int index) {
+		return (params.W[index + 1].transpose() * dZ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - cache.A[index]);
+	}
+
+	inline MatrixXf BackTanh(const MatrixXf &dZ, int index) {
+		MatrixXf A1Squared = cache.A[index].array().pow(2);
+		return (params.W[index + 1].transpose() * dZ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - (A1Squared));
+	}
 
 protected:
 	NetParameters params;

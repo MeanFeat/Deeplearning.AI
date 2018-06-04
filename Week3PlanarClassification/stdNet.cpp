@@ -1,9 +1,9 @@
 ﻿#include "stdNet.h"
 
 Net::Net() {
-	params.learningRate = 0.01f;
 }
-Net::~Net() {}
+Net::~Net() {
+}
 
 NetParameters Net::GetParams() {
 	return params;
@@ -13,66 +13,106 @@ NetCache Net::GetCache() {
 	return cache;
 }
 
-void Net::InitializeParameters(int inputSize, int hiddenSize, int outputSize) {
+void Net::AddLayer(int A, int B) {
+	params.W.push_back(MatrixXf::Random(A, B) * 0.1f);
+	params.b.push_back(VectorXf::Zero(A, 1));
+	cache.Z.push_back(MatrixXf::Zero(0, 0));
+	cache.A.push_back(MatrixXf::Zero(0, 0));
+	grads.dW.push_back(MatrixXf::Zero(0, 0));
+	grads.db.push_back(MatrixXf::Zero(0, 0));
+}
+
+void Net::InitializeParameters(int inputSize, std::vector<int> hiddenSizes, int outputSize, vector<Activation> activations, float learningRate) {
+	params.learningRate = learningRate;
+	params.layerActivations = activations;
 	params.layerSizes.push_back(inputSize);
-	params.layerSizes.push_back(hiddenSize);
-	params.layerSizes.push_back(outputSize);
-	params.W1 = MatrixXf::Random(hiddenSize, inputSize) * 0.01f;
-	params.b1 = VectorXf::Zero(hiddenSize, 1);
-	params.W2 = MatrixXf::Random(outputSize, hiddenSize) * 0.01f;
-	params.b2 = VectorXf::Zero(outputSize, 1);
-	return ;
-}
-
-MatrixXf Net::ForwardPropagation(MatrixXf X, bool training) {
-	MatrixXf broadB1 = params.b1;
-	MatrixXf broadB2 = params.b2;
-	broadB1.conservativeResize(Eigen::NoChange, X.cols());
-	broadB2.conservativeResize(Eigen::NoChange, X.cols());
-	MatrixXf Z1 = (params.W1 * X) + broadB1;
-	MatrixXf A1 = Tanh(Z1);
-	MatrixXf Z2 = (params.W2 * A1) + broadB2;
-	MatrixXf A2 = Sigmoid(Z2);
-	if(training) {
-		cache.Z1 = Z1;
-		cache.A1 = A1;
-		cache.Z2 = Z2;
-		cache.A2 = A2;
+	for(int l = 0; l < (int)hiddenSizes.size(); l++) {
+		params.layerSizes.push_back(hiddenSizes[l]);
 	}
-	return A2;
+	params.layerSizes.push_back(outputSize);
+	AddLayer(hiddenSizes[0], inputSize);
+	for(int h = 1; h < (int)hiddenSizes.size(); h++) {
+		AddLayer(hiddenSizes[h], hiddenSizes[h - 1]);
+	}
+	AddLayer(outputSize, hiddenSizes.back());
+	return;
 }
 
-float Net::ComputeCost(MatrixXf A2, MatrixXf Y) {
+MatrixXf Net::Activate( Activation act, const MatrixXf &In) {
+	switch(act) {
+	case Linear:
+		return In;
+		break;
+	case Sigmoid:
+		return CalcSigmoid(In);
+		break;
+	case Tanh:
+		return CalcTanh(In);
+		break;
+	case ReLU:
+		return CalcReLU(In);
+		break;
+	default:
+		return In;
+		break;
+	}
+}
+
+MatrixXf Net::ForwardPropagation(const MatrixXf &X, bool training) {
+	MatrixXf lastOutput = X;
+	for(int i = 0; i < (int)params.layerSizes.size() - 1; i++) {
+		MatrixXf broadBias = params.b[i];
+		broadBias.conservativeResize(Eigen::NoChange, lastOutput.cols());
+		MatrixXf Z = (params.W[i] * lastOutput) + broadBias;
+		lastOutput = Activate(params.layerActivations[i],Z);
+		if(training) {
+			cache.Z[i] = Z;
+			cache.A[i] = lastOutput;
+		}
+	}
+	return lastOutput;
+}
+
+float Net::ComputeCost(const MatrixXf &Y) {
+	MatrixXf *A2 = &cache.A[cache.A.size() - 1];
 	int m = (int)Y.cols();
 	float coeff = 1.0f / m;
-	return -((Y.cwiseProduct(Log(A2))) + (MatrixXf::Ones(1, m) - Y).cwiseProduct((Log(MatrixXf::Ones(1, m) - A2)))).sum() * coeff;
+	return -((Y.cwiseProduct(Log(*A2))) + (MatrixXf::Ones(1, m) - Y).cwiseProduct((Log(MatrixXf::Ones(1, m) - *A2)))).sum() * coeff;
 }
 
-void Net::BackwardPropagation(MatrixXf X, MatrixXf Y) {
+void Net::BackwardPropagation(const MatrixXf &X, const MatrixXf &Y) {
 	int m = (int)Y.cols();
 	float coeff = float(1.f / m);
-	MatrixXf dZ2 = cache.A2 - Y;
-	grads.dW2 = coeff * (dZ2* cache.A1.transpose());
-	grads.db2 = coeff * dZ2.rowwise().sum();
-	MatrixXf A1Squared = cache.A1.array().pow(2);
-	MatrixXf Step2 = params.W2.transpose() * dZ2;
-	MatrixXf Step3 = MatrixXf::Ones(cache.A1.cols(), cache.A1.rows()) - A1Squared.transpose();
-	MatrixXf dZ1 = (Step2).cwiseProduct(Step3.transpose());
-	MatrixXf Xprime = X.transpose();
-	grads.dW1 = (dZ1 * Xprime) * coeff;
-	grads.db1 = coeff * dZ1.rowwise().sum();
+	MatrixXf dZ = cache.A.back() - Y;
+	grads.dW.back() = coeff * (dZ * cache.A[cache.A.size()-2].transpose());
+	grads.db.back() = coeff * dZ.rowwise().sum();
+	for(int l = params.layerActivations.size() - 2; l >= 0; --l) {
+		MatrixXf lowerA = l > 0 ? cache.A[l-1] : X;
+		switch(params.layerActivations[l]) {
+		case Sigmoid:
+			dZ = BackSigmoid(dZ, l);
+			break;
+		case Tanh:			
+			dZ = BackTanh(dZ, l);
+			break;
+		default:
+			break;
+		}
+		grads.dW[l] = coeff * (dZ * lowerA.transpose());
+		grads.db[l] = coeff * dZ.rowwise().sum();
+	}
 }
 
 void Net::UpdateParameters() {
-	params.W1 = params.W1 - (params.learningRate * grads.dW1);
-	params.b1 = params.b1 - (params.learningRate * grads.db1);
-	params.W2 = params.W2 - (params.learningRate * grads.dW2);
-	params.b2 = params.b2 - (params.learningRate * grads.db2);
+	for(int i = 0; i < (int)grads.dW.size(); i++) {
+		params.W[i] -= (params.learningRate * grads.dW[i]);
+		params.b[i] -= (params.learningRate * grads.db[i]);
+	}
 }
 
-void Net::UpdateSingleStep(MatrixXf X, MatrixXf Y) {
+void Net::UpdateSingleStep(const MatrixXf &X, const MatrixXf &Y) {
 	ForwardPropagation(X, true);
-	cache.cost = ComputeCost(cache.A2, Y);
+	cache.cost = ComputeCost(Y);
 	BackwardPropagation(X, Y);
 	UpdateParameters();
 }

@@ -127,7 +127,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="stdNet.cpp" />
-    <ClCompile Include="win32_DeepLearning.cpp" />
+    <ClCompile Include="PlanarClassification.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\color.h" />
