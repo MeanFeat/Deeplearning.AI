@@ -101,6 +101,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Sigmoid },
 			0.125f);
 
+		HDC deviceContext = GetDC(window);
 		while(globalRunning) {
 			Win32ProcessPendingMessages();
 			for(int epoch = 0; epoch < 10; epoch++) {
@@ -119,12 +120,10 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 				*pixel++ = blended.ToBit();
 			}
 
-			HDC deviceContext = GetDC(window);
 			PlotData(X, Y);
 			Win32DisplayBufferInWindow(backBuffer, deviceContext);
-			DeleteDC(deviceContext);
 		}
-		
+		DeleteDC(deviceContext);
 	}
 	return EXIT_SUCCESS;
 }
