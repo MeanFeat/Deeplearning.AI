@@ -14,7 +14,7 @@ NetCache Net::GetCache() {
 }
 
 void Net::AddLayer(int A, int B) {
-	params.W.push_back(MatrixXf::Random(A, B) * 0.1f);
+	params.W.push_back(MatrixXf::Random(A, B) * 0.15f);
 	params.b.push_back(VectorXf::Zero(A, 1));
 	cache.Z.push_back(MatrixXf::Zero(0, 0));
 	cache.A.push_back(MatrixXf::Zero(0, 0));
@@ -58,12 +58,10 @@ MatrixXf Net::Activate( Activation act, const MatrixXf &In) {
 	}
 }
 
-MatrixXf Net::ForwardPropagation(const MatrixXf &X, bool training) {
+MatrixXf Net::ForwardPropagation(const MatrixXf X, bool training) {
 	MatrixXf lastOutput = X;
 	for(int i = 0; i < (int)params.layerSizes.size() - 1; i++) {
-		MatrixXf broadBias = params.b[i];
-		broadBias.conservativeResize(Eigen::NoChange, lastOutput.cols());
-		MatrixXf Z = (params.W[i] * lastOutput) + broadBias;
+		MatrixXf Z = (params.W[i] * lastOutput).colwise() + (VectorXf)params.b[i];
 		lastOutput = Activate(params.layerActivations[i],Z);
 		if(training) {
 			cache.Z[i] = Z;
@@ -73,14 +71,14 @@ MatrixXf Net::ForwardPropagation(const MatrixXf &X, bool training) {
 	return lastOutput;
 }
 
-float Net::ComputeCost(const MatrixXf &Y) {
-	MatrixXf *A2 = &cache.A[cache.A.size() - 1];
+float Net::ComputeCost(const MatrixXf Y) {
+	MatrixXf A2 = cache.A[cache.A.size() - 1];
 	int m = (int)Y.cols();
 	float coeff = 1.0f / m;
-	return -((Y.cwiseProduct(Log(*A2))) + (MatrixXf::Ones(1, m) - Y).cwiseProduct((Log(MatrixXf::Ones(1, m) - *A2)))).sum() * coeff;
+	return -((Y.cwiseProduct(Log(A2))) + (MatrixXf::Ones(1, m) - Y).cwiseProduct((Log(MatrixXf::Ones(1, m) - A2)))).sum() * coeff;
 }
 
-void Net::BackwardPropagation(const MatrixXf &X, const MatrixXf &Y) {
+void Net::BackwardPropagation(const MatrixXf X, const MatrixXf Y) {
 	int m = (int)Y.cols();
 	float coeff = float(1.f / m);
 	MatrixXf dZ = cache.A.back() - Y;
@@ -110,7 +108,7 @@ void Net::UpdateParameters() {
 	}
 }
 
-void Net::UpdateSingleStep(const MatrixXf &X, const MatrixXf &Y) {
+void Net::UpdateSingleStep(const MatrixXf X, const MatrixXf Y) {
 	ForwardPropagation(X, true);
 	cache.cost = ComputeCost(Y);
 	BackwardPropagation(X, Y);

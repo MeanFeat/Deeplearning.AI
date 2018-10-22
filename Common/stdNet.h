@@ -61,17 +61,17 @@ public:
 
 	MatrixXf Activate(Activation act, const MatrixXf &In);
 	
-	MatrixXf ForwardPropagation(const MatrixXf &X, bool training);
-	float ComputeCost( const MatrixXf &Y);
-	void BackwardPropagation(const MatrixXf &X, const MatrixXf &Y);
+	MatrixXf ForwardPropagation(const MatrixXf X, bool training);
+	float ComputeCost( const MatrixXf Y);
+	void BackwardPropagation(const MatrixXf X, const MatrixXf Y);
 	void UpdateParameters();
-	void UpdateSingleStep(const MatrixXf &X, const MatrixXf &Y);
+	void UpdateSingleStep(const MatrixXf X, const MatrixXf Y);
 
-	inline MatrixXf BackSigmoid(const MatrixXf &dZ, int index) {
+	inline MatrixXf BackSigmoid(const MatrixXf dZ, int index) {
 		return (params.W[index + 1].transpose() * dZ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - cache.A[index]);
 	}
 
-	inline MatrixXf BackTanh(const MatrixXf &dZ, int index) {
+	inline MatrixXf BackTanh(const MatrixXf dZ, int index) {
 		MatrixXf A1Squared = cache.A[index].array().pow(2);
 		return (params.W[index + 1].transpose() * dZ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - (A1Squared));
 	}

@@ -9,8 +9,8 @@
 global_variable bool globalRunning = true;
 void *backBuffer;
 BITMAPINFO bitmapInfo = { 0 };
-global_variable Color positiveColor = Color(0, 0, 255, 255);
-global_variable Color negativeColor = Color(255, 0, 0, 255);
+global_variable Color positiveColor = Color(100, 167, 211, 255);
+global_variable Color negativeColor = Color(255, 184, 113, 255);
 
 internal void Win32DisplayBufferInWindow(void *Buffer, HDC DeviceContext) {
 	StretchDIBits(DeviceContext, 0, 0, WINWIDTH, WINWIDTH, 0, 0, WINWIDTH, WINHEIGHT, Buffer, &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
@@ -47,10 +47,12 @@ internal void Win32ProcessPendingMessages() {
 void PlotData(MatrixXf X, MatrixXf Y) {
 	for(int i = 0; i < X.cols(); i++) {
 		Assert(X(1, i) != X(0, i));
-		DrawFilledCircle(backBuffer, WINWIDTH, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.15f, Color(0, 0, 0, 255));
-		DrawFilledCircle(backBuffer, WINWIDTH, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.1f, Y(i) == 1 ? positiveColor : negativeColor);
+		DrawFilledCircle(backBuffer, WINWIDTH, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.2f, Color(255, 255, 255, 255));
+		DrawFilledCircle(backBuffer, WINWIDTH, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.175f, Y(i) > 0.f ? positiveColor : negativeColor);
 	}
 }
+
+
 
 MatrixXf BuildDisplayCoords() {
 	MatrixXf out(WINWIDTH * WINHEIGHT, 2);
@@ -61,7 +63,7 @@ MatrixXf BuildDisplayCoords() {
 	}
 	for(int y = 0; y < WINHEIGHT; y++) {
 		for(int x = 0; x < WINWIDTH; x++) {
-			cols(y*WINWIDTH + x) = float((y - WINHALFWIDTH)/SCALE);;
+			cols(y*WINWIDTH + x) = float((y - WINHALFWIDTH) / SCALE);;
 		}
 	}
 	out << row.replicate(WINHEIGHT, 1), cols;
@@ -87,6 +89,20 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	MatrixXf Y;// = (MatrixXf)BuildMatFromFile("newL.txt"); write_binary("planarLabels.dat", Y);
 	read_binary("planar.dat", X);
 	read_binary("planarLabels.dat", Y);
+/*	X = MatrixXf::Random(2, 400) * 4;
+
+	for(int i = 0; i < Y.cols(); i++) {
+		if((X(0, i) > 0 && X(1, i) > 0) || (X(0, i) < 0 && X(1, i) < 0)) {
+			*(Y.data() + i) = 1.0f;
+		} else {
+			*(Y.data() + i) = -1.0f;
+		}
+	}
+
+	for(int i = 0; i < Y.cols(); i++) {
+		*(Y.data() + i) = sqrt(pow(X(0, i),2) + pow(X(1, i),2)) > 2.f ? -1.f : 1.f;
+	}
+*/	
 	WNDCLASSA winClass = {};
 	InitializeWindow(&winClass, Instance);
 	MatrixXf screenCoords = BuildDisplayCoords().transpose();
@@ -95,31 +111,35 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 									  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH, WINHEIGHT, 0, 0, Instance, 0);
 		Net neural;
-		neural.InitializeParameters(X.rows(), { 9,9 }, Y.rows(), {
+		neural.InitializeParameters(X.rows(), { 4,4 }, Y.rows(), {
 			Tanh,
 			Tanh,
-			Sigmoid },
-			0.125f);
+			Tanh },
+			0.1f);
 
+		int cycles = 0;
 		HDC deviceContext = GetDC(window);
 		while(globalRunning) {
+			cycles++;
 			Win32ProcessPendingMessages();
-			for(int epoch = 0; epoch < 10; epoch++) {
+			for(int epoch = 0; epoch < 100; epoch++) {
 				neural.UpdateSingleStep(X, Y);
+				Assert(!isnan(neural.GetCache().A.back().sum()));
 			}
+
 			MatrixXf h = neural.ForwardPropagation(screenCoords, false);
 			int *pixel = (int *)backBuffer;
 
 			for(int i = 0; i < h.cols(); i++) {
-				float percent = *(h.data() + i);
+				float percent = (*(h.data() + i));
 #if 1
-				Color blended = positiveColor.Blend(negativeColor, percent);
+				Color blended = percent > 0.f ? Color(255, 255, 255, 255).Blend(negativeColor, tanh(percent * 2))
+											: Color(255, 255, 255, 255).Blend(positiveColor, tanh(-percent * 2));
 #else
 				Color blended = percent < 0.5f ? positiveColor : negativeColor;
 #endif
 				*pixel++ = blended.ToBit();
 			}
-
 			PlotData(X, Y);
 			Win32DisplayBufferInWindow(backBuffer, deviceContext);
 		}
