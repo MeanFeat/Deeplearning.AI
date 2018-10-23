@@ -4,10 +4,12 @@
 #define WINHEIGHT 800
 #define WINHALFWIDTH WINWIDTH * 0.5f
 #define WINHALFHEIGHT WINHEIGHT * 0.5f
-#define SCALE 80
+#define SCALE 200
 
 global_variable bool globalRunning = true;
+global_variable bool discreteOutput = false;
 void *backBuffer;
+Net neural;
 BITMAPINFO bitmapInfo = { 0 };
 global_variable Color positiveColor = Color(100, 167, 211, 255);
 global_variable Color negativeColor = Color(255, 184, 113, 255);
@@ -23,6 +25,22 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 	case WM_CLOSE:
 	{
 		globalRunning = false;
+	} break;
+	case WM_KEYDOWN:
+	{
+		switch(WParam) {
+		case 'D':
+			discreteOutput = !discreteOutput;
+			break;
+		case 'S':
+			neural.SaveNetwork();
+			break;
+		case 'L':
+			neural.LoadNetwork();
+			break;
+		default:
+			break;
+		}
 	} break;
 	case WM_ACTIVATEAPP:
 	{
@@ -47,12 +65,10 @@ internal void Win32ProcessPendingMessages() {
 void PlotData(MatrixXf X, MatrixXf Y) {
 	for(int i = 0; i < X.cols(); i++) {
 		Assert(X(1, i) != X(0, i));
-		DrawFilledCircle(backBuffer, WINWIDTH, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.2f, Color(255, 255, 255, 255));
-		DrawFilledCircle(backBuffer, WINWIDTH, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.175f, Y(i) > 0.f ? positiveColor : negativeColor);
+		DrawFilledCircle(backBuffer, WINWIDTH, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.075f, Color(255, 255, 255, 255));
+		DrawFilledCircle(backBuffer, WINWIDTH, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.05f, Y(0,i) > 0.f ? positiveColor : negativeColor);
 	}
 }
-
-
 
 MatrixXf BuildDisplayCoords() {
 	MatrixXf out(WINWIDTH * WINHEIGHT, 2);
@@ -84,25 +100,41 @@ void InitializeWindow(WNDCLASSA *winclass, HINSTANCE instance) {
 	winclass->lpszClassName = "HPlanarClassificationClass";
 }
 
-int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode) {
-	MatrixXf X;// = (MatrixXf)BuildMatFromFile("new.txt"); write_binary("planar.dat", X);
-	MatrixXf Y;// = (MatrixXf)BuildMatFromFile("newL.txt"); write_binary("planarLabels.dat", Y);
-	read_binary("planar.dat", X);
-	read_binary("planarLabels.dat", Y);
-/*	X = MatrixXf::Random(2, 400) * 4;
-
-	for(int i = 0; i < Y.cols(); i++) {
-		if((X(0, i) > 0 && X(1, i) > 0) || (X(0, i) < 0 && X(1, i) < 0)) {
-			*(Y.data() + i) = 1.0f;
-		} else {
-			*(Y.data() + i) = -1.0f;
+void DrawOutputToScreen(MatrixXf screenCoords){
+	MatrixXf h = neural.ForwardPropagation(screenCoords, false);
+	int *pixel = (int *)backBuffer;
+	for(int i = 0; i < h.cols(); i++) {
+		float percent = (*(h.data() + i));
+		Color blended = Color(0, 0, 0, 0);
+		switch(neural.GetParams().layerActivations.back()) {
+		case Sigmoid:
+			percent = (percent - 0.5f) * 2;
+			break;
+		case Tanh:
+			break;
+		default:
+			break;
 		}
+		if(discreteOutput) {
+			blended = percent > 0.f ? negativeColor : positiveColor;
+		} else {
+			blended = percent > 0.f ? Color(255, 255, 255, 255).Blend(negativeColor, tanh(percent * 10))
+				: Color(255, 255, 255, 255).Blend(positiveColor, tanh(-percent * 10));
+		}
+		*pixel++ = blended.ToBit();
 	}
+}
 
-	for(int i = 0; i < Y.cols(); i++) {
-		*(Y.data() + i) = sqrt(pow(X(0, i),2) + pow(X(1, i),2)) > 2.f ? -1.f : 1.f;
-	}
-*/	
+void UpdateHistory(vector<float> &history) {
+	history.push_back(neural.GetCache().cost * WINHEIGHT);
+}
+
+int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode) {
+	MatrixXf X;// = (MatrixXf)BuildMatFromFile("Spiral.txt"); X.transposeInPlace(); write_binary("Spiral.dat", X);
+	MatrixXf Y;// = (MatrixXf)BuildMatFromFile("SpiralLabels.txt"); Y.transposeInPlace(); write_binary("SpiralLabels.dat", Y);
+	read_binary("Spiral.dat", X);
+	read_binary("SpiralLabels.dat", Y);
+
 	WNDCLASSA winClass = {};
 	InitializeWindow(&winClass, Instance);
 	MatrixXf screenCoords = BuildDisplayCoords().transpose();
@@ -110,39 +142,30 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "PlanarClassification",
 									  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH, WINHEIGHT, 0, 0, Instance, 0);
-		Net neural;
-		neural.InitializeParameters(X.rows(), { 4,4 }, Y.rows(), {
+		
+		neural.InitializeParameters(X.rows(), { 9,9 }, Y.rows(), {
 			Tanh,
 			Tanh,
 			Tanh },
-			0.1f);
+			0.025f);
 
-		int cycles = 0;
 		HDC deviceContext = GetDC(window);
+		vector<float> history;
+
+		//Main Loop
 		while(globalRunning) {
-			cycles++;
 			Win32ProcessPendingMessages();
 			for(int epoch = 0; epoch < 100; epoch++) {
 				neural.UpdateSingleStep(X, Y);
-				Assert(!isnan(neural.GetCache().A.back().sum()));
+				UpdateHistory(history);				
 			}
-
-			MatrixXf h = neural.ForwardPropagation(screenCoords, false);
-			int *pixel = (int *)backBuffer;
-
-			for(int i = 0; i < h.cols(); i++) {
-				float percent = (*(h.data() + i));
-#if 1
-				Color blended = percent > 0.f ? Color(255, 255, 255, 255).Blend(negativeColor, tanh(percent * 2))
-											: Color(255, 255, 255, 255).Blend(positiveColor, tanh(-percent * 2));
-#else
-				Color blended = percent < 0.5f ? positiveColor : negativeColor;
-#endif
-				*pixel++ = blended.ToBit();
-			}
+			
+			DrawOutputToScreen(screenCoords);
 			PlotData(X, Y);
+			DrawHistory(backBuffer, WINWIDTH, history);
 			Win32DisplayBufferInWindow(backBuffer, deviceContext);
 		}
+
 		DeleteDC(deviceContext);
 	}
 	return EXIT_SUCCESS;

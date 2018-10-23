@@ -31,9 +31,11 @@ inline MatrixXf Log(const MatrixXf &in) {
 	return in.array().log();
 }
 
-struct NetGradients{
+struct NetGradients {
 	vector<MatrixXf> dW;
 	vector<MatrixXf> db;
+	vector<MatrixXf> mW;
+	vector<MatrixXf> mb;
 };
 
 struct NetCache {
@@ -65,8 +67,11 @@ public:
 	float ComputeCost( const MatrixXf Y);
 	void BackwardPropagation(const MatrixXf X, const MatrixXf Y);
 	void UpdateParameters();
+	void UpdateParametersWithMomentum();
 	void UpdateSingleStep(const MatrixXf X, const MatrixXf Y);
 
+	void SaveNetwork();
+	void LoadNetwork();
 	inline MatrixXf BackSigmoid(const MatrixXf dZ, int index) {
 		return (params.W[index + 1].transpose() * dZ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - cache.A[index]);
 	}

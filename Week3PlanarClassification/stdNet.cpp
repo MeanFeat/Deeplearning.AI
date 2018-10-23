@@ -14,7 +14,7 @@ NetCache Net::GetCache() {
 }
 
 void Net::AddLayer(int A, int B) {
-	params.W.push_back(MatrixXf::Random(A, B) * 0.15f);
+	params.W.push_back(MatrixXf::Random(A, B) * 0.5f);
 	params.b.push_back(VectorXf::Zero(A, 1));
 	cache.Z.push_back(MatrixXf::Zero(0, 0));
 	cache.A.push_back(MatrixXf::Zero(0, 0));
@@ -72,10 +72,12 @@ MatrixXf Net::ForwardPropagation(const MatrixXf X, bool training) {
 }
 
 float Net::ComputeCost(const MatrixXf Y) {
-	MatrixXf A2 = cache.A[cache.A.size() - 1];
-	int m = (int)Y.cols();
-	float coeff = 1.0f / m;
-	return -((Y.cwiseProduct(Log(A2))) + (MatrixXf::Ones(1, m) - Y).cwiseProduct((Log(MatrixXf::Ones(1, m) - A2)))).sum() * coeff;
+	return -(cache.A[cache.A.size() - 1].array().pow(2) - Y.array().pow(2)).sum()/Y.cols();
+	//MatrixXf Output = cache.A[cache.A.size() - 1];
+	//int m = (int)Y.cols();
+	//float coeff = 1.0f / m;
+	//return -((Y.cwiseProduct(Log(Output))) + (MatrixXf::Ones(1, m) - Y).cwiseProduct((Log(MatrixXf::Ones(1, m) - Output)))).sum() * coeff;
+	
 }
 
 void Net::BackwardPropagation(const MatrixXf X, const MatrixXf Y) {
@@ -103,8 +105,17 @@ void Net::BackwardPropagation(const MatrixXf X, const MatrixXf Y) {
 
 void Net::UpdateParameters() {
 	for(int i = 0; i < (int)grads.dW.size(); i++) {
-		params.W[i] -= (params.learningRate * grads.dW[i]);
-		params.b[i] -= (params.learningRate * grads.db[i]);
+		params.W[i] -= (params.learningRate * grads.mW[i]);
+		params.b[i] -= (params.learningRate * grads.mb[i]);
+	}
+}
+
+void Net::UpdateParametersWithMomentum() {
+	for(int i = 0; i < (int)grads.dW.size(); i++) {
+		grads.mW[i] = grads.dW[i] + grads.mW[i].normalized() * cache.cost * 0.025f;
+		grads.mb[i] = grads.db[i] + grads.mb[i].normalized() * cache.cost * 0.025f;
+		params.W[i] -= params.learningRate *grads.mW[i];
+		params.b[i] -= params.learningRate *grads.mb[i];
 	}
 }
 
@@ -112,5 +123,12 @@ void Net::UpdateSingleStep(const MatrixXf X, const MatrixXf Y) {
 	ForwardPropagation(X, true);
 	cache.cost = ComputeCost(Y);
 	BackwardPropagation(X, Y);
-	UpdateParameters();
+	UpdateParametersWithMomentum();
+}
+
+void Net::SaveNetwork() {
+	
+}
+
+void Net::LoadNetwork() {
 }
