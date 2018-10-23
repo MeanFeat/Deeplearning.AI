@@ -20,6 +20,8 @@ void Net::AddLayer(int A, int B) {
 	cache.A.push_back(MatrixXf::Zero(0, 0));
 	grads.dW.push_back(MatrixXf::Zero(0, 0));
 	grads.db.push_back(MatrixXf::Zero(0, 0));
+	grads.mW.push_back(MatrixXf::Zero(A, B));
+	grads.mb.push_back(MatrixXf::Zero(A, 1));
 }
 
 void Net::InitializeParameters(int inputSize, std::vector<int> hiddenSizes, int outputSize, vector<Activation> activations, float learningRate) {
@@ -105,20 +107,20 @@ void Net::BackwardPropagation(const MatrixXf X, const MatrixXf Y) {
 
 void Net::UpdateParameters() {
 	for(int i = 0; i < (int)grads.dW.size(); i++) {
-		params.W[i] -= (params.learningRate * grads.mW[i]);
-		params.b[i] -= (params.learningRate * grads.mb[i]);
+		params.W[i] -= (params.learningRate * grads.dW[i]);
+		params.b[i] -= (params.learningRate * grads.db[i]);
 	}
 }
 
 void Net::UpdateParametersWithMomentum() {
 	for(int i = 0; i < (int)grads.dW.size(); i++) {
-		grads.mW[i] = grads.dW[i] + grads.mW[i].normalized() * cache.cost * 0.025f;
-		grads.mb[i] = grads.db[i] + grads.mb[i].normalized() * cache.cost * 0.025f;
+		grads.mW[i] = grads.dW[i] + grads.mW[i].normalized() * cache.cost * 0.025;
+		grads.mb[i] = grads.db[i] + grads.mb[i].normalized() * cache.cost * 0.025;
 		params.W[i] -= params.learningRate *grads.mW[i];
 		params.b[i] -= params.learningRate *grads.mb[i];
 	}
 }
-
+int batchIndex = 0;
 void Net::UpdateSingleStep(const MatrixXf X, const MatrixXf Y) {
 	ForwardPropagation(X, true);
 	cache.cost = ComputeCost(Y);

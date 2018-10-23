@@ -6,7 +6,9 @@ public:
 	int r, g, b, a;
 	int ToBit();
 	Color Blend(Color other, float percent);
-
+	Color operator-(const Color&other) {
+		return Color(r - other.r, g - other.g, b - other.b, a - other.a);
+	}
 };
 
 int Color::ToBit() {

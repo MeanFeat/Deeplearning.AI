@@ -1,10 +1,10 @@
 #include "win32_DeepLearning.h"
 #include "stdMat.h"
-#define WINWIDTH 800
-#define WINHEIGHT 800
+#define WINWIDTH 400
+#define WINHEIGHT 400
 #define WINHALFWIDTH WINWIDTH * 0.5f
 #define WINHALFHEIGHT WINHEIGHT * 0.5f
-#define SCALE 200
+#define SCALE 100
 
 global_variable bool globalRunning = true;
 global_variable bool discreteOutput = false;
@@ -14,8 +14,10 @@ BITMAPINFO bitmapInfo = { 0 };
 global_variable Color positiveColor = Color(100, 167, 211, 255);
 global_variable Color negativeColor = Color(255, 184, 113, 255);
 
-internal void Win32DisplayBufferInWindow(void *Buffer, HDC DeviceContext) {
-	StretchDIBits(DeviceContext, 0, 0, WINWIDTH, WINWIDTH, 0, 0, WINWIDTH, WINHEIGHT, Buffer, &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
+internal void Win32DisplayBufferInWindow(void *Buffer, HDC DeviceContext, HWND hwind) {
+	RECT winRect = {};
+	GetWindowRect(hwind, &winRect);
+	StretchDIBits(DeviceContext, 0, 0, winRect.right - winRect.left, winRect.bottom - winRect.top, 0, 0, WINWIDTH, WINHEIGHT, Buffer, &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
 }
 
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam) {
@@ -66,7 +68,9 @@ void PlotData(MatrixXf X, MatrixXf Y) {
 	for(int i = 0; i < X.cols(); i++) {
 		Assert(X(1, i) != X(0, i));
 		DrawFilledCircle(backBuffer, WINWIDTH, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.075f, Color(255, 255, 255, 255));
-		DrawFilledCircle(backBuffer, WINWIDTH, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.05f, Y(0,i) > 0.f ? positiveColor : negativeColor);
+		DrawFilledCircle(backBuffer, WINWIDTH, int((WINWIDTH / 2) + X(0, i) * SCALE), 
+						 int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.05f,
+						 (Y(0,i) > 0.f ? positiveColor : negativeColor) - Color(50, 50,50,50));
 	}
 }
 
@@ -79,10 +83,11 @@ MatrixXf BuildDisplayCoords() {
 	}
 	for(int y = 0; y < WINHEIGHT; y++) {
 		for(int x = 0; x < WINWIDTH; x++) {
-			cols(y*WINWIDTH + x) = float((y - WINHALFWIDTH) / SCALE);;
+			cols(y*WINWIDTH + x) = float((y - WINHALFWIDTH) / SCALE);
 		}
 	}
-	out << row.replicate(WINHEIGHT, 1), cols;
+	out << row.replicate(WINHEIGHT, 1), cols;	
+	out.col(1) *= -1.f;
 	return out;
 }
 
@@ -101,6 +106,7 @@ void InitializeWindow(WNDCLASSA *winclass, HINSTANCE instance) {
 }
 
 void DrawOutputToScreen(MatrixXf screenCoords){
+
 	MatrixXf h = neural.ForwardPropagation(screenCoords, false);
 	int *pixel = (int *)backBuffer;
 	for(int i = 0; i < h.cols(); i++) {
@@ -116,10 +122,10 @@ void DrawOutputToScreen(MatrixXf screenCoords){
 			break;
 		}
 		if(discreteOutput) {
-			blended = percent > 0.f ? negativeColor : positiveColor;
+			blended = percent < 0.f ? negativeColor : positiveColor;
 		} else {
-			blended = percent > 0.f ? Color(255, 255, 255, 255).Blend(negativeColor, tanh(percent * 10))
-				: Color(255, 255, 255, 255).Blend(positiveColor, tanh(-percent * 10));
+			blended = percent < 0.f ? Color(255, 255, 255, 255).Blend(negativeColor, tanh(-percent * 5))
+				: Color(255, 255, 255, 255).Blend(positiveColor, tanh(percent * 5));
 		}
 		*pixel++ = blended.ToBit();
 	}
@@ -137,19 +143,20 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 	WNDCLASSA winClass = {};
 	InitializeWindow(&winClass, Instance);
+	
 	MatrixXf screenCoords = BuildDisplayCoords().transpose();
 	if(RegisterClassA(&winClass)) {
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "PlanarClassification",
-									  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
+									  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH, WINHEIGHT, 0, 0, Instance, 0);
 		
-		neural.InitializeParameters(X.rows(), { 9,9 }, Y.rows(), {
+		neural.InitializeParameters(X.rows(), { 19,19 }, Y.rows(), {
 			Tanh,
 			Tanh,
 			Tanh },
-			0.025f);
+			0.125f);
 
-		HDC deviceContext = GetDC(window);
+		HDC deviceContext = GetDC(window);		
 		vector<float> history;
 
 		//Main Loop
@@ -157,13 +164,12 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Win32ProcessPendingMessages();
 			for(int epoch = 0; epoch < 100; epoch++) {
 				neural.UpdateSingleStep(X, Y);
-				UpdateHistory(history);				
+				UpdateHistory(history);
 			}
-			
 			DrawOutputToScreen(screenCoords);
 			PlotData(X, Y);
 			DrawHistory(backBuffer, WINWIDTH, history);
-			Win32DisplayBufferInWindow(backBuffer, deviceContext);
+			Win32DisplayBufferInWindow(backBuffer, deviceContext, window);
 		}
 
 		DeleteDC(deviceContext);
