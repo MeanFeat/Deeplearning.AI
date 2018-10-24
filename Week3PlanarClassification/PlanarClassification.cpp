@@ -149,7 +149,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 									  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH, WINHEIGHT, 0, 0, Instance, 0);
 		
-		neural.InitializeParameters(X.rows(), { 30,15 }, Y.rows(), {
+		neural.InitializeParameters(X.rows(), { 25,25 }, Y.rows(), {
 			Tanh,
 			Tanh,
 			Tanh },
@@ -163,7 +163,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Win32ProcessPendingMessages();
 			for(int epoch = 0; epoch < 1000; epoch++) {
 				neural.UpdateSingleStep(X, Y);
-				history.push_back(neural.GetCache().cost * WINHEIGHT);
+				history.push_back(min(neural.GetCache().cost * WINHEIGHT, WINHEIGHT));
 			}
 
 			DrawOutputToScreen(screenCoords);

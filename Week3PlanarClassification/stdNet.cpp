@@ -82,7 +82,7 @@ float Net::ComputeCost(const MatrixXf Y) {
 		sumSqrW += params.W[w].array().pow(2).sum();
 	}
 	float regCost = float(LAMBDA * (sumSqrW / (2.f * (float)Y.cols())));
-	return -(((cache.A[cache.A.size() - 1].array().pow(2) - Y.array().pow(2)).sum()/Y.cols()) + regCost);	
+	return -(((cache.A[cache.A.size() - 1].array().pow(2) - Y.array().pow(2)).sum()/Y.cols())) + regCost;	
 }
 
 void Net::BackwardPropagation(const MatrixXf X, const MatrixXf Y) {
