@@ -34,8 +34,6 @@ inline MatrixXf Log(const MatrixXf &in) {
 struct NetGradients {
 	vector<MatrixXf> dW;
 	vector<MatrixXf> db;
-	vector<MatrixXf> mW;
-	vector<MatrixXf> mb;
 };
 
 struct NetCache {
@@ -68,6 +66,8 @@ public:
 	void BackwardPropagation(const MatrixXf X, const MatrixXf Y);
 	void UpdateParameters();
 	void UpdateParametersWithMomentum();
+	void UpdateParametersADAM();
+	void BuildDropoutMask();
 	void UpdateSingleStep(const MatrixXf X, const MatrixXf Y);
 
 	void SaveNetwork();
@@ -83,6 +83,9 @@ public:
 
 protected:
 	NetParameters params;
+	NetParameters dropParams;
 	NetCache cache;
 	NetGradients grads;
+	NetGradients momentum;
+	NetGradients momentumSqr;
 };

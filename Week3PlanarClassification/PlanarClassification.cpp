@@ -106,7 +106,6 @@ void InitializeWindow(WNDCLASSA *winclass, HINSTANCE instance) {
 }
 
 void DrawOutputToScreen(MatrixXf screenCoords){
-
 	MatrixXf h = neural.ForwardPropagation(screenCoords, false);
 	int *pixel = (int *)backBuffer;
 	for(int i = 0; i < h.cols(); i++) {
@@ -150,11 +149,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 									  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH, WINHEIGHT, 0, 0, Instance, 0);
 		
-		neural.InitializeParameters(X.rows(), { 19,19 }, Y.rows(), {
+		neural.InitializeParameters(X.rows(), { 30,15 }, Y.rows(), {
 			Tanh,
 			Tanh,
 			Tanh },
-			0.125f);
+			0.03f);
 
 		HDC deviceContext = GetDC(window);		
 		vector<float> history;
@@ -162,10 +161,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		//Main Loop
 		while(globalRunning) {
 			Win32ProcessPendingMessages();
-			for(int epoch = 0; epoch < 100; epoch++) {
+			for(int epoch = 0; epoch < 1000; epoch++) {
 				neural.UpdateSingleStep(X, Y);
-				UpdateHistory(history);
+				history.push_back(neural.GetCache().cost * WINHEIGHT);
 			}
+
 			DrawOutputToScreen(screenCoords);
 			PlotData(X, Y);
 			DrawHistory(backBuffer, WINWIDTH, history);
