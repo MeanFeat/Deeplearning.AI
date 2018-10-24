@@ -48,6 +48,7 @@ struct NetParameters {
 	vector<MatrixXf> W;
 	vector<MatrixXf> b;
 	float learningRate;
+	float regTerm;
 };
 
 class Net {
@@ -57,7 +58,7 @@ public:
 	NetParameters GetParams();
 	NetCache GetCache();
 	void AddLayer(int A, int B);
-	void InitializeParameters(int inputSize, std::vector<int> hiddenLayers, int outputSize, vector<Activation> activations, float learningRate);
+	void InitializeParameters(int inputSize, std::vector<int> hiddenLayers, int outputSize, vector<Activation> activations, float learningRate, float regTerm);
 
 	MatrixXf Activate(Activation act, const MatrixXf &In);
 	
@@ -69,6 +70,13 @@ public:
 	void UpdateParametersADAM();
 	void BuildDropoutMask();
 	void UpdateSingleStep(const MatrixXf X, const MatrixXf Y);
+
+	inline void ModifyLearningRate(float m) {
+		params.learningRate += m;
+	}
+	inline void ModifyRegTerm(float m) {
+		params.regTerm += m;
+	}
 
 	void SaveNetwork();
 	void LoadNetwork();

@@ -26,8 +26,11 @@ void Net::AddLayer(int A, int B) {
 	momentumSqr.db.push_back(MatrixXf::Zero(A, 1));
 }
 
-void Net::InitializeParameters(int inputSize, std::vector<int> hiddenSizes, int outputSize, vector<Activation> activations, float learningRate) {
+void Net::InitializeParameters(int inputSize, std::vector<int> hiddenSizes,
+							   int outputSize, vector<Activation> activations,
+							   float learningRate, float regTerm) {
 	params.learningRate = learningRate;
+	params.regTerm = regTerm;
 	params.layerActivations = activations;
 	params.layerSizes.push_back(inputSize);
 	for(int l = 0; l < (int)hiddenSizes.size(); l++) {
@@ -75,13 +78,12 @@ MatrixXf Net::ForwardPropagation(const MatrixXf X, bool training) {
 	return lastOutput;
 }
 
-#define LAMBDA 0.2
 float Net::ComputeCost(const MatrixXf Y) {
 	float sumSqrW = 0.f;
 	for(int w = 0; w < (int)params.W.size() - 1; w++) {
 		sumSqrW += params.W[w].array().pow(2).sum();
 	}
-	float regCost = float(LAMBDA * (sumSqrW / (2.f * (float)Y.cols())));
+	float regCost = float(params.regTerm * (sumSqrW / (2.f * (float)Y.cols())));
 	return -(((cache.A[cache.A.size() - 1].array().pow(2) - Y.array().pow(2)).sum()/Y.cols())) + regCost;	
 }
 
@@ -103,7 +105,7 @@ void Net::BackwardPropagation(const MatrixXf X, const MatrixXf Y) {
 		default:
 			break;
 		}
-		grads.dW[l] = coeff * MatrixXf((dZ * lowerA.transpose()).array() + (LAMBDA * params.W[l]).array());
+		grads.dW[l] = coeff * MatrixXf((dZ * lowerA.transpose()).array() + (params.regTerm * params.W[l]).array());
 		grads.db[l] = coeff * dZ.rowwise().sum();
 	}
 	

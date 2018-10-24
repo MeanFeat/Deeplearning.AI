@@ -86,7 +86,7 @@ void DrawHistory(void *buffer, int bufferWidth, vector<float> hist) {
 				(int)hist[sample] - 1, Color(100, 100, 100, 255));*/
 		DrawLine(buffer, bufferWidth, int((sample - 1) * compressor),
 				(int)hist[sample - 1], int(sample * compressor), 
-				(int)hist[sample], Color(0, 0, 0, 0));
+				(int)hist[sample], Color(200, 90, 90, 255));
 		/*DrawLine(buffer, bufferWidth, int((sample - 1) * compressor),
 				(int)hist[sample - 1] + 1, int(sample * compressor), 
 				(int)hist[sample] + 1, Color(100, 100, 100, 255));*/
