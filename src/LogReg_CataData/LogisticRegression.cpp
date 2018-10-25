@@ -1,4 +1,3 @@
-
 #include "win32_ExpertSystems.h"
 #include <SDL.h>
 
