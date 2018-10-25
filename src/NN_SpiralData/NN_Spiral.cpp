@@ -197,9 +197,15 @@ void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> 
 
 void UpdateWinTitle(int &steps, HWND window) {
 	char s[255];
-	sprintf_s(s, "NNet||Epoch %d|Cost %0.10f|LearnRate %0.3f|RegTerm %0.3f"
+	sprintf_s(s, "SpiralData || Epoch %d | Cost %0.10f | LearnRate %0.3f | RegTerm %0.3f | LayerSizes: "
 			  , steps++, neural.GetCache().cost, neural.GetParams().learningRate, neural.GetParams().regTerm);
-	SetWindowText(window, LPCSTR(s));	
+	
+	for(int l = 0; l < neural.GetParams().layerSizes.size(); ++l) {
+		char layer[255];
+		sprintf_s(layer, "[%d]", neural.GetParams().layerSizes[l]);
+		strcat_s(s, layer);
+	}
+	SetWindowText(window, LPCSTR(s));
 }
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode) {
