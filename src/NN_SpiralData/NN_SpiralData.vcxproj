@@ -19,8 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{91250F08-DAD1-43C0-8C67-4208C0700B7F}</ProjectGuid>
-    <RootNamespace>Week4DeepNeuralNetwork</RootNamespace>
+    <ProjectGuid>{E2361299-1B61-4877-B5AB-5468DAFBA3B5}</ProjectGuid>
+    <RootNamespace>NN_SpiralData</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -68,8 +68,11 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>..\..\eigen;..\..\ExpertSystems.AI\Common;$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>..\Common;..\..\eigen;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\eigen;..\..\ExpertSystems.AI\Common;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -112,12 +115,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="DeepNetwork.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\Common\stdMat.h" />
-    <ClInclude Include="..\Common\stdNet.h" />
-    <ClInclude Include="..\Common\win32_DeepLearning.h" />
+    <ClCompile Include="..\..\Common\stdNet.cpp" />
+    <ClCompile Include="NN_Spiral.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

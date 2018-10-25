@@ -1,5 +1,5 @@
-\.vs/DeepLearning\.AI/v14/
-\.vs/DeepLearning\.AI/v15/
+\.vs/ExpertSystems\.AI/v14/
+\.vs/ExpertSystems\.AI/v15/
 *.log
 *.filters
 *.user
@@ -10,3 +10,5 @@ Release/
 *.dll
 
 *.ipch
+
+\.vs/ExpertSystems/v14/
