@@ -33,12 +33,12 @@ void Net::InitializeParameters(int inputSize, std::vector<int> hiddenSizes,
 	params.regTerm = regTerm;
 	params.layerActivations = activations;
 	params.layerSizes.push_back(inputSize);
-	for(int l = 0; l < (int)hiddenSizes.size(); l++) {
+	for(int l = 0; l < (int)hiddenSizes.size(); ++l) {
 		params.layerSizes.push_back(hiddenSizes[l]);
 	}
 	params.layerSizes.push_back(outputSize);
 	AddLayer(hiddenSizes[0], inputSize);
-	for(int h = 1; h < (int)hiddenSizes.size(); h++) {
+	for(int h = 1; h < (int)hiddenSizes.size(); ++h) {
 		AddLayer(hiddenSizes[h], hiddenSizes[h - 1]);
 	}
 	AddLayer(outputSize, hiddenSizes.back());
@@ -67,7 +67,7 @@ MatrixXf Net::Activate( Activation act, const MatrixXf &In) {
 
 MatrixXf Net::ForwardPropagation(const MatrixXf X, bool training) {
 	MatrixXf lastOutput = X;
-	for(int i = 0; i < (int)params.layerSizes.size() - 1; i++) {
+	for(int i = 0; i < (int)params.layerSizes.size() - 1; ++i) {
 		MatrixXf Z = (params.W[i] * lastOutput).colwise() + (VectorXf)params.b[i];
 		lastOutput = Activate(params.layerActivations[i],Z);
 		if(training) {
@@ -80,7 +80,7 @@ MatrixXf Net::ForwardPropagation(const MatrixXf X, bool training) {
 
 float Net::ComputeCost(const MatrixXf Y) {
 	float sumSqrW = 0.f;
-	for(int w = 0; w < (int)params.W.size() - 1; w++) {
+	for(int w = 0; w < (int)params.W.size() - 1; ++w) {
 		sumSqrW += params.W[w].array().pow(2).sum();
 	}
 	float regCost = float(params.regTerm * (sumSqrW / (2.f * (float)Y.cols())));
@@ -112,14 +112,14 @@ void Net::BackwardPropagation(const MatrixXf X, const MatrixXf Y) {
 }
 
 void Net::UpdateParameters() {
-	for(int i = 0; i < (int)grads.dW.size(); i++) {
+	for(int i = 0; i < (int)grads.dW.size(); ++i) {
 		params.W[i] -= (params.learningRate * grads.dW[i]);
 		params.b[i] -= (params.learningRate * grads.db[i]);
 	}
 }
 
 void Net::UpdateParametersWithMomentum() {
-	for(int i = 0; i < (int)grads.dW.size(); i++) {
+	for(int i = 0; i < (int)grads.dW.size(); ++i) {
 		momentum.dW[i] = grads.dW[i] + momentum.dW[i].normalized() * cache.cost * 0.025;
 		momentum.db[i] = grads.db[i] + momentum.db[i].normalized() * cache.cost * 0.025;
 		params.W[i] -= params.learningRate * momentum.dW[i];
@@ -130,7 +130,7 @@ void Net::UpdateParametersWithMomentum() {
 #define BETA1 0.9
 #define BETA2 (1.f - FLT_EPSILON)
 void Net::UpdateParametersADAM() {
-	for(int i = 0; i < (int)grads.dW.size(); i++) {
+	for(int i = 0; i < (int)grads.dW.size(); ++i) {
 		NetGradients vCorrected = momentum;
 		NetGradients sCorrected = momentumSqr;
 		momentum.dW[i] = BETA1 * momentum.dW[i] + (1 - BETA1) * grads.dW[i];
@@ -151,8 +151,8 @@ void Net::BuildDropoutMask() {
 	dropParams = params;
 	dropParams.W[0] = MatrixXf::Ones(dropParams.W[0].rows(), dropParams.W[0].cols());
 	dropParams.b[0] = MatrixXf::Ones(dropParams.b[0].rows(), dropParams.b[0].cols());
-	for(int i = 1; i < (int)dropParams.W.size() - 1; i++) {
-		for(int row = 0; row < dropParams.W[i].rows(); row++) {
+	for(int i = 1; i < (int)dropParams.W.size() - 1; ++i) {
+		for(int row = 0; row < dropParams.W[i].rows(); ++row) {
 			float val = ((float)rand() / (RAND_MAX));
 			if(val < 0.95) {
 				dropParams.W[i].row(row) = MatrixXf::Ones(1, dropParams.W[i].cols());

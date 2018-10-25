@@ -72,10 +72,10 @@ public:
 	void UpdateSingleStep(const MatrixXf X, const MatrixXf Y);
 
 	inline void ModifyLearningRate(float m) {
-		params.learningRate += m;
+		params.learningRate = max(0.001f, params.learningRate + m);
 	}
 	inline void ModifyRegTerm(float m) {
-		params.regTerm += m;
+		params.regTerm = max(FLT_EPSILON, params.regTerm + m);
 	}
 
 	void SaveNetwork();
