@@ -14,7 +14,7 @@ NetCache Net::GetCache() {
 }
 
 void Net::AddLayer(int A, int B) {
-	params.W.push_back(MatrixXf::Random(A, B) * 0.5f);
+	params.W.push_back(MatrixXf::Random(A, B) * 0.15f);
 	params.b.push_back(VectorXf::Zero(A, 1));
 	cache.Z.push_back(MatrixXf::Zero(0, 0));
 	cache.A.push_back(MatrixXf::Zero(0, 0));
@@ -102,6 +102,11 @@ void Net::BackwardPropagation(const MatrixXf X, const MatrixXf Y) {
 		case Tanh:			
 			dZ = BackTanh(dZ, l);
 			break;
+		case ReLU:
+			dZ = BackReLU(dZ, lowerA);
+			grads.dW[l] = coeff * (dZ * lowerA.transpose());
+			grads.db[l] = coeff * dZ.rowwise().sum();
+			break;
 		default:
 			break;
 		}
@@ -172,7 +177,7 @@ void Net::UpdateSingleStep(const MatrixXf X, const MatrixXf Y) {
 	ForwardPropagation(X, true);
 	cache.cost = ComputeCost(Y);
 	BackwardPropagation(X, Y);
-	UpdateParametersADAM();	
+	UpdateParametersADAM();
 }
 
 void Net::SaveNetwork() {

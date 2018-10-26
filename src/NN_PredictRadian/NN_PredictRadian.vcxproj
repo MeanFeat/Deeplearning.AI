@@ -19,8 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{E2361299-1B61-4877-B5AB-5468DAFBA3B5}</ProjectGuid>
-    <RootNamespace>NN_SpiralData</RootNamespace>
+    <ProjectGuid>{C5D9FC81-43C2-4BDD-9330-A7FAB8F740A3}</ProjectGuid>
+    <RootNamespace>NN_PredictRadian</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -116,7 +116,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Common\stdNet.cpp" />
-    <ClCompile Include="NN_Spiral.cpp" />
+    <ClCompile Include="NN_PredictRadian.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Common\stdDraw.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

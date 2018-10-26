@@ -14,6 +14,7 @@ enum Activation {
 	ReLU
 };
 
+
 inline MatrixXf CalcSigmoid( const MatrixXf &in) {
 	return ((-1.0f*in).array().exp() + 1).cwiseInverse();
 }
@@ -87,6 +88,9 @@ public:
 	inline MatrixXf BackTanh(const MatrixXf dZ, int index) {
 		MatrixXf A1Squared = cache.A[index].array().pow(2);
 		return (params.W[index + 1].transpose() * dZ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - (A1Squared));
+	}
+	inline MatrixXf BackReLU(const MatrixXf dZ, MatrixXf lowerA) {
+		return (lowerA * dZ).unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.f; });
 	}
 
 protected:

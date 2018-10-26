@@ -94,10 +94,9 @@ internal void Win32ProcessPendingMessages() {
 
 void PlotData(MatrixXf X, MatrixXf Y) {
 	for(int i = 0; i < X.cols(); ++i) {
-		Assert(X(1, i) != X(0, i));
-		DrawFilledCircle(backBuffer, WINWIDTH, int((WINWIDTH / 2) + X(0, i) * SCALE), int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.11f, Color(255, 255, 255, 255));
-		DrawFilledCircle(backBuffer, WINWIDTH, int((WINWIDTH / 2) + X(0, i) * SCALE),
-						 int((WINHEIGHT / 2) + -X(1, i) * SCALE), SCALE * 0.08f,
+		DrawFilledCircle(backBuffer, WINWIDTH, int(WINHALFWIDTH + X(0, i) * SCALE), int(WINHALFHEIGHT + -X(1, i) * SCALE), SCALE * 0.11f, Color(255, 255, 255, 255));
+		DrawFilledCircle(backBuffer, WINWIDTH, int(WINHALFWIDTH + X(0, i) * SCALE),
+						 int(WINHALFHEIGHT + -X(1, i) * SCALE), SCALE * 0.08f,
 						 (Y(0, i) > 0.f ? positiveColor : negativeColor) - Color(50, 50, 50, 50));
 	}
 }
@@ -168,16 +167,15 @@ void ClearScreen(MatrixXf screenCoords) {
 void UpdateHistory(vector<float> &history) {
 	history.push_back(min((neural.GetCache().cost) * WINHEIGHT, WINHEIGHT));
 	if(history.size() >= WINWIDTH*2) {
-		for(int i = 0; i < (int)history.size(); i += 2) {
+		for(int i = 1; i < (int)history.size(); i += 2) {
 			history.erase(history.begin() + i);
 		}
 	}
 }
 
 MatrixXf BuildPolynomials(MatrixXf m) {
-	MatrixXf temp = MatrixXf(m.rows() * 2, m.cols());
-	temp << m,
-		MatrixXf(m.array().pow(2));
+	MatrixXf temp = MatrixXf(m.rows() + 3, m.cols());
+	temp << m, MatrixXf(m.array().pow(2)), MatrixXf(m.array().pow(2)).colwise().sum();
 	return temp;
 }
 
@@ -200,7 +198,7 @@ void UpdateWinTitle(int &steps, HWND window) {
 	sprintf_s(s, "SpiralData || Epoch %d | Cost %0.10f | LearnRate %0.3f | RegTerm %0.3f | LayerSizes: "
 			  , steps++, neural.GetCache().cost, neural.GetParams().learningRate, neural.GetParams().regTerm);
 	
-	for(int l = 0; l < neural.GetParams().layerSizes.size(); ++l) {
+	for(int l = 0; l < (int)neural.GetParams().layerSizes.size(); ++l) {
 		char layer[255];
 		sprintf_s(layer, "[%d]", neural.GetParams().layerSizes[l]);
 		strcat_s(s, layer);
@@ -213,13 +211,12 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	MatrixXf Y;// = (MatrixXf)BuildMatFromFile("SpiralLabels.txt"); Y.transposeInPlace(); write_binary("SpiralLabels.dat", Y);
 	read_binary("Spiral.dat", X);
 	read_binary("SpiralLabels.dat", Y);
-
 	WNDCLASSA winClass = {};
 	InitializeWindow(&winClass, Instance);
 	MatrixXf screenCoords = BuildDisplayCoords().transpose();
 
-	X.conservativeResize(int(X.rows()), int(X.cols()*0.25));
-	Y.conservativeResize(int(Y.rows()), int(Y.cols()*0.25));
+	//X.conservativeResize(int(X.rows()), int(X.cols()*0.25));
+	//Y.conservativeResize(int(Y.rows()), int(Y.cols()*0.25));
 
 	X = BuildPolynomials(X);
 	screenCoords = BuildPolynomials(screenCoords);
@@ -227,14 +224,14 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	if(RegisterClassA(&winClass)) {
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
 									  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
-									  WINWIDTH * 4, WINHEIGHT * 4, 0, 0, Instance, 0);
+									  WINWIDTH*4, WINHEIGHT*4, 0, 0, Instance, 0);
 
-		neural.InitializeParameters(X.rows(), { 8,6 }, Y.rows(), {
+		neural.InitializeParameters(X.rows(), { 8,8 }, Y.rows(), {
 			Tanh,
 			Tanh,
 			Tanh },
-			0.125f,
-			0.7f);
+			0.25f,
+			0.8f);
 
 		HDC deviceContext = GetDC(window);
 		vector<float> history;
@@ -242,7 +239,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 		//Main Loop
 		while(globalRunning) {
-			for(int epoch = 0; epoch < 100; ++epoch) {
+			for(int epoch = 0; epoch < 1; ++epoch) {
 				Win32ProcessPendingMessages();
 				if(!globalRunning) {
 					break;
