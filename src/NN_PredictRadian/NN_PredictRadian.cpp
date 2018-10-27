@@ -2,7 +2,7 @@
 #include "stdMat.h"
 #include "windowsx.h"
 
-#define WINWIDTH 350
+#define WINWIDTH 600
 #define WINHEIGHT WINWIDTH
 #define WINHALFWIDTH int((WINWIDTH-1)*0.5f)
 #define WINHALFHEIGHT WINHALFWIDTH
@@ -165,7 +165,7 @@ void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> 
 			int predY = int(cos(predictions[i] * Pi32) * 100.f);
 			DrawLine(backBuffer, WINWIDTH, WINHALFWIDTH, WINHALFHEIGHT, float(WINHALFWIDTH) + predX, float(WINHALFHEIGHT) + predY, Color(100+i, 4*i, 4 * i, 0));
 		}
-		
+		DrawHistory(backBuffer, WINWIDTH, history);
 	}	
 }
 
@@ -181,7 +181,7 @@ void UpdateWinTitle(int &steps, HWND window) {
 
 MatrixXf BuildRadians(MatrixXf m) {
 	MatrixXf out = MatrixXf(3, m.cols());
-	for (int i = 0; i < m.cols()-1;++i){
+	for(int i = 0; i < m.cols() - 1; ++i) {
 		out(0, i) = atan2((m(0, i)), -(m(1, i))) / Pi32;
 		out(1, i) = -atan2((m(1, i)), -(m(0, i))) / Pi32;
 		out(2, i) = -atan2(-(m(1, i)), (m(0, i))) / Pi32;
@@ -221,10 +221,10 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 									  WS_OVERLAPPED | WS_SYSMENU |WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH, WINHEIGHT, 0, 0, Instance, 0);
 		
-		neural.InitializeParameters(X.rows(), { 11,11 }, Y.rows(), {
+		neural.InitializeParameters(X.rows(), { 8,8 }, Y.rows(), {
 			Tanh,Tanh,
 			Tanh },
-			0.15f,
+			0.25f,
 			0.0f);
 
 		HDC deviceContext = GetDC(window);
@@ -235,7 +235,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Win32ProcessPendingMessages();	
 			if (training) {
 				neural.UpdateSingleStep(X, Y);
-				steps++;
+				steps++; 
+				history.push_back(min(neural.GetCache().cost*WINHEIGHT + 40,WINHEIGHT));
 			}
 			UpdateDisplay(screenCoords, X, Y, history);
 			UpdatePrediction();
