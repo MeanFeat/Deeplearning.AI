@@ -132,19 +132,17 @@ void ClearScreen() {
 }
 
 MatrixXf NormalizeData(MatrixXf m) {
-	auto a = MatrixXf((m.row(0).array().pow(2) + m.row(1).array().pow(2)));
-	auto b = MatrixXf(a.array().sqrt());
-	auto c = MatrixXf(2, b.cols());
-	c << b, b;
-	MatrixXf normal = MatrixXf(m.array() / c.array());
-	
+	MatrixXf a = (m.row(0).array().pow(2) + m.row(1).array().pow(2)).array().sqrt();
+	MatrixXf b = MatrixXf(2, a.cols());
+	b << a, a;
+	MatrixXf normal = MatrixXf(m.array() / b.array());	
 	return normal;
 }
 
-void DrawOutputToScreen(MatrixXf screenCoords) {
-	MatrixXf h = neural.ForwardPropagation(NormalizeData(screenCoords), false);
+void DrawOutputToScreen(MatrixXf normScreen) {
+	MatrixXf h = neural.ForwardPropagation(normScreen, false);
 	int *pixel = (int *)backBuffer;
-	for(int i = 0; i < screenCoords.cols(); ++i) {
+	for(int i = 0; i < normScreen.cols(); ++i) {
 		float percent = h(0,i);
 		Color blended = percent < 0.f ? Color(255, 255, 255, 255).Blend(negativeColor, -percent)
 			: Color(255, 255, 255, 255).Blend(positiveColor, percent);
@@ -181,7 +179,7 @@ void UpdateWinTitle(int &steps, HWND window) {
 
 MatrixXf BuildRadians(MatrixXf m) {
 	MatrixXf out = MatrixXf(3, m.cols());
-	for(int i = 0; i < m.cols() - 1; ++i) {
+	for(int i = 0; i < m.cols(); ++i) {
 		out(0, i) = atan2((m(0, i)), -(m(1, i))) / Pi32;
 		out(1, i) = -atan2((m(1, i)), -(m(0, i))) / Pi32;
 		out(2, i) = -atan2(-(m(1, i)), (m(0, i))) / Pi32;
@@ -205,7 +203,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	MatrixXf Y;
 	WNDCLASSA winClass = {};
 	InitializeWindow(&winClass, Instance);
-	MatrixXf screenCoords = BuildDisplayCoords().transpose();	
+	MatrixXf screenCoords = NormalizeData(BuildDisplayCoords().transpose());
 
 	//write_binary("Radian.dat", MatrixXf(screenCoords.array() / WINHALFHEIGHT));
 	//write_binary("RadianLabels.dat", BuildRaidans(MatrixXf(screenCoords / WINHALFHEIGHT)));

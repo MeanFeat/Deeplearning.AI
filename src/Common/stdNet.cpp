@@ -93,9 +93,9 @@ float Net::ComputeCost(const MatrixXf Y) {
 }
 
 void Net::BackwardPropagation(const MatrixXf X, const MatrixXf Y) {
-	int m = (int)Y.cols();
+	float m = (float)Y.cols();
 	float coeff = float(1.f / m);
-	MatrixXf dZ = MatrixXf(cache.A.back().array() - Y.array());
+	MatrixXf dZ = MatrixXf(cache.A.back() - Y);
 	grads.dW.back() = coeff * (dZ * cache.A[cache.A.size() - 2].transpose());
 	grads.db.back() = coeff * dZ.rowwise().sum();
 	for(int l = params.layerActivations.size() - 2; l >= 0; --l) {
