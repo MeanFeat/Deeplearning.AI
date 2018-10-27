@@ -29,6 +29,11 @@ void Net::AddLayer(int A, int B) {
 void Net::InitializeParameters(int inputSize, std::vector<int> hiddenSizes,
 							   int outputSize, vector<Activation> activations,
 							   float learningRate, float regTerm) {
+	params.learningMod = float(inputSize + outputSize);
+	for(int i = 0; i < (int)hiddenSizes.size() - 1; ++i) {
+		params.learningMod += hiddenSizes[i];
+	}
+	params.learningMod = 1.f / params.learningMod;
 	params.learningRate = learningRate;
 	params.regTerm = regTerm;
 	params.layerActivations = activations;
@@ -45,7 +50,7 @@ void Net::InitializeParameters(int inputSize, std::vector<int> hiddenSizes,
 	return;
 }
 
-MatrixXf Net::Activate( Activation act, const MatrixXf &In) {
+MatrixXf Net::Activate(Activation act, const MatrixXf &In) {
 	switch(act) {
 	case Linear:
 		return In;
@@ -69,7 +74,7 @@ MatrixXf Net::ForwardPropagation(const MatrixXf X, bool training) {
 	MatrixXf lastOutput = X;
 	for(int i = 0; i < (int)params.layerSizes.size() - 1; ++i) {
 		MatrixXf Z = (params.W[i] * lastOutput).colwise() + (VectorXf)params.b[i];
-		lastOutput = Activate(params.layerActivations[i],Z);
+		lastOutput = Activate(params.layerActivations[i], Z);
 		if(training) {
 			cache.Z[i] = Z;
 			cache.A[i] = lastOutput;
@@ -84,22 +89,22 @@ float Net::ComputeCost(const MatrixXf Y) {
 		sumSqrW += params.W[w].array().pow(2).sum();
 	}
 	float regCost = float(params.regTerm * (sumSqrW / (2.f * (float)Y.cols())));
-	return -(((cache.A[cache.A.size() - 1].array().pow(2) - Y.array().pow(2)).sum()/Y.cols())) + regCost;	
+	return -(((cache.A[cache.A.size() - 1].array().pow(2) - Y.array().pow(2)).sum() / Y.cols())) + regCost;
 }
 
 void Net::BackwardPropagation(const MatrixXf X, const MatrixXf Y) {
 	int m = (int)Y.cols();
 	float coeff = float(1.f / m);
-	MatrixXf dZ = cache.A.back() - Y;
-	grads.dW.back() = coeff * (dZ * cache.A[cache.A.size()-2].transpose());
+	MatrixXf dZ = MatrixXf(cache.A.back().array() - Y.array());
+	grads.dW.back() = coeff * (dZ * cache.A[cache.A.size() - 2].transpose());
 	grads.db.back() = coeff * dZ.rowwise().sum();
 	for(int l = params.layerActivations.size() - 2; l >= 0; --l) {
-		MatrixXf lowerA = l > 0 ? cache.A[l-1] : X;
+		MatrixXf lowerA = l > 0 ? cache.A[l - 1] : X;
 		switch(params.layerActivations[l]) {
 		case Sigmoid:
 			dZ = BackSigmoid(dZ, l);
 			break;
-		case Tanh:			
+		case Tanh:
 			dZ = BackTanh(dZ, l);
 			break;
 		case ReLU:
@@ -113,13 +118,13 @@ void Net::BackwardPropagation(const MatrixXf X, const MatrixXf Y) {
 		grads.dW[l] = coeff * MatrixXf((dZ * lowerA.transpose()).array() + (params.regTerm * params.W[l]).array());
 		grads.db[l] = coeff * dZ.rowwise().sum();
 	}
-	
+
 }
 
 void Net::UpdateParameters() {
 	for(int i = 0; i < (int)grads.dW.size(); ++i) {
-		params.W[i] -= (params.learningRate * grads.dW[i]);
-		params.b[i] -= (params.learningRate * grads.db[i]);
+		params.W[i] -= ((params.learningRate*params.learningMod) * grads.dW[i]);
+		params.b[i] -= ((params.learningRate*params.learningMod) * grads.db[i]);
 	}
 }
 
@@ -127,8 +132,8 @@ void Net::UpdateParametersWithMomentum() {
 	for(int i = 0; i < (int)grads.dW.size(); ++i) {
 		momentum.dW[i] = grads.dW[i] + momentum.dW[i].normalized() * cache.cost * 0.025;
 		momentum.db[i] = grads.db[i] + momentum.db[i].normalized() * cache.cost * 0.025;
-		params.W[i] -= params.learningRate * momentum.dW[i];
-		params.b[i] -= params.learningRate * momentum.db[i];
+		params.W[i] -= (params.learningRate*params.learningMod) * momentum.dW[i];
+		params.b[i] -= (params.learningRate*params.learningMod) * momentum.db[i];
 	}
 }
 
@@ -146,8 +151,8 @@ void Net::UpdateParametersADAM() {
 		momentumSqr.db[i] = (BETA2 * momentumSqr.db[i]) + ((1 - BETA2) * MatrixXf(grads.db[i].array().pow(2)));
 		sCorrected.dW[i] = momentumSqr.dW[i] / (1 - pow(BETA2, 2));
 		sCorrected.db[i] = momentumSqr.db[i] / (1 - pow(BETA2, 2));
-		params.W[i] -= params.learningRate * MatrixXf(vCorrected.dW[i].array() / (sCorrected.dW[i].array().sqrt() + FLT_EPSILON));
-		params.b[i] -= params.learningRate * MatrixXf(vCorrected.db[i].array() / (sCorrected.db[i].array().sqrt() + FLT_EPSILON));
+		params.W[i] -= (params.learningRate*params.learningMod) * MatrixXf(vCorrected.dW[i].array() / (sCorrected.dW[i].array().sqrt() + FLT_EPSILON));
+		params.b[i] -= (params.learningRate*params.learningMod) * MatrixXf(vCorrected.db[i].array() / (sCorrected.db[i].array().sqrt() + FLT_EPSILON));
 	}
 }
 
@@ -166,7 +171,7 @@ void Net::BuildDropoutMask() {
 				dropParams.W[i].row(row) = MatrixXf::Zero(1, dropParams.W[i].cols());
 				dropParams.b[i].row(row) = MatrixXf::Zero(1, dropParams.b[i].cols());
 			}
-		}		
+		}
 	}
 	dropParams.W[dropParams.W.size() - 1].row(0) = MatrixXf::Ones(1, dropParams.W[dropParams.W.size() - 1].cols());
 	dropParams.b[dropParams.b.size() - 1].row(0) = MatrixXf::Ones(1, dropParams.b[dropParams.b.size() - 1].cols());
@@ -181,7 +186,7 @@ void Net::UpdateSingleStep(const MatrixXf X, const MatrixXf Y) {
 }
 
 void Net::SaveNetwork() {
-	
+
 }
 
 void Net::LoadNetwork() {

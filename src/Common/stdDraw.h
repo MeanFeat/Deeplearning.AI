@@ -49,8 +49,8 @@ void DrawLine(void *buffer, int bufferWidth, float aX, float aY, float bX, float
 	if(abs(dx) > abs(dy) && dx) {
 		if(dx) dy /= abs(dx);
 		else dy = 0.f;
-		if(dx >= 0.f) dx = 1.f;
-		else dx = -1.f;
+		if(dx >= 0.f) dx = 1;
+		else dx = -1;
 		do { //for(;x<x1; x++){
 			int *pixel = (int *)buffer + int(aX + int(aY) * bufferWidth);
 			*pixel = ((col.r << 16) | (col.g << 8) | col.b);
@@ -60,10 +60,10 @@ void DrawLine(void *buffer, int bufferWidth, float aX, float aY, float bX, float
 	} else if(dy) {
 		if(dy) dx /= abs(dy);
 		else dx = 0;
-		if(dy > 0) dy = 1.f;
-		else dy = -1.f;
+		if(dy > 0) dy = 1;
+		else dy = -1;
 		do { //for(;y<y1; y++){
-			int *pixel = (int *)buffer + int(aX + aY * bufferWidth);
+			int *pixel = (int *)buffer + int(aX + int(aY) * bufferWidth);
 			*pixel = ((col.r << 16) | (col.g << 8) | col.b);
 			aY += dy;
 			aX += dx;
@@ -74,9 +74,9 @@ void DrawLine(void *buffer, int bufferWidth, float aX, float aY, float bX, float
 void DrawHistory(void *buffer, int bufferWidth, vector<float> hist) {
 	float compressor = int(hist.size() - 1) > bufferWidth ? float(bufferWidth) / float(hist.size() - 1) : 1.f;
 	for(int sample = 1; sample < (int)hist.size() - 1; sample++) {
-		DrawLine(buffer, bufferWidth, (sample - 1) * compressor,
-				hist[sample - 1], sample * compressor, 
-				hist[sample], Color(200, 90, 90, 255));
+		DrawLine(buffer, bufferWidth, float(int((sample - 1) * compressor)-bufferWidth),
+			floor(hist[sample - 1]), float(int(sample * compressor)-bufferWidth),
+				 floor(hist[sample]), Color(200, 90, 90, 255));
 	}
 }
 

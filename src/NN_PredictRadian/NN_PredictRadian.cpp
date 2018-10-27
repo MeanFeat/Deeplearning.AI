@@ -8,9 +8,9 @@
 #define WINHALFHEIGHT WINHALFWIDTH
 
 global_variable bool globalRunning = true;
-global_variable bool training = false;
-global_variable bool drawOutput = true;
-global_variable float prediction = 0.f;
+global_variable bool training = true;
+global_variable bool drawOutput = false;
+global_variable vector<float> predictions;
 float mouseX = WINHALFWIDTH;
 float mouseY = WINHALFHEIGHT - 100;
 
@@ -124,10 +124,10 @@ void InitializeWindow(WNDCLASSA *winclass, HINSTANCE instance) {
 void ClearScreen() {
 	int *pixel = (int *)backBuffer;
 	for(int i = 0; i < WINHEIGHT * WINWIDTH; i+=4) {
-		*pixel++ = Color(0, 0, 0, 0).ToBit();
-		*pixel++ = Color(0, 0, 0, 0).ToBit();
-		*pixel++ = Color(0, 0, 0, 0).ToBit();
-		*pixel++ = Color(0, 0, 0, 0).ToBit();
+		*pixel++ = Color(10, 10, 10, 0).ToBit();
+		*pixel++ = Color(10, 10, 10, 0).ToBit();
+		*pixel++ = Color(10, 10, 10, 0).ToBit();
+		*pixel++ = Color(10, 10, 10, 0).ToBit();
 	}
 }
 
@@ -144,14 +144,13 @@ MatrixXf NormalizeData(MatrixXf m) {
 void DrawOutputToScreen(MatrixXf screenCoords) {
 	MatrixXf h = neural.ForwardPropagation(NormalizeData(screenCoords), false);
 	int *pixel = (int *)backBuffer;
-	for(int i = 0; i < h.cols(); ++i) {
-		float percent = *(h.data() + i);
+	for(int i = 0; i < screenCoords.cols(); ++i) {
+		float percent = h(0,i);
 		Color blended = percent < 0.f ? Color(255, 255, 255, 255).Blend(negativeColor, -percent)
 			: Color(255, 255, 255, 255).Blend(positiveColor, percent);
 		*pixel++ = blended.ToBit();
 	}
 }
-
 
 void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> &history) {
 	if(globalRunning) {
@@ -161,27 +160,31 @@ void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> 
 			ClearScreen();
 		}
 		DrawLine(backBuffer, WINWIDTH, WINHALFWIDTH, WINHALFHEIGHT, mouseX, float(WINHEIGHT - mouseY), Color(0, 0, 255, 255));
-		int predX = int(sin(prediction*Pi32) * 100.f);
-		int predY = int(cos(prediction*Pi32) * 100.f);
-		DrawLine(backBuffer, WINWIDTH, WINHALFWIDTH, WINHALFHEIGHT, float(WINHALFWIDTH)+predX, float(WINHALFHEIGHT)+predY, Color(255, 0, 0, 0));
+		for (int i = 0; i < (int)predictions.size();++i){
+			int predX = int(sin(predictions[i] * Pi32) * 100.f);
+			int predY = int(cos(predictions[i] * Pi32) * 100.f);
+			DrawLine(backBuffer, WINWIDTH, WINHALFWIDTH, WINHALFHEIGHT, float(WINHALFWIDTH) + predX, float(WINHALFHEIGHT) + predY, Color(100+i, 4*i, 4 * i, 0));
+		}
 		
 	}	
 }
 
 void UpdateWinTitle(int &steps, HWND window) {
 	char s[255];
-	sprintf_s(s, "Epoch %d|Cost %0.5f|LR %0.2f|RT %0.2f "
-			  , steps++, neural.GetCache().cost, neural.GetParams().learningRate, neural.GetParams().regTerm);
+	sprintf_s(s, "Epoch %d|Cost %0.15f|LR %0.2f|RT %0.2f "
+			  , steps, neural.GetCache().cost, neural.GetParams().learningRate, neural.GetParams().regTerm);
 	char r[255];	
-	sprintf_s(r, " |%0.2f|%0.2f| ", atan2((mouseX - WINHALFWIDTH), -(mouseY - WINHALFHEIGHT)), prediction*Pi32);
+	sprintf_s(r, " |%0.2f|%0.2f| ", atan2((mouseX - WINHALFWIDTH), -(mouseY - WINHALFHEIGHT)), predictions[0]*Pi32);
 	strcat_s(s, r);
 	SetWindowText(window, LPCSTR(s));
 }
 
-MatrixXf BuildRaidans(MatrixXf screenCoords) {
-	MatrixXf out = MatrixXf(1, screenCoords.cols());
-	for (int i = 0; i < screenCoords.cols()-1;++i){
-		out(0,i) = atan2((screenCoords(0, i)), -(screenCoords(1, i))) / Pi32;
+MatrixXf BuildRadians(MatrixXf m) {
+	MatrixXf out = MatrixXf(3, m.cols());
+	for (int i = 0; i < m.cols()-1;++i){
+		out(0, i) = atan2((m(0, i)), -(m(1, i))) / Pi32;
+		out(1, i) = -atan2((m(1, i)), -(m(0, i))) / Pi32;
+		out(2, i) = -atan2(-(m(1, i)), (m(0, i))) / Pi32;
 	}
 	return out;
 }
@@ -190,8 +193,11 @@ void UpdatePrediction() {
 	MatrixXf mouse = MatrixXf(2,1);
 	mouse(0, 0) = mouseX-WINHALFWIDTH;
 	mouse(1, 0) = mouseY-WINHALFHEIGHT;
-	MatrixXf h = neural.ForwardPropagation(NormalizeData(mouse/WINHALFHEIGHT), false);
-	prediction = h(0);
+	MatrixXf h = neural.ForwardPropagation(NormalizeData(mouse / WINHALFHEIGHT), false);
+	predictions.clear();
+	for (int i = 0; i < h.rows(); ++i){
+		predictions.push_back(h(i, 0));
+	}
 }
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode) {
@@ -206,17 +212,19 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 	read_binary("Radian.dat", X);	
 	read_binary("RadianLabels.dat", Y);
+
 	X = NormalizeData(X);
+	Y = BuildRadians(X);
 
 	if(RegisterClassA(&winClass)) {
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
 									  WS_OVERLAPPED | WS_SYSMENU |WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH, WINHEIGHT, 0, 0, Instance, 0);
 		
-		neural.InitializeParameters(X.rows(), { 10,5 }, Y.rows(), {
+		neural.InitializeParameters(X.rows(), { 11,11 }, Y.rows(), {
 			Tanh,Tanh,
 			Tanh },
-			0.05f,
+			0.15f,
 			0.0f);
 
 		HDC deviceContext = GetDC(window);
@@ -224,18 +232,14 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		int steps = 0;
 		//Main Loop
 		while(globalRunning) {
-			int epochCount = 1;
-			for(int epoch = 0; epoch < epochCount; ++epoch) {
-				Win32ProcessPendingMessages();
-				if(!globalRunning) {
-					break;
-				}
+			Win32ProcessPendingMessages();	
+			if (training) {
 				neural.UpdateSingleStep(X, Y);
-				UpdatePrediction();
-				UpdateWinTitle(steps, window);
-				epochCount = training ? 1000 : 1;
+				steps++;
 			}
 			UpdateDisplay(screenCoords, X, Y, history);
+			UpdatePrediction();
+			UpdateWinTitle(steps, window);			
 			Win32DisplayBufferInWindow(backBuffer, deviceContext, window);
 		}
 		DeleteDC(deviceContext);

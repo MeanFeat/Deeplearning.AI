@@ -166,7 +166,7 @@ void ClearScreen(MatrixXf screenCoords) {
 
 void UpdateHistory(vector<float> &history) {
 	history.push_back(min((neural.GetCache().cost) * WINHEIGHT, WINHEIGHT));
-	if(history.size() >= WINWIDTH*2) {
+	if(history.size() >= WINWIDTH + WINWIDTH) {
 		for(int i = 1; i < (int)history.size(); i += 2) {
 			history.erase(history.begin() + i);
 		}
@@ -230,7 +230,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Tanh,
 			Tanh,
 			Tanh },
-			0.25f,
+			0.5f,
 			0.8f);
 
 		HDC deviceContext = GetDC(window);
@@ -239,7 +239,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 		//Main Loop
 		while(globalRunning) {
-			for(int epoch = 0; epoch < 1; ++epoch) {
+			for(int epoch = 0; epoch < 1000; ++epoch) {
 				Win32ProcessPendingMessages();
 				if(!globalRunning) {
 					break;

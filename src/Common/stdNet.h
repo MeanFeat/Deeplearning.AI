@@ -49,6 +49,7 @@ struct NetParameters {
 	vector<MatrixXf> W;
 	vector<MatrixXf> b;
 	float learningRate;
+	float learningMod;
 	float regTerm;
 };
 
