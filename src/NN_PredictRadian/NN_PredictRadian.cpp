@@ -2,7 +2,7 @@
 #include "stdMat.h"
 #include "windowsx.h"
 
-#define WINWIDTH 600
+#define WINWIDTH 350
 #define WINHEIGHT WINWIDTH
 #define WINHALFWIDTH int((WINWIDTH-1)*0.5f)
 #define WINHALFHEIGHT WINHALFWIDTH
@@ -13,7 +13,7 @@ global_variable bool drawOutput = false;
 global_variable vector<float> predictions;
 float mouseX = WINHALFWIDTH;
 float mouseY = WINHALFHEIGHT - 100;
-
+int windowTitleHeight = -25;
 global_variable Color positiveColor = Color(100, 167, 211, 255);
 global_variable Color negativeColor = Color(255, 184, 113, 255);
 
@@ -24,7 +24,7 @@ BITMAPINFO bitmapInfo = { 0 };
 internal void Win32DisplayBufferInWindow(void *Buffer, HDC DeviceContext, HWND hwind) {
 	RECT winRect = {};
 	GetWindowRect(hwind, &winRect);
-	StretchDIBits(DeviceContext, 0, 0, winRect.right - winRect.left, winRect.bottom - winRect.top, 0, 0, WINWIDTH, WINHEIGHT, Buffer, &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
+	StretchDIBits(DeviceContext, 0, windowTitleHeight, winRect.right - winRect.left, winRect.bottom - winRect.top, 0, 0, WINWIDTH, WINHEIGHT, Buffer, &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
 }
 
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam) {
@@ -65,7 +65,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 	{
 		if(DWORD(WParam) & MK_LBUTTON) {
 			mouseX = float(GET_X_LPARAM(LParam));
-			mouseY = float(GET_Y_LPARAM(LParam));
+			mouseY = float(GET_Y_LPARAM(LParam)) - windowTitleHeight;
 		}
 	} break;
 
@@ -135,8 +135,19 @@ MatrixXf NormalizeData(MatrixXf m) {
 	MatrixXf a = (m.row(0).array().pow(2) + m.row(1).array().pow(2)).array().sqrt();
 	MatrixXf b = MatrixXf(2, a.cols());
 	b << a, a;
-	MatrixXf normal = MatrixXf(m.array() / b.array());	
-	return normal;
+	return MatrixXf(m.array() / b.array());
+}
+
+Color GetColorBlend(float percent) {		
+	return percent < 0.f ? Color(255, 255, 255, 255).Blend(negativeColor, -percent)
+		: Color(255, 255, 255, 255).Blend(positiveColor, percent);;
+}
+
+void PlotData(MatrixXf X, MatrixXf Y) {
+	for(int i = 0; i < X.cols(); ++i) {
+		DrawFilledCircle(backBuffer, WINWIDTH, int(WINHALFWIDTH + X(0, i)), int(WINHALFHEIGHT + -X(1, i)), 11.f, Color(0, 0, 0, 0));
+		DrawFilledCircle(backBuffer, WINWIDTH, int(WINHALFWIDTH + X(0, i)), int(WINHALFHEIGHT + -X(1, i)), 8.f, GetColorBlend(Y(0, i)));
+	}
 }
 
 void DrawOutputToScreen(MatrixXf normScreen) {
@@ -144,9 +155,8 @@ void DrawOutputToScreen(MatrixXf normScreen) {
 	int *pixel = (int *)backBuffer;
 	for(int i = 0; i < normScreen.cols(); ++i) {
 		float percent = h(0,i);
-		Color blended = percent < 0.f ? Color(255, 255, 255, 255).Blend(negativeColor, -percent)
-			: Color(255, 255, 255, 255).Blend(positiveColor, percent);
-		*pixel++ = blended.ToBit();
+
+		*pixel++ = GetColorBlend(percent).ToBit();
 	}
 }
 
@@ -154,6 +164,7 @@ void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> 
 	if(globalRunning) {
 		if(drawOutput) {
 			DrawOutputToScreen(screenCoords);
+			PlotData(X*120, Y);
 		} else {
 			ClearScreen();
 		}
@@ -161,7 +172,7 @@ void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> 
 		for (int i = 0; i < (int)predictions.size();++i){
 			int predX = int(sin(predictions[i] * Pi32) * 100.f);
 			int predY = int(cos(predictions[i] * Pi32) * 100.f);
-			DrawLine(backBuffer, WINWIDTH, WINHALFWIDTH, WINHALFHEIGHT, float(WINHALFWIDTH) + predX, float(WINHALFHEIGHT) + predY, Color(100+i, 4*i, 4 * i, 0));
+			DrawLine(backBuffer, WINWIDTH, WINHALFWIDTH, WINHALFHEIGHT, float(WINHALFWIDTH) + predX, float(WINHALFHEIGHT) + predY, Color(100, 0, 0, 0));
 		}
 		DrawHistory(backBuffer, WINWIDTH, history);
 	}	
@@ -198,6 +209,28 @@ void UpdatePrediction() {
 	}
 }
 
+MatrixXf CreateSparseData(int pointCount) {
+	float piAdjusted = Pi32;
+	float delta = (2 * piAdjusted) / float(pointCount);
+	MatrixXf out = MatrixXf(2, pointCount);
+	for(int i = 0; i < pointCount; i++) {
+		float r = min(-piAdjusted + (delta * i), piAdjusted);
+		out(0,i) = sin(r);
+		out(1,i) = cos(r);
+	}
+	return out;
+}
+
+void UpdateHistory(vector<float> &history) {
+	history.push_back(min((neural.GetCache().cost) * WINHEIGHT, WINHEIGHT));
+	if(history.size() >= WINWIDTH + WINWIDTH) {
+		for(int i = 1; i < (int)history.size(); i += 2) {
+			history.erase(history.begin() + i);
+		}
+	}
+}
+
+
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode) {
 	MatrixXf X;
 	MatrixXf Y;
@@ -207,11 +240,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 	//write_binary("Radian.dat", MatrixXf(screenCoords.array() / WINHALFHEIGHT));
 	//write_binary("RadianLabels.dat", BuildRaidans(MatrixXf(screenCoords / WINHALFHEIGHT)));
+	//read_binary("Radian.dat", X);
+	//read_binary("RadianLabels.dat", Y);
+	//X = NormalizeData(X);
 
-	read_binary("Radian.dat", X);	
-	read_binary("RadianLabels.dat", Y);
-
-	X = NormalizeData(X);
+	X = NormalizeData(CreateSparseData(60));
 	Y = BuildRadians(X);
 
 	if(RegisterClassA(&winClass)) {
@@ -222,8 +255,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		neural.InitializeParameters(X.rows(), { 8,8 }, Y.rows(), {
 			Tanh,Tanh,
 			Tanh },
-			0.25f,
-			0.0f);
+			0.15f,
+			0.01f);
 
 		HDC deviceContext = GetDC(window);
 		vector<float> history;
@@ -234,7 +267,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			if (training) {
 				neural.UpdateSingleStep(X, Y);
 				steps++; 
-				history.push_back(min(neural.GetCache().cost*WINHEIGHT + 40,WINHEIGHT));
+				UpdateHistory(history);
+			} else {
 			}
 			UpdateDisplay(screenCoords, X, Y, history);
 			UpdatePrediction();
