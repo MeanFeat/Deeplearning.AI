@@ -9,6 +9,7 @@
 global_variable bool globalRunning = true;
 global_variable bool discreteOutput = false;
 global_variable bool plotData = true;
+global_variable int winTitleHeight = 10;
 void *backBuffer;
 Net neural;
 global_variable float GraphZoom = 1.f;
@@ -19,7 +20,7 @@ global_variable Color negativeColor = Color(255, 184, 113, 255);
 internal void Win32DisplayBufferInWindow(void *Buffer, HDC DeviceContext, HWND hwind) {
 	RECT winRect = {};
 	GetWindowRect(hwind, &winRect);
-	StretchDIBits(DeviceContext, 0, 0, winRect.right - winRect.left, winRect.bottom - winRect.top, 0, 0, WINWIDTH, WINHEIGHT, Buffer, &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
+	StretchDIBits(DeviceContext, 0, -winTitleHeight, winRect.right - winRect.left, winRect.bottom - winRect.top, 0, 0, WINWIDTH, WINHEIGHT, Buffer, &bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
 }
 
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam) {
@@ -230,8 +231,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Tanh,
 			Tanh,
 			Tanh },
-			0.5f,
-			0.8f);
+			0.25f,
+			0.3f);
 
 		HDC deviceContext = GetDC(window);
 		vector<float> history;

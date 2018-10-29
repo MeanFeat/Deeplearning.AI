@@ -14,7 +14,7 @@ NetCache Net::GetCache() {
 }
 
 void Net::AddLayer(int A, int B) {
-	params.W.push_back(MatrixXf::Random(A, B) * 0.015f);
+	params.W.push_back(MatrixXf::Random(A, B)*0.015f);
 	params.b.push_back(VectorXf::Zero(A, 1));
 	cache.Z.push_back(MatrixXf::Zero(0, 0));
 	cache.A.push_back(MatrixXf::Zero(0, 0));
@@ -84,12 +84,14 @@ MatrixXf Net::ForwardPropagation(const MatrixXf X, bool training) {
 }
 
 float Net::ComputeCost(const MatrixXf Y) {
+	float coeff = 1.f / Y.cols();
 	float sumSqrW = 0.f;
 	for(int w = 0; w < (int)params.W.size() - 1; ++w) {
 		sumSqrW += params.W[w].array().pow(2).sum();
 	}
-	float regCost = float(params.regTerm * (sumSqrW / (2.f * (float)Y.cols())));
-	return -(((cache.A[cache.A.size() - 1].array().pow(2) - Y.array().pow(2)).sum() / Y.cols())) + regCost;
+	float regCost = 0.5f * float(params.regTerm * (sumSqrW / (2.f * (float)Y.cols())));
+	//return -(((cache.A[cache.A.size() - 1].array().pow(2) - Y.array().pow(2)).sum() * coeff)) + regCost;
+	return ((Y - cache.A[cache.A.size() - 1]).array().pow(2).sum() * coeff )+ regCost;
 }
 
 void Net::BackwardPropagation(const MatrixXf X, const MatrixXf Y) {
@@ -115,7 +117,7 @@ void Net::BackwardPropagation(const MatrixXf X, const MatrixXf Y) {
 		default:
 			break;
 		}
-		grads.dW[l] = coeff * MatrixXf((dZ * lowerA.transpose()).array() + (params.regTerm * params.W[l]).array());
+		grads.dW[l] = coeff * MatrixXf((dZ * lowerA.transpose()).array() + (0.5f * params.regTerm * params.W[l]).array());
 		grads.db[l] = coeff * dZ.rowwise().sum();
 	}
 

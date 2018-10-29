@@ -9,10 +9,12 @@
 
 global_variable bool globalRunning = true;
 global_variable bool training = true;
-global_variable bool drawOutput = false;
+global_variable bool drawOutput = true;
+global_variable bool plotData = true;
+
 global_variable vector<float> predictions;
 float mouseX = WINHALFWIDTH;
-float mouseY = WINHALFHEIGHT - 100;
+float mouseY = WINHALFHEIGHT + 100;
 int windowTitleHeight = -25;
 global_variable Color positiveColor = Color(100, 167, 211, 255);
 global_variable Color negativeColor = Color(255, 184, 113, 255);
@@ -44,6 +46,9 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 		case 'D':
 			drawOutput = !drawOutput;
 			break;
+		case 'P':
+			plotData = !plotData;
+			break;
 		case 'W':
 			neural.ModifyLearningRate(0.02f);
 			break;
@@ -60,7 +65,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			break;
 		}
 	} break;
-
+	case WM_LBUTTONDOWN: //fall through
 	case WM_MOUSEMOVE:
 	{
 		if(DWORD(WParam) & MK_LBUTTON) {
@@ -145,8 +150,8 @@ Color GetColorBlend(float percent) {
 
 void PlotData(MatrixXf X, MatrixXf Y) {
 	for(int i = 0; i < X.cols(); ++i) {
-		DrawFilledCircle(backBuffer, WINWIDTH, int(WINHALFWIDTH + X(0, i)), int(WINHALFHEIGHT + -X(1, i)), 11.f, Color(0, 0, 0, 0));
-		DrawFilledCircle(backBuffer, WINWIDTH, int(WINHALFWIDTH + X(0, i)), int(WINHALFHEIGHT + -X(1, i)), 8.f, GetColorBlend(Y(0, i)));
+		//DrawFilledCircle(backBuffer, WINWIDTH, int(WINHALFWIDTH + X(0, i)), int(WINHALFHEIGHT + -X(1, i)), 11.f, Color(0, 0, 0, 0));
+		DrawFilledCircle(backBuffer, WINWIDTH, int(WINHALFWIDTH + X(0, i)), int(WINHALFHEIGHT + -X(1, i)), 10.f, GetColorBlend(Y(0, i)));
 	}
 }
 
@@ -164,15 +169,18 @@ void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> 
 	if(globalRunning) {
 		if(drawOutput) {
 			DrawOutputToScreen(screenCoords);
-			PlotData(X*120, Y);
 		} else {
 			ClearScreen();
 		}
+		if (plotData){
+			PlotData(X*120, Y);
+		}
+
 		DrawLine(backBuffer, WINWIDTH, WINHALFWIDTH, WINHALFHEIGHT, mouseX, float(WINHEIGHT - mouseY), Color(0, 0, 255, 255));
 		for (int i = 0; i < (int)predictions.size();++i){
 			int predX = int(sin(predictions[i] * Pi32) * 100.f);
 			int predY = int(cos(predictions[i] * Pi32) * 100.f);
-			DrawLine(backBuffer, WINWIDTH, WINHALFWIDTH, WINHALFHEIGHT, float(WINHALFWIDTH) + predX, float(WINHALFHEIGHT) + predY, Color(100, 0, 0, 0));
+			DrawLine(backBuffer, WINWIDTH, WINHALFWIDTH, WINHALFHEIGHT, float(WINHALFWIDTH) + predX, float(WINHALFHEIGHT) - predY, Color(100, 0, 0, 0));
 		}
 		DrawHistory(backBuffer, WINWIDTH, history);
 	}	
@@ -183,17 +191,18 @@ void UpdateWinTitle(int &steps, HWND window) {
 	sprintf_s(s, "Epoch %d|Cost %0.15f|LR %0.2f|RT %0.2f "
 			  , steps, neural.GetCache().cost, neural.GetParams().learningRate, neural.GetParams().regTerm);
 	char r[255];	
-	sprintf_s(r, " |%0.2f|%0.2f| ", atan2((mouseX - WINHALFWIDTH), -(mouseY - WINHALFHEIGHT)), predictions[0]*Pi32);
+	sprintf_s(r, " |%0.2f|%0.2f| ", atan2((mouseX - WINHALFWIDTH), (mouseY - WINHALFHEIGHT)), predictions[0]*Pi32);
 	strcat_s(s, r);
 	SetWindowText(window, LPCSTR(s));
 }
 
 MatrixXf BuildRadians(MatrixXf m) {
-	MatrixXf out = MatrixXf(3, m.cols());
+	float coefficient = 1.f / Pi32;
+	MatrixXf out = MatrixXf(1, m.cols());
 	for(int i = 0; i < m.cols(); ++i) {
-		out(0, i) = atan2((m(0, i)), -(m(1, i))) / Pi32;
-		out(1, i) = -atan2((m(1, i)), -(m(0, i))) / Pi32;
-		out(2, i) = -atan2(-(m(1, i)), (m(0, i))) / Pi32;
+		out(0, i) = atan2((m(0, i)), (m(1, i))) * coefficient;
+		//out(1, i) = -atan2((m(1, i)), -(m(0, i))) * coefficient;
+		//out(2, i) = -atan2(-(m(1, i)), (m(0, i))) * coefficient;
 	}
 	return out;
 }
@@ -209,12 +218,14 @@ void UpdatePrediction() {
 	}
 }
 
+#define clamp(x,lo,hi) min( hi, max(lo,x) )
+
 MatrixXf CreateSparseData(int pointCount) {
-	float piAdjusted = Pi32;
-	float delta = (2 * piAdjusted) / float(pointCount);
-	MatrixXf out = MatrixXf(2, pointCount);
-	for(int i = 0; i < pointCount; i++) {
-		float r = min(-piAdjusted + (delta * i), piAdjusted);
+	float piAdjusted = Pi32 - 0.01f;
+	float delta = (2 * Pi32) / float(pointCount);
+	MatrixXf out = MatrixXf(2, pointCount+1);
+	for(int i = 0; i <= pointCount; i++) {
+		float r = clamp(-Pi32 + (delta * i), -piAdjusted, piAdjusted);
 		out(0,i) = sin(r);
 		out(1,i) = cos(r);
 	}
@@ -244,7 +255,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	//read_binary("RadianLabels.dat", Y);
 	//X = NormalizeData(X);
 
-	X = NormalizeData(CreateSparseData(60));
+	X = NormalizeData(CreateSparseData(30));
 	Y = BuildRadians(X);
 
 	if(RegisterClassA(&winClass)) {
@@ -252,11 +263,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 									  WS_OVERLAPPED | WS_SYSMENU |WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH, WINHEIGHT, 0, 0, Instance, 0);
 		
-		neural.InitializeParameters(X.rows(), { 8,8 }, Y.rows(), {
-			Tanh,Tanh,
+		neural.InitializeParameters(X.rows(), { 15,10 }, Y.rows(), {
+			Tanh, Tanh,
 			Tanh },
 			0.15f,
-			0.01f);
+			0.2f);
 
 		HDC deviceContext = GetDC(window);
 		vector<float> history;
