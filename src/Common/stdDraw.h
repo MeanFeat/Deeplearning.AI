@@ -2,8 +2,19 @@
 #include "stdMat.h"
 #include "windows.h"
 #include "color.h"
+
 #define Pi32 3.14159265359f
 
+static Color positiveColor = Color(100, 167, 211, 255);
+static Color negativeColor = Color(255, 184, 113, 255);
+
+struct Buffer {
+	void* memory;
+	int width;
+	int height;
+	int titleOffset;
+	BITMAPINFO bitmapInfo = { 0 };
+};
 
 void drawLine(HDC *hdc, int x, int y, int x1, int y1, Color c) {
 	int dx = x1 - x;
@@ -43,7 +54,7 @@ void DrawCircle(HDC *hdc, int x, int y, float d, Color c) {
 	}
 }
 
-void DrawLine(void *buffer, int bufferWidth, float aX, float aY, float bX, float bY, Color col) {
+void DrawLine(Buffer buffer, float aX, float aY, float bX, float bY, Color col) {
 	float dx = bX - aX;
 	float dy = bY - aY;
 	if(abs(dx) > abs(dy) && dx) {
@@ -52,7 +63,7 @@ void DrawLine(void *buffer, int bufferWidth, float aX, float aY, float bX, float
 		if(dx >= 0.f) dx = 1;
 		else dx = -1;
 		do { //for(;x<x1; x++){
-			int *pixel = (int *)buffer + int(aX + int(aY) * bufferWidth);
+			int *pixel = (int *)buffer.memory + int(aX + int(aY) * buffer.width);
 			*pixel = ((col.r << 16) | (col.g << 8) | col.b);
 			aY += dy;
 			aX += dx;
@@ -63,7 +74,7 @@ void DrawLine(void *buffer, int bufferWidth, float aX, float aY, float bX, float
 		if(dy > 0) dy = 1;
 		else dy = -1;
 		do { //for(;y<y1; y++){
-			int *pixel = (int *)buffer + int(aX + int(aY) * bufferWidth);
+			int *pixel = (int *)buffer.memory + int(aX + int(aY) * buffer.width);
 			*pixel = ((col.r << 16) | (col.g << 8) | col.b);
 			aY += dy;
 			aX += dx;
@@ -71,25 +82,57 @@ void DrawLine(void *buffer, int bufferWidth, float aX, float aY, float bX, float
 	}
 }
 
-void DrawHistory(void *buffer, int bufferWidth, vector<float> hist) {
-	float compressor = int(hist.size() - 1) > bufferWidth ? float(bufferWidth) / float(hist.size() - 1) : 1.f;
+void DrawHistory(Buffer buffer, vector<float> hist) {
+	float compressor = int(hist.size() - 1) > buffer.width ? float(buffer.width) / float(hist.size() - 1) : 1.f;
 	for(int sample = 1; sample < (int)hist.size() - 1; sample++) {
-		DrawLine(buffer, bufferWidth, float(int((sample - 1) * compressor)-bufferWidth),
-			floor(hist[sample - 1]), float(int(sample * compressor)-bufferWidth),
+		DrawLine(buffer, float(int((sample - 1) * compressor)- buffer.width),
+			floor(hist[sample - 1]), float(int(sample * compressor)- buffer.width),
 				 floor(hist[sample]), Color(200, 90, 90, 255));
 	}
 }
 
-void DrawFilledCircle(void *buffer, int bufferWidth, int x, int y, float d, Color c) {
+void DrawFilledCircle(Buffer buffer, int x, int y, float d, Color c) {
 	int r = int(d*0.5);
 	for(int h = -r; h < r; h++) {
 		int height = (int)sqrt(r * r - h * h);
 
-		if(x - d > 0 && x + d < 800 && y - d > 0 && y + d < bufferWidth) {
+		if(x - d > 0 && x + d < 800 && y - d > 0 && y + d < buffer.width) {
 			for(int v = -height; v < height; v++) {
-				int *pixel = (int *)buffer + int(((x)+h) + ((y + v)* bufferWidth));
+				int *pixel = (int *)buffer.memory + int(((x)+h) + ((y + v)* buffer.width));
 				*pixel = ((c.r << 16) | (c.g << 8) | c.b);
 			}
 		}
 	}
+}
+
+MatrixXf BuildDisplayCoords(Buffer buffer, float scale = 1.f) {
+	MatrixXf out(buffer.width * buffer.height, 2);
+	VectorXf row(buffer.width);
+	VectorXf cols(buffer.width * buffer.height);
+	int halfWidth = int(buffer.width * 0.5f);
+	for(int x = 0; x < buffer.width; ++x) {
+		row(x) = float((x - halfWidth) / scale);
+	}
+	for(int y = 0; y < buffer.height; ++y) {
+		for(int x = 0; x < buffer.width; ++x) {
+			cols(y*buffer.width + x) = float((y - halfWidth) / scale);
+		}
+	}
+	out << row.replicate(buffer.height, 1), cols;
+	out.col(1) *= -1.f;
+	return out;
+}
+
+void FillScreen(Buffer buff, Color col = Color(0,0,0,0)) {
+	int *pixel = (int *)buff.memory;
+	for(int i = 0; i < buff.width * buff.height; i += 4) {
+		*pixel++ = col.ToBit();
+		*pixel++ = col.ToBit();
+		*pixel++ = col.ToBit();
+		*pixel++ = col.ToBit();
+	}
+}
+
+void ClearScreen(Buffer buff) {
+	FillScreen(buff);
 }

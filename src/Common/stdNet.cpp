@@ -14,7 +14,7 @@ NetCache Net::GetCache() {
 }
 
 void Net::AddLayer(int A, int B) {
-	params.W.push_back(MatrixXf::Random(A, B)*0.015f);
+	params.W.push_back(MatrixXf::Random(A, B)*0.15f);
 	params.b.push_back(VectorXf::Zero(A, 1));
 	cache.Z.push_back(MatrixXf::Zero(0, 0));
 	cache.A.push_back(MatrixXf::Zero(0, 0));
@@ -83,15 +83,14 @@ MatrixXf Net::ForwardPropagation(const MatrixXf X, bool training) {
 	return lastOutput;
 }
 
-float Net::ComputeCost(const MatrixXf Y) {
+float Net::ComputeCost(const MatrixXf h, const MatrixXf Y) {
 	float coeff = 1.f / Y.cols();
 	float sumSqrW = 0.f;
 	for(int w = 0; w < (int)params.W.size() - 1; ++w) {
 		sumSqrW += params.W[w].array().pow(2).sum();
 	}
 	float regCost = 0.5f * float(params.regTerm * (sumSqrW / (2.f * (float)Y.cols())));
-	//return -(((cache.A[cache.A.size() - 1].array().pow(2) - Y.array().pow(2)).sum() * coeff)) + regCost;
-	return ((Y - cache.A[cache.A.size() - 1]).array().pow(2).sum() * coeff )+ regCost;
+	return ((Y - h).array().pow(2).sum() * coeff ) + regCost;
 }
 
 void Net::BackwardPropagation(const MatrixXf X, const MatrixXf Y) {
@@ -181,8 +180,7 @@ void Net::BuildDropoutMask() {
 
 void Net::UpdateSingleStep(const MatrixXf X, const MatrixXf Y) {
 	//BuildDropoutMask();
-	ForwardPropagation(X, true);
-	cache.cost = ComputeCost(Y);
+	cache.cost = ComputeCost(ForwardPropagation(X, true), Y);
 	BackwardPropagation(X, Y);
 	UpdateParametersADAM();
 }

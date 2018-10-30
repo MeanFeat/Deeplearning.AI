@@ -64,8 +64,8 @@ public:
 
 	MatrixXf Activate(Activation act, const MatrixXf &In);
 	
-	MatrixXf ForwardPropagation(const MatrixXf X, bool training);
-	float ComputeCost( const MatrixXf Y);
+	MatrixXf ForwardPropagation(const MatrixXf X, bool training = false);
+	float ComputeCost(const MatrixXf h, const MatrixXf Y);
 	void BackwardPropagation(const MatrixXf X, const MatrixXf Y);
 	void UpdateParameters();
 	void UpdateParametersWithMomentum();
