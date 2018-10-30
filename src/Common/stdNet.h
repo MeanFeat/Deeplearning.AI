@@ -59,13 +59,13 @@ public:
 	~Net();
 	NetParameters GetParams();
 	NetCache GetCache();
-	void AddLayer(int A, int B);
-	void InitializeParameters(int inputSize, std::vector<int> hiddenLayers, int outputSize, vector<Activation> activations, float learningRate, float regTerm);
+	void AddLayer(int A, int B, float weightScale);
+	void InitializeParameters(int inputSize, std::vector<int> hiddenLayers, int outputSize, float weightScale, vector<Activation> activations, float learningRate, float regTerm);
 
 	MatrixXf Activate(Activation act, const MatrixXf &In);
 	
 	MatrixXf ForwardPropagation(const MatrixXf X, bool training = false);
-	float ComputeCost(const MatrixXf h, const MatrixXf Y);
+	float CalcCost(const MatrixXf h, const MatrixXf Y);
 	void BackwardPropagation(const MatrixXf X, const MatrixXf Y);
 	void UpdateParameters();
 	void UpdateParametersWithMomentum();

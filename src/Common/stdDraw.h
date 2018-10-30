@@ -82,12 +82,12 @@ void DrawLine(Buffer buffer, float aX, float aY, float bX, float bY, Color col) 
 	}
 }
 
-void DrawHistory(Buffer buffer, vector<float> hist) {
-	float compressor = int(hist.size() - 1) > buffer.width ? float(buffer.width) / float(hist.size() - 1) : 1.f;
+void DrawHistory(Buffer buffer, vector<float> hist, Color c) {
+	float compressor = int(hist.size()) > buffer.width ? float(buffer.width) / float(hist.size()) : 1.f;
 	for(int sample = 1; sample < (int)hist.size() - 1; sample++) {
 		DrawLine(buffer, float(int((sample - 1) * compressor)- buffer.width),
 			floor(hist[sample - 1]), float(int(sample * compressor)- buffer.width),
-				 floor(hist[sample]), Color(200, 90, 90, 255));
+				 floor(hist[sample]), c);
 	}
 }
 

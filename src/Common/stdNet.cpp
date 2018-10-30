@@ -13,8 +13,8 @@ NetCache Net::GetCache() {
 	return cache;
 }
 
-void Net::AddLayer(int A, int B) {
-	params.W.push_back(MatrixXf::Random(A, B)*0.15f);
+void Net::AddLayer(int A, int B, float weightScale) {
+	params.W.push_back(MatrixXf::Random(A, B)*weightScale);
 	params.b.push_back(VectorXf::Zero(A, 1));
 	cache.Z.push_back(MatrixXf::Zero(0, 0));
 	cache.A.push_back(MatrixXf::Zero(0, 0));
@@ -27,7 +27,7 @@ void Net::AddLayer(int A, int B) {
 }
 
 void Net::InitializeParameters(int inputSize, std::vector<int> hiddenSizes,
-							   int outputSize, vector<Activation> activations,
+							   int outputSize, float weightScale, vector<Activation> activations,
 							   float learningRate, float regTerm) {
 	params.learningMod = float(inputSize + outputSize);
 	for(int i = 0; i < (int)hiddenSizes.size() - 1; ++i) {
@@ -42,11 +42,11 @@ void Net::InitializeParameters(int inputSize, std::vector<int> hiddenSizes,
 		params.layerSizes.push_back(hiddenSizes[l]);
 	}
 	params.layerSizes.push_back(outputSize);
-	AddLayer(hiddenSizes[0], inputSize);
+	AddLayer(hiddenSizes[0], inputSize, weightScale);
 	for(int h = 1; h < (int)hiddenSizes.size(); ++h) {
-		AddLayer(hiddenSizes[h], hiddenSizes[h - 1]);
+		AddLayer(hiddenSizes[h], hiddenSizes[h - 1], weightScale);
 	}
-	AddLayer(outputSize, hiddenSizes.back());
+	AddLayer(outputSize, hiddenSizes.back(), weightScale);
 	return;
 }
 
@@ -83,7 +83,7 @@ MatrixXf Net::ForwardPropagation(const MatrixXf X, bool training) {
 	return lastOutput;
 }
 
-float Net::ComputeCost(const MatrixXf h, const MatrixXf Y) {
+float Net::CalcCost(const MatrixXf h, const MatrixXf Y) {
 	float coeff = 1.f / Y.cols();
 	float sumSqrW = 0.f;
 	for(int w = 0; w < (int)params.W.size() - 1; ++w) {
@@ -180,7 +180,7 @@ void Net::BuildDropoutMask() {
 
 void Net::UpdateSingleStep(const MatrixXf X, const MatrixXf Y) {
 	//BuildDropoutMask();
-	cache.cost = ComputeCost(ForwardPropagation(X, true), Y);
+	cache.cost = CalcCost(ForwardPropagation(X, true), Y);
 	BackwardPropagation(X, Y);
 	UpdateParametersADAM();
 }

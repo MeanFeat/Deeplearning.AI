@@ -1,6 +1,7 @@
 #include "win32_ExpertSystems.h"
 #include "stdMat.h"
 #include "windowsx.h"
+#include <time.h>
 
 #define WINWIDTH 350
 #define WINHEIGHT WINWIDTH
@@ -11,7 +12,10 @@ global_variable bool globalRunning = true;
 global_variable bool training = true;
 global_variable bool drawOutput = false;
 global_variable bool plotData = true;
+
 global_variable vector<float> predictions;
+static time_t startTime;
+static time_t currentTime;
 
 float mouseX = WINHALFWIDTH;
 float mouseY = WINHALFHEIGHT + 100;
@@ -103,7 +107,7 @@ void DrawOutputToScreen(MatrixXf normScreen) {
 	}
 }
 
-void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> &history) {
+void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> &history, vector<float> &testHistory) {
 	if(globalRunning) {
 		if(drawOutput) {
 			DrawOutputToScreen(screenCoords);
@@ -120,14 +124,16 @@ void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> 
 			int predY = int(cos(predictions[i] * Pi32) * 100.f);
 			DrawLine(backBuffer, WINHALFWIDTH, WINHALFHEIGHT, float(WINHALFWIDTH) + predX, float(WINHALFHEIGHT) - predY, Color(100, 0, 0, 0));
 		}
-		DrawHistory(backBuffer, history);
+		DrawHistory(backBuffer, history, Color(200, 90, 90, 255));
+		DrawHistory(backBuffer, testHistory, Color(100, 100, 100, 255));
 	}	
 }
 
 void UpdateWinTitle(int &steps, HWND window) {
+	time(&currentTime);
 	char s[255];
-	sprintf_s(s, "%d|Cost %0.25f|LR %0.2f|RT %0.2f "
-			  , steps, neural.GetCache().cost, neural.GetParams().learningRate, neural.GetParams().regTerm);
+	sprintf_s(s, "%d|T:%0.f|C:%0.10f|LR:%0.2f|RT:%0.2f|"
+			  , steps,difftime(currentTime, startTime),neural.GetCache().cost, neural.GetParams().learningRate, neural.GetParams().regTerm);
 	char r[255];	
 	sprintf_s(r, " |%0.2f|%0.2f| ", atan2((mouseX - WINHALFWIDTH), (mouseY - WINHALFHEIGHT)), predictions[0]*Pi32);
 	strcat_s(s, r);
@@ -168,8 +174,8 @@ MatrixXf CreateSparseData(int pointCount) {
 	return out;
 }
 
-void UpdateHistory(vector<float> &history) {
-	history.push_back(min((neural.GetCache().cost) * WINHEIGHT, WINHEIGHT));
+void UpdateHistory(vector<float> &history, float cost) {
+	history.push_back(min((cost) * WINHEIGHT, WINHEIGHT));
 	if(history.size() >= WINWIDTH + WINWIDTH) {
 		for(int i = 1; i < (int)history.size(); i += 2) {
 			history.erase(history.begin() + i);
@@ -179,7 +185,9 @@ void UpdateHistory(vector<float> &history) {
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode) {
 	MatrixXf X;
+	MatrixXf testX;
 	MatrixXf Y;
+	MatrixXf testY;
 	WNDCLASSA winClass = {};
 	InitializeWindow(&winClass, Instance, Win32MainWindowCallback, &backBuffer, WINWIDTH, WINHEIGHT, "NN_PredictRadian");
 	MatrixXf screenCoords = NormalizeData(BuildDisplayCoords(backBuffer).transpose());
@@ -190,36 +198,47 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	//read_binary("RadianLabels.dat", Y);
 	//X = NormalizeData(X);
 
+	read_binary("Radian.dat", testX);
+	testX = NormalizeData(testX);
+	testY = BuildRadians(testX);
+
 	X = NormalizeData(CreateSparseData(45));
 	Y = BuildRadians(X);
+
+	
+	time(&startTime);
 
 	if(RegisterClassA(&winClass)) {
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
 									  WS_OVERLAPPED | WS_SYSMENU |WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH, WINHEIGHT, 0, 0, Instance, 0);
 		
-		neural.InitializeParameters(X.rows(), { 10,10 }, Y.rows(), {
+		neural.InitializeParameters(X.rows(), { 8,8 }, Y.rows(), 0.15f, {
 			Tanh,Tanh,
 			Tanh },
-			0.5f,
-			0.1f);
+			0.15f,
+			0.2f);
 
 		HDC deviceContext = GetDC(window);
 		vector<float> history;
+		vector<float> testHistory;
+
 		int steps = 0;
 		//Main Loop
 		while(globalRunning) {
 			Win32ProcessPendingMessages();	
 			if (training) {
 				neural.UpdateSingleStep(X, Y);
-				steps++; 
-				UpdateHistory(history);
+				UpdateHistory(history, neural.GetCache().cost);
+				UpdateHistory(testHistory, neural.CalcCost(neural.ForwardPropagation(testX), testY));
+				steps++;
 			} else {
 			}
-			UpdateDisplay(screenCoords, X, Y, history);
+			UpdateDisplay(screenCoords, X, Y, history, testHistory);
 			UpdatePrediction();
-			UpdateWinTitle(steps, window);			
-			Win32DisplayBufferInWindow( deviceContext, window, backBuffer);
+			Win32DisplayBufferInWindow(deviceContext, window, backBuffer);
+			
+			UpdateWinTitle(steps, window);
 		}
 		DeleteDC(deviceContext);
 	}

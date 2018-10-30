@@ -1,5 +1,7 @@
 #include "win32_ExpertSystems.h"
 #include "stdMat.h"
+#include <time.h>
+
 #define WINWIDTH 200
 #define WINHEIGHT 200
 #define WINHALFWIDTH WINWIDTH * 0.5f
@@ -10,6 +12,8 @@ global_variable bool globalRunning = true;
 global_variable bool discreteOutput = false;
 global_variable bool plotData = true;
 global_variable int winTitleHeight = 10;
+static time_t startTime;
+static time_t currentTime;
 
 Buffer backBuffer;
 Net neural;
@@ -111,15 +115,8 @@ void DrawOutputToScreen(MatrixXf screenCoords) {
 	}
 }
 
-void ClearScreen(MatrixXf screenCoords) {
-	int *pixel = (int *)backBuffer.memory;
-	for(int i = 0; i < WINHEIGHT * WINWIDTH; ++i) {
-		*pixel++ = Color(0, 0, 0, 0).ToBit();
-	}
-}
-
 void UpdateHistory(vector<float> &history) {
-	history.push_back(min((neural.GetCache().cost) * WINHEIGHT, WINHEIGHT));
+	history.push_back(min((neural.GetCache().cost) * (WINHEIGHT-backBuffer.titleOffset), WINHEIGHT));
 	if(history.size() >= WINWIDTH + WINWIDTH) {
 		for(int i = 1; i < (int)history.size(); i += 2) {
 			history.erase(history.begin() + i);
@@ -143,20 +140,21 @@ void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> 
 		for(int i = GraphZoom > 1.f ? int(GraphZoom * 50) : 0; i < (int)history.size() - 1; ++i) {
 			zoomedHist.push_back(min(WINHEIGHT, history[i] * GraphZoom));
 		}
-		DrawHistory(backBuffer, zoomedHist);
+		DrawHistory(backBuffer, zoomedHist, Color(200,100,100,255));
 	}
 }
 
 void UpdateWinTitle(int &steps, HWND window) {
+	time(&currentTime);
 	char s[255];
-	sprintf_s(s, "SpiralData || Epoch %d | Cost %0.10f | LearnRate %0.3f | RegTerm %0.3f | LayerSizes: "
-			  , steps++, neural.GetCache().cost, neural.GetParams().learningRate, neural.GetParams().regTerm);
+	sprintf_s(s, "SpiralData || Epoch %d | Time: %0.1f | Cost %0.10f | LearnRate %0.3f | RegTerm %0.3f | "
+			  , steps++, difftime(currentTime, startTime), neural.GetCache().cost, neural.GetParams().learningRate, neural.GetParams().regTerm);
 	
-	for(int l = 0; l < (int)neural.GetParams().layerSizes.size(); ++l) {
+	/*for(int l = 0; l < (int)neural.GetParams().layerSizes.size(); ++l) {
 		char layer[255];
 		sprintf_s(layer, "[%d]", neural.GetParams().layerSizes[l]);
 		strcat_s(s, layer);
-	}
+	}*/
 	SetWindowText(window, LPCSTR(s));
 }
 
@@ -179,20 +177,21 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 									  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH*4, WINHEIGHT*4, 0, 0, Instance, 0);
 
-		neural.InitializeParameters(X.rows(), { 8,8 }, Y.rows(), {
+		neural.InitializeParameters(X.rows(), { 8,8 }, Y.rows(), 0.15f, {
 			Tanh,
 			Tanh,
 			Tanh },
-			0.05f,
-			0.8f);
+			0.125f,
+			1.f);
 
+		time(&startTime);
 		HDC deviceContext = GetDC(window);
 		vector<float> history;
 		int steps = 0;
 
 		//Main Loop
 		while(globalRunning) {
-			for(int epoch = 0; epoch < 10; ++epoch) {
+			for(int epoch = 0; epoch < 100; ++epoch) {
 				Win32ProcessPendingMessages();
 				if(!globalRunning) {
 					break;
