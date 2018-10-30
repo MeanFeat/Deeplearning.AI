@@ -64,7 +64,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 	{
 		if(DWORD(WParam) & MK_LBUTTON) {
 			mouseX = float(GET_X_LPARAM(LParam));
-			mouseY = float(GET_Y_LPARAM(LParam)) - backBuffer.titleOffset;
+			mouseY = float(GET_Y_LPARAM(LParam)) + backBuffer.titleOffset;
 		}
 	} break;
 
