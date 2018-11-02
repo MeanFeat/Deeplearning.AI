@@ -59,9 +59,15 @@ namespace Eigen {
 		return outMat;
 	}
 
+	const static IOFormat CSVFormat(StreamPrecision, DontAlignCols, ", ", "\n");
+	void writeToCSVfile(string name, MatrixXf matrix) {
+		ofstream file(name.c_str());
+		file << matrix.format(CSVFormat);
+	}
+
 	void removeColumn(Eigen::MatrixXf& matrix, unsigned int colToRemove) {
-		unsigned int numRows = matrix.rows();
-		unsigned int numCols = matrix.cols() - 1;
+		unsigned int numRows = (unsigned int)matrix.rows();
+		unsigned int numCols = (unsigned int)matrix.cols() - 1;
 
 		if(colToRemove < numCols)
 			matrix.block(0, colToRemove, numRows, numCols - colToRemove) = matrix.rightCols(numCols - colToRemove);

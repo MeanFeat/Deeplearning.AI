@@ -159,25 +159,33 @@ void UpdateWinTitle(int &steps, HWND window) {
 }
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode) {
-	MatrixXf X;// = (MatrixXf)BuildMatFromFile("Spiral.txt"); X.transposeInPlace(); write_binary("Spiral.dat", X);
-	MatrixXf Y;// = (MatrixXf)BuildMatFromFile("SpiralLabels.txt"); Y.transposeInPlace(); write_binary("SpiralLabels.dat", Y);
+	MatrixXf X;//= (MatrixXf)BuildMatFromFile("Spiral.csv"); write_binary("Spiral_64.dat", X);
+	MatrixXf Y;//= (MatrixXf)BuildMatFromFile("SpiralLabels.csv"); write_binary("SpiralLabels_64.dat", Y);
+
+#if x64
+	read_binary("Spiral_64.dat", X);
+	read_binary("SpiralLabels_64.dat", Y);
+#else
 	read_binary("Spiral.dat", X);
 	read_binary("SpiralLabels.dat", Y);
+#endif
+
 	X = BuildPolynomials(X);
+
+	//X.conservativeResize(int(X.rows()), int(X.cols()*0.25));
+	//Y.conservativeResize(int(Y.rows()), int(Y.cols()*0.25));
 
 	WNDCLASSA winClass = {};
 	InitializeWindow(&winClass, Instance, Win32MainWindowCallback, &backBuffer, WINWIDTH, WINHEIGHT, "NN_Spiral");
 	MatrixXf screenCoords = BuildPolynomials(BuildDisplayCoords(backBuffer, SCALE).transpose());
 
-	//X.conservativeResize(int(X.rows()), int(X.cols()*0.25));
-	//Y.conservativeResize(int(Y.rows()), int(Y.cols()*0.25));
 
 	if(RegisterClassA(&winClass)) {
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
 									  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH*4, WINHEIGHT*4, 0, 0, Instance, 0);
 
-		neural.InitializeParameters(X.rows(), { 8,8 }, Y.rows(), 0.15f, {
+		neural.InitializeParameters((int)X.rows(), { 8,8 }, (int)Y.rows(), 0.15f, {
 			Tanh,
 			Tanh,
 			Tanh },

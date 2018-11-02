@@ -10,7 +10,7 @@
 
 global_variable bool globalRunning = true;
 global_variable bool training = true;
-global_variable bool drawOutput = false;
+global_variable bool drawOutput = true;
 global_variable bool plotData = true;
 
 global_variable vector<float> predictions;
@@ -155,7 +155,7 @@ void UpdatePrediction() {
 	MatrixXf mouse = MatrixXf(2,1);
 	mouse(0, 0) = mouseX-WINHALFWIDTH;
 	mouse(1, 0) = mouseY-WINHALFHEIGHT;
-	MatrixXf h = neural.ForwardPropagation(NormalizeData(mouse / WINHALFHEIGHT));
+	MatrixXf h = neural.ForwardPropagation(NormalizeData(mouse));
 	predictions.clear();
 	for (int i = 0; i < h.rows(); ++i){
 		predictions.push_back(h(i, 0));
@@ -164,7 +164,7 @@ void UpdatePrediction() {
 
 MatrixXf CreateSparseData(int pointCount) {
 	float piAdjusted = Pi32 - 0.01f;
-	float delta = (2 * Pi32) / float(pointCount);
+	float delta = (2.f * Pi32) / float(pointCount);
 	MatrixXf out = MatrixXf(2, pointCount+1);
 	for(int i = 0; i <= pointCount; i++) {
 		float r = clamp(-Pi32 + (delta * i), -piAdjusted, piAdjusted);
@@ -192,28 +192,18 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	InitializeWindow(&winClass, Instance, Win32MainWindowCallback, &backBuffer, WINWIDTH, WINHEIGHT, "NN_PredictRadian");
 	MatrixXf screenCoords = NormalizeData(BuildDisplayCoords(backBuffer).transpose());
 
-	//write_binary("Radian.dat", MatrixXf(screenCoords.array() / WINHALFHEIGHT));
-	//write_binary("RadianLabels.dat", BuildRaidans(MatrixXf(screenCoords / WINHALFHEIGHT)));
-	//read_binary("Radian.dat", X);
-	//read_binary("RadianLabels.dat", Y);
-	//X = NormalizeData(X);
-
-	read_binary("Radian.dat", testX);
-	testX = NormalizeData(testX);
+	testX = NormalizeData(CreateSparseData(99));
 	testY = BuildRadians(testX);
-
 	X = NormalizeData(CreateSparseData(45));
-	Y = BuildRadians(X);
+	Y = BuildRadians(X);	
 
-	
 	time(&startTime);
-
 	if(RegisterClassA(&winClass)) {
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
 									  WS_OVERLAPPED | WS_SYSMENU |WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH, WINHEIGHT, 0, 0, Instance, 0);
 		
-		neural.InitializeParameters(X.rows(), { 8,8 }, Y.rows(), 0.15f, {
+		neural.InitializeParameters((int)X.rows(), { 8,8 }, (int)Y.rows(), 0.15f, {
 			Tanh,Tanh,
 			Tanh },
 			0.15f,
