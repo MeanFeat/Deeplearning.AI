@@ -99,7 +99,7 @@ void Net::BackwardPropagation(const MatrixXf X, const MatrixXf Y) {
 	MatrixXf dZ = MatrixXf(cache.A.back() - Y);
 	grads.dW.back() = coeff * (dZ * cache.A[cache.A.size() - 2].transpose());
 	grads.db.back() = coeff * dZ.rowwise().sum();
-	for(int l = params.layerActivations.size() - 2; l >= 0; --l) {
+	for(int l = (int)params.layerActivations.size() - 2; l >= 0; --l) {
 		MatrixXf lowerA = l > 0 ? cache.A[l - 1] : X;
 		switch(params.layerActivations[l]) {
 		case Sigmoid:
