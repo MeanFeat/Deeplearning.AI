@@ -42,10 +42,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>..\..\..\SDL2-2.0.7\include;..\..\..\eigen;..\Common;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\SDL2-2.0.7\include;..\..\..\eigen;..\es_core\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>..\..\..\SDL2-2.0.7\include;..\..\..\eigen;..\Common;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\SDL2-2.0.7\include;..\..\..\eigen;..\es_core\;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\GameDev\SDL2-2.0.7\lib\x64\;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -84,11 +85,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\Common\stdNet.cpp" />
     <ClCompile Include="LogisticRegression.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Common\win32_ExpertSystems.h" />
+    <ProjectReference Include="..\es_core\es_core.vcxproj">
+      <Project>{389d51b1-0826-48ba-93cc-bdb12eea1357}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

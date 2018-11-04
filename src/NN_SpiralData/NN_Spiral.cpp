@@ -1,5 +1,4 @@
 #include "win32_ExpertSystems.h"
-#include "stdMat.h"
 #include <time.h>
 
 #define WINWIDTH 200

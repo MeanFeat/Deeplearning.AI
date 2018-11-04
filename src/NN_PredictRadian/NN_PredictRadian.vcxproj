@@ -69,18 +69,20 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>..\..\..\eigen;..\Common;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\eigen;..\es_core;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>..\..\..\eigen;..\Common;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\eigen;..\es_core;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ReferencePath>$(ReferencePath)</ReferencePath>
-    <IncludePath>..\..\..\eigen;.\..\Common;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>..\..\..\eigen;..\es_core;$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\x64\Release\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ReferencePath>$(ReferencePath)</ReferencePath>
-    <IncludePath>..\..\..\eigen;.\..\Common;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>..\..\..\eigen;..\es_core;$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\x64\Release\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -134,15 +136,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\Common\stdNet.cpp" />
     <ClCompile Include="NN_PredictRadian.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Common\color.h" />
-    <ClInclude Include="..\Common\stdDraw.h" />
-    <ClInclude Include="..\Common\stdMat.h" />
-    <ClInclude Include="..\Common\stdNet.h" />
-    <ClInclude Include="..\Common\win32_ExpertSystems.h" />
+    <ProjectReference Include="..\es_core\es_core.vcxproj">
+      <Project>{389d51b1-0826-48ba-93cc-bdb12eea1357}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
