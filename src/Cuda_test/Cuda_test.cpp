@@ -25,19 +25,16 @@ namespace Eigen {
 	MatrixXf cuda_mult( MatrixXf a, MatrixXf b) {
 		MatrixXf outMat = MatrixXf::Zero(a.rows(), b.cols());
 		float *d_A, *d_B, *d_C;
-		unsigned int mem_size_A = sizeof(float) * b.size();
-		unsigned int mem_size_B = sizeof(float) * a.size();
+		unsigned int mem_size_A = sizeof(float) * a.size();
+		unsigned int mem_size_B = sizeof(float) * b.size();
 		unsigned int mem_size_C = sizeof(float) * outMat.size();
 		checkCudaErrors(cudaMalloc((void **)&d_A, mem_size_A));
 		checkCudaErrors(cudaMalloc((void **)&d_B, mem_size_B));
-		checkCudaErrors(cudaMemcpy(d_A, b.data(), mem_size_A, cudaMemcpyHostToDevice));
-		checkCudaErrors(cudaMemcpy(d_B, a.data(), mem_size_B, cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMemcpy(d_A, a.data(), mem_size_A, cudaMemcpyHostToDevice));
+		checkCudaErrors(cudaMemcpy(d_B, b.data(), mem_size_B, cudaMemcpyHostToDevice));
 		checkCudaErrors(cudaMalloc((void **)&d_C, mem_size_C));
-		INIT_TIMER
-		START_TIMER
-		checkCudaErrors(cublasSgemm(cuda_handle, CUBLAS_OP_N, CUBLAS_OP_N, a.rows(), b.cols(), b.rows(), &alpha, d_B, a.rows(), d_A, b.rows(), &beta, d_C, a.rows()));
+		checkCudaErrors(cublasSgemm(cuda_handle, CUBLAS_OP_N, CUBLAS_OP_N, a.rows(), b.cols(), b.rows(), &alpha, d_A, a.rows(), d_B, b.rows(), &beta, d_C, a.rows()));
 		checkCudaErrors(cudaMemcpy(outMat.data(), d_C, mem_size_C, cudaMemcpyDeviceToHost));
-		STOP_TIMER("GPU-CUDA")
 		checkCudaErrors(cudaFree(d_A));
 		checkCudaErrors(cudaFree(d_B));
 		checkCudaErrors(cudaFree(d_C));
@@ -48,17 +45,18 @@ namespace Eigen {
 using namespace Eigen;
 
 void TestMatrixMut() {
-	MatrixXf A = MatrixXf::Random(10001, 1000);
-	MatrixXf B = MatrixXf::Random(1000, 10001);
+	MatrixXf A = MatrixXf::Random(9000, 1000);
+	MatrixXf B = MatrixXf::Random(1000, 9000);
 
 	checkCudaErrors(cublasCreate(&cuda_handle));
 	printf("Starting test...\n");
-	MatrixXf testCuda = cuda_mult(A, B);
-	checkCudaErrors(cublasDestroy(cuda_handle));
-	MatrixXf control;
 	INIT_TIMER
+		START_TIMER
+	MatrixXf testCuda = cuda_mult(A, B);
+	STOP_TIMER("GPU-CUDA")
+	checkCudaErrors(cublasDestroy(cuda_handle));
 	START_TIMER
-	control = A*B;
+	MatrixXf control = A*B;
 	STOP_TIMER("CPU")
 
 		if(testCuda.isApprox(control)) {
@@ -67,8 +65,6 @@ void TestMatrixMut() {
 			printf("Fail!\n");
 		}
 }
-
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Program main

@@ -1,5 +1,5 @@
 #pragma  once
-#if !defined(WIN32_DEEPLEARNING_H)
+#if !defined(WIN32_EXPERTSYSTEMS_H)
 #include <math.h>
 #include <stdint.h>
 #include <windows.h>
@@ -12,7 +12,6 @@
 #include "stdDraw.h"
 #include "stdMat.h"
 #include "stdNet.h"
-
 
 #define internal static 
 #define local_persist static 
@@ -69,5 +68,5 @@ internal void Win32DisplayBufferInWindow(HDC DeviceContext, HWND hwind, Buffer b
 				  0, 0, buffer.width, buffer.height, buffer.memory, &buffer.bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
 }
 
-#define WIN32_DEEPLEARNING_H
+#define WIN32_EXPERTSYSTEMS_H
 #endif
