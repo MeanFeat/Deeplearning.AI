@@ -24,7 +24,7 @@ inline MatrixXf CalcTanh(const MatrixXf &in) {
 }
 
 inline MatrixXf CalcReLU(const MatrixXf &in) {
-	return (in.cwiseMax(0));
+	return (in.cwiseMax(0.f));
 }
 
 
@@ -85,13 +85,13 @@ public:
 	inline MatrixXf BackSigmoid(const MatrixXf dZ, int index) {
 		return (params.W[index + 1].transpose() * dZ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - cache.A[index]);
 	}
-
 	inline MatrixXf BackTanh(const MatrixXf dZ, int index) {
 		MatrixXf A1Squared = cache.A[index].array().pow(2);
 		return (params.W[index + 1].transpose() * dZ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - (A1Squared));
 	}
-	inline MatrixXf BackReLU(const MatrixXf dZ, MatrixXf lowerA) {
-		return (lowerA * dZ).unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.f; });
+
+	inline MatrixXf BackReLU(const MatrixXf dZ, int index) {
+		return (params.W[index + 1].transpose() * dZ).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.f; }));
 	}
 
 protected:

@@ -76,7 +76,6 @@ MatrixXf Net::ForwardPropagation(const MatrixXf X, bool training) {
 		MatrixXf Z = (params.W[i] * lastOutput).colwise() + (VectorXf)params.b[i];
 		lastOutput = Activate(params.layerActivations[i], Z);
 		if(training) {
-			cache.Z[i] = Z;
 			cache.A[i] = lastOutput;
 		}
 	}
@@ -109,9 +108,7 @@ void Net::BackwardPropagation(const MatrixXf X, const MatrixXf Y) {
 			dZ = BackTanh(dZ, l);
 			break;
 		case ReLU:
-			dZ = BackReLU(dZ, lowerA);
-			grads.dW[l] = coeff * (dZ * lowerA.transpose());
-			grads.db[l] = coeff * dZ.rowwise().sum();
+			dZ = BackReLU(dZ, l);
 			break;
 		default:
 			break;

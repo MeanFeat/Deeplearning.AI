@@ -101,6 +101,8 @@ void DrawOutputToScreen(MatrixXf screenCoords) {
 			break;
 		case Tanh:
 			break;
+		case ReLU:
+			break;
 		default:
 			break;
 		}
