@@ -73,8 +73,8 @@ MatrixXf Net::Activate(Activation act, const MatrixXf &In) {
 MatrixXf Net::ForwardPropagation(const MatrixXf X, bool training) {
 	MatrixXf lastOutput = X;
 	for(int i = 0; i < (int)params.layerSizes.size() - 1; ++i) {
-		MatrixXf Z = (params.W[i] * lastOutput).colwise() + (VectorXf)params.b[i];
-		lastOutput = Activate(params.layerActivations[i], Z);
+		cache.Z[i] = (params.W[i] * lastOutput).colwise() + (VectorXf)params.b[i];
+		lastOutput = Activate(params.layerActivations[i], cache.Z[i]);
 		if(training) {
 			cache.A[i] = lastOutput;
 		}
