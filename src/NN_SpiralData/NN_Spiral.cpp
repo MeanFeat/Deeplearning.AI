@@ -16,6 +16,8 @@ static time_t currentTime;
 
 Buffer backBuffer;
 Net neural;
+NetTrainer trainer;
+
 global_variable float GraphZoom = 1.f;
 
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam) {
@@ -33,16 +35,16 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			discreteOutput = !discreteOutput;
 			break;
 		case 'W':
-			neural.ModifyLearningRate(0.02f);
+			trainer.ModifyLearningRate(0.02f);
 			break;
 		case 'S':
-			neural.ModifyLearningRate(-0.02f);
+			trainer.ModifyLearningRate(-0.02f);
 			break;
 		case 'Q':
-			neural.ModifyRegTerm(0.02f);
+			trainer.ModifyRegTerm(0.02f);
 			break;
 		case 'A':
-			neural.ModifyRegTerm(-0.02f);
+			trainer.ModifyRegTerm(-0.02f);
 			break;
 		case 'P':
 			plotData = !plotData;
@@ -117,7 +119,7 @@ void DrawOutputToScreen(MatrixXf screenCoords) {
 }
 
 void UpdateHistory(vector<float> &history) {
-	history.push_back(min((neural.GetCache().cost) * (WINHEIGHT-backBuffer.titleOffset), WINHEIGHT));
+	history.push_back(min((trainer.GetCache().cost) * (WINHEIGHT-backBuffer.titleOffset), WINHEIGHT));
 	if(history.size() >= WINWIDTH + WINWIDTH) {
 		for(int i = 1; i < (int)history.size(); i += 2) {
 			history.erase(history.begin() + i);
@@ -149,7 +151,7 @@ void UpdateWinTitle(int &steps, HWND window) {
 	time(&currentTime);
 	char s[255];
 	sprintf_s(s, "SpiralData || Epoch %d | Time: %0.1f | Cost %0.10f | LearnRate %0.3f | RegTerm %0.3f | "
-			  , steps++, difftime(currentTime, startTime), neural.GetCache().cost, neural.GetParams().learningRate, neural.GetParams().regTerm);
+			  , steps++, difftime(currentTime, startTime), trainer.GetCache().cost, trainer.GetTrainParams().learningRate, trainer.GetTrainParams().regTerm);
 	
 	/*for(int l = 0; l < (int)neural.GetParams().layerSizes.size(); ++l) {
 		char layer[255];
@@ -186,12 +188,12 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 									  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH*4, WINHEIGHT*4, 0, 0, Instance, 0);
 
-		neural.InitializeParameters((int)X.rows(), { 8,8 }, (int)Y.rows(), 0.15f, {
+		neural = Net((int)X.rows(), { 8,8 }, (int)Y.rows(), {
 			Tanh,
 			Tanh,
-			Tanh },
-			0.125f,
-			1.f);
+			Tanh });
+
+		trainer = NetTrainer(&neural, &X, &Y, 0.15f, 0.125f, 1.f);
 
 		time(&startTime);
 		HDC deviceContext = GetDC(window);
@@ -205,7 +207,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 				if(!globalRunning) {
 					break;
 				}
-				neural.UpdateSingleStep(X, Y);
+				trainer.UpdateSingleStep();
 				UpdateHistory(history);
 				UpdateWinTitle(steps, window);
 			}

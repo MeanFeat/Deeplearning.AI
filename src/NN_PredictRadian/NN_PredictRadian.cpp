@@ -7,6 +7,7 @@
 #define WINHEIGHT WINWIDTH
 #define WINHALFWIDTH int((WINWIDTH-1)*0.5f)
 #define WINHALFHEIGHT WINHALFWIDTH
+#define PLOTDIST 120.f
 
 global_variable bool globalRunning = true;
 global_variable bool training = true;
@@ -22,6 +23,7 @@ float mouseY = WINHALFHEIGHT + 100;
 
 Buffer backBuffer;
 Net neural;
+NetTrainer trainer;
 
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam) {
 	LRESULT Result = 0;
@@ -44,16 +46,16 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			plotData = !plotData;
 			break;
 		case 'W':
-			neural.ModifyLearningRate(0.02f);
+			trainer.ModifyLearningRate(0.02f);
 			break;
 		case 'S':
-			neural.ModifyLearningRate(-0.02f);
+			trainer.ModifyLearningRate(-0.02f);
 			break;
 		case 'Q':
-			neural.ModifyRegTerm(0.02f);
+			trainer.ModifyRegTerm(0.02f);
 			break;
 		case 'A':
-			neural.ModifyRegTerm(-0.02f);
+			trainer.ModifyRegTerm(-0.02f);
 			break;
 		default:
 			break;
@@ -115,7 +117,8 @@ void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> 
 			ClearScreen(backBuffer);
 		}
 		if (plotData){
-			PlotData(X*120, Y);
+
+			PlotData(X*PLOTDIST, Y);
 		}
 
 		DrawLine(backBuffer, WINHALFWIDTH, WINHALFHEIGHT, mouseX, float(WINHEIGHT - mouseY), Color(0, 0, 255, 255));
@@ -133,7 +136,7 @@ void UpdateWinTitle(int &steps, HWND window) {
 	time(&currentTime);
 	char s[255];
 	sprintf_s(s, "%d|T:%0.f|C:%0.10f|LR:%0.2f|RT:%0.2f|"
-			  , steps,difftime(currentTime, startTime),neural.GetCache().cost, neural.GetParams().learningRate, neural.GetParams().regTerm);
+			  , steps,difftime(currentTime, startTime), trainer.GetCache().cost, trainer.GetTrainParams().learningRate, trainer.GetTrainParams().regTerm);
 	char r[255];	
 	sprintf_s(r, " |%0.2f|%0.2f| ", atan2((mouseX - WINHALFWIDTH), (mouseY - WINHALFHEIGHT)), predictions[0]*Pi32);
 	strcat_s(s, r);
@@ -203,11 +206,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 									  WS_OVERLAPPED | WS_SYSMENU |WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH, WINHEIGHT, 0, 0, Instance, 0);
 		
-		neural.InitializeParameters((int)X.rows(), { 8,8 }, (int)Y.rows(), 0.15f, {
-			Tanh,Tanh,
-			Tanh },
-			0.15f,
-			0.2f);
+		neural = Net((int)X.rows(), { 8,8 }, (int)Y.rows(), { Tanh, Tanh, Tanh });
+		trainer = NetTrainer(&neural, &X, &Y, 0.5f, 0.125f, 0.2f);
 
 		HDC deviceContext = GetDC(window);
 		vector<float> history;
@@ -218,9 +218,9 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		while(globalRunning) {
 			Win32ProcessPendingMessages();	
 			if (training) {
-				neural.UpdateSingleStep(X, Y);
-				UpdateHistory(history, neural.GetCache().cost);
-				UpdateHistory(testHistory, neural.CalcCost(neural.ForwardPropagation(testX), testY));
+				trainer.UpdateSingleStep();
+				UpdateHistory(history, trainer.GetCache().cost);
+				UpdateHistory(testHistory, trainer.CalcCost(neural.ForwardPropagation(testX), testY));
 				steps++;
 			} else {
 			}

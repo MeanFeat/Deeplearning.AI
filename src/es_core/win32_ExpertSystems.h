@@ -12,6 +12,7 @@
 #include "stdDraw.h"
 #include "stdMat.h"
 #include "stdNet.h"
+#include "stdNetTrainer.h"
 
 #define internal static 
 #define local_persist static 
