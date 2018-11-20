@@ -10,7 +10,7 @@
 #define PLOTDIST 120.f
 
 global_variable bool globalRunning = true;
-global_variable bool training = true;
+global_variable bool isTraining = true;
 global_variable bool drawOutput = true;
 global_variable bool plotData = true;
 
@@ -37,7 +37,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 	{
 		switch(WParam) {
 		case 'T':
-			training = !training;
+			isTraining = !isTraining;
 			break;
 		case 'D':
 			drawOutput = !drawOutput;
@@ -148,8 +148,8 @@ MatrixXf BuildRadians(MatrixXf m) {
 	MatrixXf out = MatrixXf(1, m.cols());
 	for(int i = 0; i < m.cols(); ++i) {
 		out(0, i) = atan2((m(0, i)), (m(1, i))) * coefficient;
-		//out(1, i) = -atan2((m(1, i)), -(m(0, i))) * coefficient;
-		//out(2, i) = -atan2(-(m(1, i)), (m(0, i))) * coefficient;
+		//out(1, i) = atan2(-(m(1, i)), (m(0, i))) * coefficient;
+		//out(2, i) = atan2((m(1, i)), -(m(0, i))) * coefficient;
 	}
 	return out;
 }
@@ -206,8 +206,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 									  WS_OVERLAPPED | WS_SYSMENU |WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH, WINHEIGHT, 0, 0, Instance, 0);
 		
-		neural = Net((int)X.rows(), { 8,8 }, (int)Y.rows(), { Tanh, Tanh, Tanh });
-		trainer = NetTrainer(&neural, &X, &Y, 0.5f, 0.125f, 0.2f);
+		neural = Net((int)X.rows(), { 8, 8 }, (int)Y.rows(), { Tanh, Tanh, Tanh });
+		trainer = NetTrainer(&neural, &X, &Y, 0.5f, 0.25f, 1.f);
 
 		HDC deviceContext = GetDC(window);
 		vector<float> history;
@@ -217,7 +217,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		//Main Loop
 		while(globalRunning) {
 			Win32ProcessPendingMessages();	
-			if (training) {
+			if (isTraining) {
 				trainer.UpdateSingleStep();
 				UpdateHistory(history, trainer.GetCache().cost);
 				UpdateHistory(testHistory, trainer.CalcCost(neural.ForwardPropagation(testX), testY));

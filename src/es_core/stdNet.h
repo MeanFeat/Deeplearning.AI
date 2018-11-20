@@ -42,7 +42,7 @@ public:
 	Net();
 	Net(int inputSize, std::vector<int> hiddenSizes, int outputSize, vector<Activation> activations);
 	~Net();
-	NetParameters GetParams();
+	NetParameters &GetParams();
 	void SetParams(vector<MatrixXf> W, vector<MatrixXf> b);
 	void AddLayer(int A, int B);
 	static MatrixXf Activate(Activation act, const MatrixXf &In);	

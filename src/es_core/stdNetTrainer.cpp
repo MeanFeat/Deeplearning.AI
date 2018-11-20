@@ -8,11 +8,12 @@ NetTrainer::NetTrainer(Net *net, MatrixXf *data, MatrixXf *labels, float weightS
 	network = net;
 	trainData = data;
 	trainLabels = labels;
+	int nodeCount = 0;
 	for(int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i) {
-		trainParams.learningMod += network->GetParams().layerSizes[i];
+		nodeCount += network->GetParams().layerSizes[i];
 		network->GetParams().W[i] *= weightScale;
 	}
-	trainParams.learningMod = 1.f / trainParams.learningMod;
+	trainParams.learningMod = 1.f / nodeCount;
 	trainParams.learningRate = learnRate;
 	trainParams.regTerm = regTerm;
 	for(int h = 1; h < (int)network->GetParams().layerSizes.size(); ++h) {
@@ -59,7 +60,7 @@ float NetTrainer::CalcCost(const MatrixXf h, MatrixXf Y) {
 	for(int w = 0; w < (int)network->GetParams().W.size() - 1; ++w) {
 		sumSqrW += network->GetParams().W[w].array().pow(2).sum();
 	}
-	float regCost = 0.5f * float(trainParams.regTerm * (sumSqrW / (2.f * (float)Y.cols())));
+	float regCost = 0.5f * float((trainParams.regTerm*trainParams.learningMod) * (sumSqrW / (2.f * (float)trainLabels->cols())));
 	return ((Y - h).array().pow(2).sum() * coeff) + regCost;
 }
 
@@ -84,20 +85,17 @@ void NetTrainer::BackwardPropagation() {
 		default:
 			break;
 		}
-		trainParams.dW[l] = coeff * MatrixXf((dZ * lowerA.transpose()).array() + (0.5f * trainParams.regTerm * network->GetParams().W[l]).array());
+		trainParams.dW[l] = coeff * MatrixXf((dZ * lowerA.transpose()).array() + (0.5f * (trainParams.regTerm*trainParams.learningMod) * network->GetParams().W[l]).array());
 		trainParams.db[l] = coeff * dZ.rowwise().sum();
 	}
 
 }
 
 void NetTrainer::UpdateParameters() {
-	vector<MatrixXf> W = network->GetParams().W;
-	vector<MatrixXf> b = network->GetParams().b;
 	for(int i = 0; i < (int)trainParams.dW.size(); ++i) {
-		W[i] -= ((trainParams.learningRate*trainParams.learningMod) * trainParams.dW[i]);
-		b[i] -= ((trainParams.learningRate*trainParams.learningMod) * trainParams.db[i]);
+		network->GetParams().W[i] -= ((trainParams.learningRate*trainParams.learningMod) * trainParams.dW[i]);
+		network->GetParams().b[i] -= ((trainParams.learningRate*trainParams.learningMod) * trainParams.db[i]);
 	}
-	network->SetParams(W, b);
 }
 
 void NetTrainer::UpdateParametersWithMomentum() {
@@ -112,8 +110,6 @@ void NetTrainer::UpdateParametersWithMomentum() {
 #define BETA1 0.9
 #define BETA2 (1.f - FLT_EPSILON)
 void NetTrainer::UpdateParametersADAM() {
-	vector<MatrixXf> W = network->GetParams().W;
-	vector<MatrixXf> b = network->GetParams().b;
 	for(int i = 0; i < (int)trainParams.dW.size(); ++i) {
 		NetTrainParameters vCorrected = momentum;
 		NetTrainParameters sCorrected = momentumSqr;
@@ -125,10 +121,9 @@ void NetTrainer::UpdateParametersADAM() {
 		momentumSqr.db[i] = (BETA2 * momentumSqr.db[i]) + ((1 - BETA2) * MatrixXf(trainParams.db[i].array().pow(2)));
 		sCorrected.dW[i] = momentumSqr.dW[i] / (1 - pow(BETA2, 2));
 		sCorrected.db[i] = momentumSqr.db[i] / (1 - pow(BETA2, 2));
-		W[i] -= (trainParams.learningRate*trainParams.learningMod) * MatrixXf(vCorrected.dW[i].array() / (sCorrected.dW[i].array().sqrt() + FLT_EPSILON));
-		b[i] -= (trainParams.learningRate*trainParams.learningMod) * MatrixXf(vCorrected.db[i].array() / (sCorrected.db[i].array().sqrt() + FLT_EPSILON));
+		network->GetParams().W[i] -= (trainParams.learningRate*trainParams.learningMod) * MatrixXf(vCorrected.dW[i].array() / (sCorrected.dW[i].array().sqrt() + FLT_EPSILON));
+		network->GetParams().b[i] -= (trainParams.learningRate*trainParams.learningMod) * MatrixXf(vCorrected.db[i].array() / (sCorrected.db[i].array().sqrt() + FLT_EPSILON));
 	}
-	network->SetParams(W, b);
 }
 
 

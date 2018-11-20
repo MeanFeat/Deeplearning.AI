@@ -20,7 +20,7 @@ Net::Net(int inputSize, std::vector<int> hiddenSizes, int outputSize, vector<Act
 Net::~Net() {
 }
 
-NetParameters Net::GetParams() {
+NetParameters &Net::GetParams() {
 	return params;
 }
 
