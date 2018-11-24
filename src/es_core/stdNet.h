@@ -11,7 +11,8 @@ enum Activation {
 	Linear,
 	Sigmoid,
 	Tanh,
-	ReLU
+	ReLU,
+	LReLU
 };
 
 inline MatrixXf CalcSigmoid( const MatrixXf &in) {
@@ -25,6 +26,11 @@ inline MatrixXf CalcTanh(const MatrixXf &in) {
 inline MatrixXf CalcReLU(const MatrixXf &in) {
 	return (in.cwiseMax(0.f));
 }
+
+inline MatrixXf CalcLReLU(const MatrixXf &in) {
+	return in.unaryExpr([](float elem) { return elem > 0.f ? elem : elem * 0.01f; });
+}
+
 
 inline MatrixXf Log(const MatrixXf &in) {
 	return in.array().log();

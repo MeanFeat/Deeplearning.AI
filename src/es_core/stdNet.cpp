@@ -48,6 +48,9 @@ MatrixXf Net::Activate(Activation act, const MatrixXf &In) {
 	case ReLU:
 		return CalcReLU(In);
 		break;
+	case LReLU:
+		return CalcLReLU(In);
+		break;
 	default:
 		return In;
 		break;

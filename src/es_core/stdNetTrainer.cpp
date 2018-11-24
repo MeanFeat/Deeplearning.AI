@@ -82,6 +82,9 @@ void NetTrainer::BackwardPropagation() {
 		case ReLU:
 			dZ = BackReLU(dZ, l);
 			break;
+		case LReLU:
+			dZ = BackLReLU(dZ, l);
+			break;
 		default:
 			break;
 		}
