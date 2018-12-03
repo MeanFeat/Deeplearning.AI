@@ -34,8 +34,6 @@ public:
 	Net *network;
 	MatrixXf *trainData;
 	MatrixXf *trainLabels;
-	MatrixXf *d_trainData;
-	MatrixXf *d_trainLabels;
 
 	void AddLayer(int A, int B, float weightScale);
 	
@@ -47,7 +45,6 @@ public:
 	void UpdateParametersADAM();
 	void UpdateSingleStep();
 
-	MatrixXf TestMatMult(MatrixXf h_A, MatrixXf h_B);
 
 	inline void ModifyLearningRate(float m) {
 		trainParams.learningRate = max(0.001f, trainParams.learningRate + m);
@@ -57,18 +54,18 @@ public:
 	}
 
 	inline MatrixXf BackSigmoid(const MatrixXf dZ, int index) {
-		return (network->GetParams().W[index + 1].transpose() * dZ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - cache.A[index]);
+		return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - cache.A[index]);
 	}
 	inline MatrixXf BackTanh(const MatrixXf dZ, int index) {
 		MatrixXf A1Squared = cache.A[index].array().pow(2);
-		return (network->GetParams().W[index + 1].transpose() * dZ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - (A1Squared));
+		return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - (A1Squared));
 	}
 	inline MatrixXf BackReLU(const MatrixXf dZ, int index) {
-		return (network->GetParams().W[index + 1].transpose() * dZ).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.f; }));
+		return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.f; }));
 	}
 
 	inline MatrixXf BackLReLU(const MatrixXf dZ, int index) {
-		return (network->GetParams().W[index + 1].transpose() * dZ).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.01f; }));
+		return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.01f; }));
 	}
 
 	unsigned int GetExamplesCount() {

@@ -75,11 +75,11 @@
     <IncludePath>D:\GameDev\eigen;$(IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>..\es_cuda;..\common;D:\GameDev\eigen;$(IncludePath);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\include</IncludePath>
+    <IncludePath>D:\Gamedev\CUDA\common\inc;..\es_cuda;..\common;D:\GameDev\eigen;$(IncludePath);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\include</IncludePath>
     <LibraryPath>..\..\x64\Debug\$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>..\es_cuda;..\common;D:\GameDev\eigen;$(IncludePath);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\include</IncludePath>
+    <IncludePath>D:\Gamedev\CUDA\common\inc;..\es_cuda;..\common;D:\GameDev\eigen;$(IncludePath);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\include</IncludePath>
     <LibraryPath>..\..\x64\Release\$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -146,11 +146,10 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\es_cuda\d_Matrix.h" />
+    <ClInclude Include="..\es_cuda\d_matrix.h" />
     <ClInclude Include="color.h" />
     <ClInclude Include="d_NetTrainer.h" />
     <ClInclude Include="stdDraw.h" />
-    <ClInclude Include="stdMatrix.h" />
     <ClInclude Include="stdNet.h" />
     <ClInclude Include="stdNetTrainer.h" />
     <ClInclude Include="win32_ExpertSystems.h" />

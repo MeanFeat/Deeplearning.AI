@@ -1,5 +1,5 @@
 #include "win32_ExpertSystems.h"
-#include "stdMat.h"
+#include "stdMatrix.h"
 #include "windowsx.h"
 #include <time.h>
 

@@ -15,12 +15,11 @@ __global__ void MatrixMultKernel(float *dst, float *srcA, float *srcB, int m, in
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if(col < k && row < m) {
 		float tempSum = 0.f;
-		for(int ind = 0; ind < m; ++ind) {
+		for(int ind = 0; ind < n; ++ind) {
 			tempSum += srcA[row + m * ind] * srcB[col * n + ind];
 		}
 		dst[col * m + row] = tempSum;
 	}
-	__syncthreads();
 }
 
 __global__ void ForwardLayerKernel(float *dst, float *d_W, float *d_last, float * d_bias, int m, int n, int k) {
@@ -28,12 +27,17 @@ __global__ void ForwardLayerKernel(float *dst, float *d_W, float *d_last, float 
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if(col < k && row < m) {
 		float tempSum = 0.f;
-		for(int ind = 0; ind < m; ++ind) {
+		for(int ind = 0; ind < n; ++ind) {
 			tempSum += d_W[row + m * ind] * d_last[col * n + ind];
 		}
 		dst[col * m + row] = tempSum + d_bias[row];
 	}
-	__syncthreads();
+}
+
+void d_forwardLayer(float* dst, float* d_W, float* d_last, float* d_bias, int  m, int n, int k) {
+	dim3 dimGrid((k + BLOCK_SIZE - 1) / BLOCK_SIZE, (m + BLOCK_SIZE - 1) / BLOCK_SIZE);
+	dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
+	ForwardLayerKernel << <dimGrid, dimBlock >> > (dst, d_W, d_last, d_bias, m, n, k);
 }
 
 __global__ void SigmoidKernal(float *dst, int N) {
@@ -60,11 +64,6 @@ __global__ void LReLUKernal(float *dst, int N) {
 		dst[tid] = max(dst[tid] * 0.1f, dst[tid]);
 }
 
-void d_forwardLayer(float* dst, float* d_W, float* d_last, float* d_bias, int  m, int n, int k) {
-	dim3 dimGrid((k + BLOCK_SIZE - 1) / BLOCK_SIZE, (m + BLOCK_SIZE - 1) / BLOCK_SIZE);
-	dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
-	ForwardLayerKernel << <dimGrid, dimBlock >> > (dst, d_W, d_last, d_bias, m, n, k);
-}
 
 void d_Activate(float* dst, int size, int act) {
 	switch(act) {

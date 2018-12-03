@@ -17,15 +17,10 @@ d_NetTrainer::d_NetTrainer(Net *net, MatrixXf *data, MatrixXf *labels, float wei
 	trainParams.learningMod = 1.f / nodeCount;
 	trainParams.learningRate = learnRate;
 	trainParams.regTerm = regTerm;
+	cache.A.push_back(*trainData);
 	for(int h = 1; h < (int)network->GetParams().layerSizes.size(); ++h) {
 		AddLayer((int)network->GetParams().layerSizes[h], (int)network->GetParams().layerSizes[h - 1], weightScale);
 	}
-	cudaMalloc((void **)&d_trainData, data->size() * sizeof(float));
-	cudaMemcpy(d_trainData, data->data(), data->size() * sizeof(float), cudaMemcpyHostToDevice);
-	cudaMalloc((void **)&d_trainLabels, labels->size() * sizeof(float));
-	cudaMemcpy(d_trainLabels, labels->data(), labels->size() * sizeof(float), cudaMemcpyHostToDevice);
-
-
 }
 
 d_NetTrainer::~d_NetTrainer() {
@@ -54,18 +49,16 @@ void d_NetTrainer::AddLayer(int A, int B, float weightScale) {
 MatrixXf d_NetTrainer::ForwardTrain() {	
 	MatrixXf lastOutput = *trainData;
 	for(int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i) {
-		d_MatrixXf d_lastOutput = d_MatrixXf(&lastOutput);
+		d_MatrixXf d_lastOutput = d_MatrixXf(&cache.A[i]);
 		d_MatrixXf d_W = d_MatrixXf(&network->GetParams().W[i]);
 		d_MatrixXf d_b = d_MatrixXf(&network->GetParams().b[i]);
-		MatrixXf tempZ = MatrixXf::Zero(d_W.rows(), d_lastOutput.cols());
 		MatrixXf tempA = MatrixXf::Zero(d_W.rows(), d_lastOutput.cols());
-		d_MatrixXf d_Z = d_MatrixXf(&tempZ);
 		d_MatrixXf d_A = d_MatrixXf(&tempA);
-		d_forwardLayer(d_Z.d_data(), d_W.d_data(), d_lastOutput.d_data(), d_b.d_data(), d_W.rows(), d_W.cols(), d_lastOutput.cols());
-		d_Z.UpdateHostData();
-		cache.Z[i] = (network->GetParams().W[i] * lastOutput).colwise() + (VectorXf)network->GetParams().b[i];
-		lastOutput = Net::Activate(network->GetParams().layerActivations[i], cache.Z[i]);
-		cache.A[i] = lastOutput;
+		d_forwardLayer(d_A.d_data(), d_W.d_data(), d_lastOutput.d_data(), d_b.d_data(), d_W.rows(), d_W.cols(), d_lastOutput.cols());
+		d_Activate(d_A.d_data(), d_A.size(), network->GetParams().layerActivations[i]);
+		d_A.UpdateHostData();
+		lastOutput = *d_A.h_matrix();
+		cache.A[i+1] = lastOutput;
 	}
 	return lastOutput;
 }
@@ -87,19 +80,19 @@ void d_NetTrainer::BackwardPropagation() {
 	trainParams.dW.back() = coeff * (dZ * cache.A[cache.A.size() - 2].transpose());
 	trainParams.db.back() = coeff * dZ.rowwise().sum();
 	for(int l = (int)network->GetParams().layerActivations.size() - 2; l >= 0; --l) {
-		MatrixXf lowerA = l > 0 ? cache.A[l - 1] : *trainData;
+		MatrixXf lowerA =  cache.A[l];
 		switch(network->GetParams().layerActivations[l]) {
 		case Sigmoid:
-			dZ = BackSigmoid(dZ, l);
+			dZ = BackSigmoid(dZ, l + 1);
 			break;
 		case Tanh:
-			dZ = BackTanh(dZ, l);
+			dZ = BackTanh(dZ, l + 1);
 			break;
 		case ReLU:
-			dZ = BackReLU(dZ, l);
+			dZ = BackReLU(dZ, l + 1);
 			break;
 		case LReLU:
-			dZ = BackLReLU(dZ, l);
+			dZ = BackLReLU(dZ, l + 1);
 			break;
 		default:
 			break;
@@ -118,8 +111,6 @@ void d_NetTrainer::UpdateParameters() {
 }
 
 void d_NetTrainer::CleanUpAll() {
-	cudaFree(d_trainData);
-	cudaFree(d_trainLabels);
 }
 
 
@@ -143,29 +134,6 @@ void d_NetTrainer::UpdateParametersADAM() {
 }
 
 void d_NetTrainer::UpdateSingleStep() {
-	//MatrixXf m1 = MatrixXf::Random(130,12);
-	////m1 << 0.1, 0.1, 0.2, 0.2, 0.3, 0.3;
-	//MatrixXf m2 = MatrixXf::Random(12,1400);
-	////m2 << 0.4, 0.5, 0.7, 0.7, 0.8, 0.9, 1.0, 1.1;
-	//MatrixXf test = TestMatMult(m1, m2);
-	//MatrixXf expected = m1 * m2;
-	//MatrixXf diff = MatrixXf(test.array() - expected.array());
-	//float diffSum = diff.sum();
-	//vector<float> v1;
-	//vector<float> v2;
-	//for(int i = 0; i < m1.size(); ++i) {
-	//	v1.push_back(*(m1.data() + i));
-	//	v2.push_back(*(m2.data() + i));
-	//}
-
-	//vector<float> testvector;
-	//vector<float> exptvector;
-	//for(int i = 0; i < test.size(); ++i) {
-	//	testvector.push_back(*(test.data() + i));
-	//	exptvector.push_back(*(expected.data() + i));
-	//}
-	//return;
-	
 	
 	cache.cost = CalcCost(ForwardTrain(), *trainLabels);
 	BackwardPropagation();
@@ -174,13 +142,4 @@ void d_NetTrainer::UpdateSingleStep() {
 
 }
 
-MatrixXf d_NetTrainer::TestMatMult(MatrixXf h_A, MatrixXf h_B) {
-	MatrixXf h_C = MatrixXf::Zero(h_A.rows(),h_B.cols());
-	d_MatrixXf d_testA = d_MatrixXf(&h_A);
-	d_MatrixXf d_testB = d_MatrixXf(&h_B);
-	d_MatrixXf d_testC = d_MatrixXf(&h_C);
-	d_forwardLayer(d_testC.d_data(), d_testA.d_data(), d_testB.d_data(), d_testC.d_data(), d_testA.rows(), d_testA.cols(), d_testB.cols());
-	d_testC.UpdateHostData();
-	return *d_testC.h_matrix();
-}
 
