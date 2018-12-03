@@ -16,7 +16,7 @@ static time_t currentTime;
 
 Buffer backBuffer;
 Net neural;
-NetTrainer trainer;
+d_NetTrainer trainer;
 
 global_variable float GraphZoom = 1.f;
 
@@ -193,7 +193,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Tanh,
 			Tanh });
 
-		trainer = NetTrainer(&neural, &X, &Y, 0.15f,
+		trainer = d_NetTrainer(&neural, &X, &Y, 0.15f,
 							 1.25f, 
 							 20.f);
 
@@ -218,6 +218,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Win32DisplayBufferInWindow(deviceContext, window, backBuffer);
 		}
 		DeleteDC(deviceContext);
+		trainer.CleanUpAll();
 	}
 	return EXIT_SUCCESS;
 }

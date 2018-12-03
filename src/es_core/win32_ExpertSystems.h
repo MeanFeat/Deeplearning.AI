@@ -10,9 +10,10 @@
 #include <stdlib.h>
 #include <Eigen/dense>
 #include "stdDraw.h"
-#include "stdMat.h"
+#include "stdMatrix.h"
 #include "stdNet.h"
 #include "stdNetTrainer.h"
+#include "d_NetTrainer.h"
 
 #define internal static 
 #define local_persist static 
