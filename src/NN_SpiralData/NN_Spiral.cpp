@@ -92,7 +92,7 @@ void PlotData(MatrixXf X, MatrixXf Y) {
 }
 
 void DrawOutputToScreen(MatrixXf screenCoords) {
-	MatrixXf h = neural.ForwardPropagation(screenCoords);
+	MatrixXf h = trainer.Visualization(screenCoords);
 	int *pixel = (int *)backBuffer.memory;
 	for(int i = 0; i < h.cols(); ++i) {
 		float percent = (*(h.data() + i));
@@ -204,7 +204,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 		//Main Loop
 		while(globalRunning) {
-			for(int epoch = 0; epoch < 10; ++epoch) {
+			for(int epoch = 0; epoch < 1; ++epoch) {
 				Win32ProcessPendingMessages();
 				if(!globalRunning) {
 					break;

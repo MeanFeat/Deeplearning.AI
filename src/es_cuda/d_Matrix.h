@@ -12,6 +12,7 @@ using namespace Eigen;
 
 class d_MatrixXf {
 public:
+	d_MatrixXf();
 	d_MatrixXf(MatrixXf m);
 	~d_MatrixXf();
 	float* d_data() {

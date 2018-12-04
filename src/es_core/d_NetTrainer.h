@@ -19,6 +19,7 @@ struct d_NetTrainParameters {
 
 struct d_NetCache {
 	vector<d_MatrixXf> d_A;
+	vector<d_MatrixXf> d_dZ;
 	float cost;
 };
 
@@ -33,8 +34,11 @@ public:
 	Net *network;
 	MatrixXf *trainData;
 	MatrixXf *trainLabels;
+	d_MatrixXf d_trainLabels;
 
 	void AddLayer(int A, int B, float weightScale);
+
+	MatrixXf Visualization(MatrixXf screen);
 	
 	d_MatrixXf ForwardTrain();
 	float CalcCost(const MatrixXf h, const MatrixXf Y);
