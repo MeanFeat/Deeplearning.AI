@@ -1,15 +1,13 @@
 #include "d_math.h"
 #include <stdio.h>
 
-
 #define BLOCK_SIZE 32
 
-
-dim3 Grid3d(int m, int k) {
+dim3 dimGrid(int m, int k) {
 	return dim3((k + BLOCK_SIZE - 1) / BLOCK_SIZE, (m + BLOCK_SIZE - 1) / BLOCK_SIZE);
 }
 
-dim3 Block3d() {
+dim3 dimBlock() {
 	return dim3(BLOCK_SIZE, BLOCK_SIZE);
 }
 
@@ -23,7 +21,7 @@ __global__ void subtractKernel(float *c, const float *a, const float *b) {
 	c[i] = a[i] - b[i];
 }
 
-__global__ void MatrixMultKernel(float *dst, float *srcA, float *srcB, int m, int n, int k) {
+__global__ void MatrixMultKernel(float *dst,const float *srcA,const float *srcB, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if(col < k && row < m) {
@@ -47,10 +45,12 @@ __global__ void ForwardLayerKernel(float *dst,const float *d_W, const float *d_l
 	}
 }
 
-void d_forwardLayer(float* dst, const float* d_W, const float* d_last, const float* d_bias, int  m, int n, int k) {
-	dim3 dimGrid((k + BLOCK_SIZE - 1) / BLOCK_SIZE, (m + BLOCK_SIZE - 1) / BLOCK_SIZE);
-	dim3 dimBlock(BLOCK_SIZE, BLOCK_SIZE);
-	ForwardLayerKernel << <dimGrid, dimBlock >> > (dst, d_W, d_last, d_bias, m, n, k);
+void d_forwardLayer(float* dst, const float* d_W, const float* d_last, const float* d_bias, int  m, int n, int k) {	
+	ForwardLayerKernel << <dimGrid(m,k), dimBlock() >> > (dst, d_W, d_last, d_bias, m, n, k);
+}
+
+void d_matrixMult(float* dst, const float* d_W, const float* d_last, int  m, int n, int k) {
+	MatrixMultKernel << <dimGrid(m, k), dimBlock() >> > (dst, d_W, d_last, m, n, k);
 }
 
 __global__ void SigmoidKernal(float *dst, int N) {
@@ -97,29 +97,30 @@ void d_Activate(float* dst, int size, int act) {
 	}
 }
 
-__global__ void BackTanhKernel(float *dst, float *d_W, float *d_dZ, const float *d_A, int m, int n, int k) {
+
+__global__ void BackTanhKernel(float *dst, float *srcA, float *srcB, const float *d_A, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if(col < k && row < m) {
 		float tempSum = 0.f;
 		for(int ind = 0; ind < n; ++ind) {
-			tempSum += d_W[row + m * ind] * d_dZ[col * n + ind];
+			tempSum += srcA[row + m * ind] * srcB[col * n + ind];
 		}
-		dst[col * m + row] = tempSum;
+		dst[col * m + row] = tempSum * (1 - d_A[col * m + row] * d_A[col * m + row]);
 	}
 }
 
 
 void d_BackTanh(float *dst, float *d_W, float *d_dZ, const float *d_A, int m, int n, int k) {
-	BackTanhKernel << <m, 1 >> > (dst, d_W, d_dZ, d_A, m, n, k);
+	BackTanhKernel << <dimGrid(m,k), dimBlock() >> > (dst, d_W, d_dZ, d_A, m, n, k);
 }
 
 // Helper function for using CUDA to add vectors in parallel.
 void d_add(float *c, const float *a, const float *b, unsigned int size) {
-	addKernel <<<size, 1 >>> (c, a, b);
+	addKernel <<<1,size>>> (c, a, b);
 }
 
 // Helper function for using CUDA to add vectors in parallel.
 void d_subtract(float *c, const float *a, const float *b, unsigned int size) {
-	subtractKernel << <size, 1 >> > (c, a, b);
+	subtractKernel << <1, size >> > (c, a, b);
 }
