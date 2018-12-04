@@ -18,8 +18,7 @@ struct d_NetTrainParameters {
 };
 
 struct d_NetCache {
-	vector<MatrixXf> Z;
-	vector<MatrixXf> A;
+	vector<d_MatrixXf> d_A;
 	float cost;
 };
 
@@ -37,7 +36,7 @@ public:
 
 	void AddLayer(int A, int B, float weightScale);
 	
-	MatrixXf ForwardTrain();
+	d_MatrixXf ForwardTrain();
 	float CalcCost(const MatrixXf h, const MatrixXf Y);
 	void BackwardPropagation();
 	void UpdateParameters();
@@ -54,18 +53,22 @@ public:
 	}
 
 	inline MatrixXf BackSigmoid(const MatrixXf dZ, int index) {
-		return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - cache.A[index]);
+		MatrixXf* A = &cache.d_A[index].h_matrix();
+		return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(MatrixXf::Ones(A->rows(), A->cols()) - *A);
 	}
 	inline MatrixXf BackTanh(const MatrixXf dZ, int index) {
-		MatrixXf A1Squared = cache.A[index].array().pow(2);
-		return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - (A1Squared));
+		MatrixXf* A = &cache.d_A[index].h_matrix();
+		MatrixXf A1Squared = A->array().pow(2);
+		return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(MatrixXf::Ones(A->rows(), A->cols()) - (A1Squared));
 	}
 	inline MatrixXf BackReLU(const MatrixXf dZ, int index) {
-		return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.f; }));
+		MatrixXf* A = &cache.d_A[index].h_matrix();
+		return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(A->unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.f; }));
 	}
 
 	inline MatrixXf BackLReLU(const MatrixXf dZ, int index) {
-		return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.01f; }));
+		MatrixXf* A = &cache.d_A[index].h_matrix();
+		return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(A->unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.01f; }));
 	}
 
 	unsigned int GetExamplesCount() {

@@ -204,7 +204,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 		//Main Loop
 		while(globalRunning) {
-			for(int epoch = 0; epoch < 1; ++epoch) {
+			for(int epoch = 0; epoch < 10; ++epoch) {
 				Win32ProcessPendingMessages();
 				if(!globalRunning) {
 					break;

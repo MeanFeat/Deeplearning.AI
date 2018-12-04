@@ -17,7 +17,7 @@ d_NetTrainer::d_NetTrainer(Net *net, MatrixXf *data, MatrixXf *labels, float wei
 	trainParams.learningMod = 1.f / nodeCount;
 	trainParams.learningRate = learnRate;
 	trainParams.regTerm = regTerm;
-	cache.A.push_back(*trainData);
+	cache.d_A.push_back(d_MatrixXf(*trainData));
 	for(int h = 1; h < (int)network->GetParams().layerSizes.size(); ++h) {
 		AddLayer((int)network->GetParams().layerSizes[h], (int)network->GetParams().layerSizes[h - 1], weightScale);
 	}
@@ -36,8 +36,7 @@ d_NetCache d_NetTrainer::GetCache() {
 }
 
 void d_NetTrainer::AddLayer(int A, int B, float weightScale) {
-	cache.Z.push_back(MatrixXf::Zero(A, trainExamplesCount));
-	cache.A.push_back(MatrixXf::Zero(A, trainExamplesCount));
+	cache.d_A.push_back(d_MatrixXf( MatrixXf::Zero(A, trainExamplesCount) ));
 	trainParams.dW.push_back(MatrixXf::Zero(A, B));
 	trainParams.db.push_back(MatrixXf::Zero(A, 1));
 	momentum.dW.push_back(MatrixXf::Zero(A, B));
@@ -46,21 +45,15 @@ void d_NetTrainer::AddLayer(int A, int B, float weightScale) {
 	momentumSqr.db.push_back(MatrixXf::Zero(A, 1));
 }
 
-MatrixXf d_NetTrainer::ForwardTrain() {	
-	MatrixXf lastOutput = *trainData;
+d_MatrixXf d_NetTrainer::ForwardTrain() {
 	for(int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i) {
-		d_MatrixXf d_lastOutput = d_MatrixXf(&cache.A[i]);
-		d_MatrixXf d_W = d_MatrixXf(&network->GetParams().W[i]);
-		d_MatrixXf d_b = d_MatrixXf(&network->GetParams().b[i]);
-		MatrixXf tempA = MatrixXf::Zero(d_W.rows(), d_lastOutput.cols());
-		d_MatrixXf d_A = d_MatrixXf(&tempA);
-		d_forwardLayer(d_A.d_data(), d_W.d_data(), d_lastOutput.d_data(), d_b.d_data(), d_W.rows(), d_W.cols(), d_lastOutput.cols());
-		d_Activate(d_A.d_data(), d_A.size(), network->GetParams().layerActivations[i]);
-		d_A.UpdateHostData();
-		lastOutput = *d_A.h_matrix();
-		cache.A[i+1] = lastOutput;
+		d_MatrixXf d_W = d_MatrixXf(network->GetParams().W[i]); //TODO: use device memory
+		d_MatrixXf d_b = d_MatrixXf(network->GetParams().b[i]); //TODO: use device memory
+		d_forwardLayer(cache.d_A[i + 1].d_data(), d_W.d_data(), cache.d_A[i].d_data(), d_b.d_data(), d_W.rows(), d_W.cols(), cache.d_A[i].cols());
+		d_Activate(cache.d_A[i + 1].d_data(), cache.d_A[i + 1].size(), network->GetParams().layerActivations[i]);		
+		cache.d_A[i + 1].UpdateHostData();
 	}
-	return lastOutput;
+	return cache.d_A.back();
 }
 
 float d_NetTrainer::CalcCost(const MatrixXf h, MatrixXf Y) {
@@ -76,11 +69,11 @@ float d_NetTrainer::CalcCost(const MatrixXf h, MatrixXf Y) {
 void d_NetTrainer::BackwardPropagation() {
 	float m = (float)trainLabels->cols();
 	float coeff = float(1.f / m);
-	MatrixXf dZ = MatrixXf(cache.A.back() - * trainLabels);
-	trainParams.dW.back() = coeff * (dZ * cache.A[cache.A.size() - 2].transpose());
+	MatrixXf dZ = MatrixXf(cache.d_A.back().h_matrix() - *trainLabels);
+	trainParams.dW.back() = coeff * (dZ * cache.d_A[cache.d_A.size() - 2].h_matrix().transpose());
 	trainParams.db.back() = coeff * dZ.rowwise().sum();
 	for(int l = (int)network->GetParams().layerActivations.size() - 2; l >= 0; --l) {
-		MatrixXf lowerA =  cache.A[l];
+		MatrixXf lowerA = cache.d_A[l].h_matrix();
 		switch(network->GetParams().layerActivations[l]) {
 		case Sigmoid:
 			dZ = BackSigmoid(dZ, l + 1);
@@ -97,7 +90,7 @@ void d_NetTrainer::BackwardPropagation() {
 		default:
 			break;
 		}
-		trainParams.dW[l] = coeff * MatrixXf((dZ * lowerA.transpose()).array() + (0.5f * (trainParams.regTerm*trainParams.learningMod) * network->GetParams().W[l]).array());
+		trainParams.dW[l] = coeff * MatrixXf((dZ * lowerA.transpose()).array() +(0.5f * (trainParams.regTerm*trainParams.learningMod) * network->GetParams().W[l]).array());
 		trainParams.db[l] = coeff * dZ.rowwise().sum();
 	}
 
@@ -134,8 +127,7 @@ void d_NetTrainer::UpdateParametersADAM() {
 }
 
 void d_NetTrainer::UpdateSingleStep() {
-	
-	cache.cost = CalcCost(ForwardTrain(), *trainLabels);
+	cache.cost = CalcCost(ForwardTrain().h_matrix(), *trainLabels);
 	BackwardPropagation();
 	UpdateParametersADAM();
 	
