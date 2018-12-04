@@ -86,7 +86,7 @@ void d_NetTrainer::BackwardPropagation() {
 	vector<MatrixXf> diffs;
 	float m = (float)trainLabels->cols();
 	float coeff = float(1.f / m);
-	MatrixXf dZ = MatrixXf(cache.d_A.back().h_matrix() - *trainLabels);
+	MatrixXf dZ = MatrixXf(cache.d_A.back().h_matrix().array() - trainLabels->array());
 	//d_subtract(cache.d_dZ.back().d_data(), cache.d_A.back().d_data(), d_trainLabels.d_data(), cache.d_dZ.back().size());
 	//cache.d_dZ.back().UpdateHostData();
 	//diffs.push_back(cache.d_dZ.back().h_matrix().array() - dZ.array());
