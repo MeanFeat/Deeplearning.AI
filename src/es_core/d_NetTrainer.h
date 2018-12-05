@@ -47,30 +47,16 @@ public:
 	void CleanUpAll();
 	void UpdateParametersADAM();
 	void UpdateSingleStep();
-
+	MatrixXf BackSigmoid(const MatrixXf dZ, int index);
+	MatrixXf BackTanh(const MatrixXf dZ, int index);
+	MatrixXf BackReLU(const MatrixXf dZ, int index);
+	MatrixXf BackLReLU(const MatrixXf dZ, int index);
 
 	inline void ModifyLearningRate(float m) {
 		trainParams.learningRate = max(0.001f, trainParams.learningRate + m);
 	}
 	inline void ModifyRegTerm(float m) {
 		trainParams.regTerm = max(FLT_EPSILON, trainParams.regTerm + m);
-	}
-
-	inline MatrixXf BackSigmoid(const MatrixXf dZ, int index) {
-		MatrixXf A = cache.d_A[index].h_matrix();
-		return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(MatrixXf::Ones(A.rows(), A.cols()) - A);
-	}
-	inline MatrixXf BackTanh(const MatrixXf dZ, int index) {
-		MatrixXf A = cache.d_A[index].h_matrix();
-		MatrixXf A1Squared = A.array().pow(2);
-		return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(MatrixXf::Ones(A.rows(), A.cols()) - (A1Squared));
-	}
-	inline MatrixXf BackReLU(const MatrixXf dZ, int index) {
-		return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(cache.d_A[index].h_matrix().unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.f; }));
-	}
-
-	inline MatrixXf BackLReLU(const MatrixXf dZ, int index) {
-		return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(cache.d_A[index].h_matrix().unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.01f; }));
 	}
 
 	unsigned int GetExamplesCount() {
@@ -85,3 +71,5 @@ protected:
 
 	unsigned int trainExamplesCount;
 };
+
+

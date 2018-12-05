@@ -45,12 +45,15 @@ __global__ void ForwardLayerKernel(float *dst,const float *d_W, const float *d_l
 	}
 }
 
+
 void d_forwardLayer(float* dst, const float* d_W, const float* d_last, const float* d_bias, int  m, int n, int k) {	
-	ForwardLayerKernel << <dimGrid(m,k), dimBlock() >> > (dst, d_W, d_last, d_bias, m, n, k);
+	ForwardLayerKernel << <dimGrid(m,k), dimBlock() >> > 
+		(dst, d_W, d_last, d_bias, m, n, k);
 }
 
 void d_matrixMult(float* dst, const float* d_W, const float* d_last, int  m, int n, int k) {
-	MatrixMultKernel << <dimGrid(m, k), dimBlock() >> > (dst, d_W, d_last, m, n, k);
+	MatrixMultKernel << <dimGrid(m, k), dimBlock() >> > 
+		(dst, d_W, d_last, m, n, k);
 }
 
 __global__ void SigmoidKernal(float *dst, int N) {

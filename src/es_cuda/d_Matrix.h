@@ -4,40 +4,35 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include "d_math.h"
-#include <Eigen/dense>
 
 #define BLOCK_SIZE 32
-
-using namespace Eigen;
 
 class d_MatrixXf {
 public:
 	d_MatrixXf();
-	d_MatrixXf(MatrixXf m);
+	d_MatrixXf(float * host_data, int rows, int cols_);
 	~d_MatrixXf();
 	float* d_data() {
 		return device_data;
 	}
 	int rows() {
-		return (int)h_mat.rows();
+		return rowCount;
 	}
 	int cols() {
-		return (int)h_mat.cols();
+		return colCount;
 	}
 	int size() {
-		return (int)h_mat.size();
+		return rowCount * colCount;
 	}
 	size_t memSize() {
 		return size() * sizeof(float);
 	}
-	MatrixXf h_matrix() {
-		return h_mat;
-	}
-	void UpdateHostData() {
-		cudaMemcpy(h_mat.data(), device_data, memSize(), cudaMemcpyDeviceToHost);
+	void free() {
+		cudaFree(device_data);
 	}
 
 private:
-	MatrixXf h_mat;
+	int rowCount;
+	int colCount;
 	float* device_data;
 };
