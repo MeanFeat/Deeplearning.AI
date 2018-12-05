@@ -45,6 +45,39 @@ __global__ void ForwardLayerKernel(float *dst,const float *d_W, const float *d_l
 	}
 }
 
+__global__ void DrawPixelsKernel(int *buffer, int m, const float* vals, bool discrete, Color neg, Color pos) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	float percent = vals[col * m + row];
+	if(discrete) {
+		if (percent > 0.f) {
+			buffer[col * m + row] = ((pos.r << 16) | ((pos.g << 8) | pos.b));
+		} else {
+			buffer[col * m + row] = ((neg.r << 16) | ((neg.g << 8) | neg.b));
+		}
+	} else {
+		if(percent > 0.f) {
+			unsigned char r = unsigned char(float(255) + (percent*(float(pos.r) - float(255))));
+			unsigned char g = unsigned char(float(255) + (percent*(float(pos.g) - float(255))));
+			unsigned char b = unsigned char(float(255) + (percent*(float(pos.b) - float(255))));
+			unsigned char a = unsigned char(float(255) + (percent*(float(pos.a) - float(255))));
+			buffer[col * m + row] = ((r << 16) | ((g << 8) | b));
+		} else {
+			unsigned char r = unsigned char(float(255) + (-percent*(float(neg.r) - float(255))));
+			unsigned char g = unsigned char(float(255) + (-percent*(float(neg.g) - float(255))));
+			unsigned char b = unsigned char(float(255) + (-percent*(float(neg.b) - float(255))));
+			unsigned char a = unsigned char(float(255) + (-percent*(float(neg.a) - float(255))));
+			buffer[col * m + row] = ((r << 16) | ((g << 8) | b));
+		}
+	}
+}
+
+void d_drawPixels(int * buffer, int m,int k, const float* vals, bool discrete){ 
+	Color pos = Color(100, 167, 211, 255);
+	Color neg = Color(255, 184, 113, 255);
+	DrawPixelsKernel << <dimGrid(m, k), dimBlock() >> >
+		(buffer, m, vals, discrete, neg, pos);
+}
 
 void d_forwardLayer(float* dst, const float* d_W, const float* d_last, const float* d_bias, int  m, int n, int k) {	
 	ForwardLayerKernel << <dimGrid(m,k), dimBlock() >> > 

@@ -81,7 +81,7 @@ void d_NetTrainer::AddLayer(int A, int B, float weightScale) {
 	momentumSqr.db.push_back(MatrixXf::Zero(A, 1));
 }
 
-MatrixXf d_NetTrainer::Visualization(MatrixXf screen) {
+void d_NetTrainer::Visualization(MatrixXf screen, int * buffer,int m,int k, bool discrete) {
 	d_MatrixXf d_last = to_device(screen);
 	d_MatrixXf d_out;
 	for(int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i) {
@@ -94,10 +94,14 @@ MatrixXf d_NetTrainer::Visualization(MatrixXf screen) {
 		d_W.free();
 		d_b.free();
 	}
-	MatrixXf out = to_host(d_last);
+	int *d_buffer;
+	cudaMalloc((void **)&d_buffer, m*k * sizeof(int));
+	d_drawPixels(d_buffer, m,k, d_out.d_data(), discrete);
+	cudaMemcpy(buffer, d_buffer, m*k * sizeof(int), cudaMemcpyDeviceToHost);
+	cudaFree(d_buffer);
 	d_last.free();
 	d_out.free();
-	return out;
+
 }
 
 d_MatrixXf d_NetTrainer::ForwardTrain() {

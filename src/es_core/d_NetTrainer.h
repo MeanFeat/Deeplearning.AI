@@ -38,7 +38,7 @@ public:
 
 	void AddLayer(int A, int B, float weightScale);
 
-	MatrixXf Visualization(MatrixXf screen);
+	void Visualization(MatrixXf screen, int * buffer, int m, int k, bool discrete);
 	
 	d_MatrixXf ForwardTrain();
 	float CalcCost(const MatrixXf h, const MatrixXf Y);

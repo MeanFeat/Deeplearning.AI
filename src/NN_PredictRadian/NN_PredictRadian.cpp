@@ -12,7 +12,7 @@
 global_variable bool globalRunning = true;
 global_variable bool isTraining = true;
 global_variable bool drawOutput = true;
-global_variable bool plotData = true;
+global_variable bool plotData = false;
 
 global_variable vector<float> predictions;
 static time_t startTime;
@@ -23,7 +23,7 @@ float mouseY = WINHALFHEIGHT + 100;
 
 Buffer backBuffer;
 Net neural;
-NetTrainer trainer;
+d_NetTrainer trainer;
 
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam) {
 	LRESULT Result = 0;
@@ -101,12 +101,7 @@ void PlotData(MatrixXf X, MatrixXf Y) {
 }
 
 void DrawOutputToScreen(MatrixXf normScreen) {
-	MatrixXf h = neural.ForwardPropagation(normScreen);
-	int *pixel = (int *)backBuffer.memory;
-	for(int i = 0; i < normScreen.cols(); ++i) {
-		float percent = h(0,i);
-		*pixel++ = GetColorBlend(percent).ToBit();
-	}
+	trainer.Visualization(normScreen, (int*)backBuffer.memory, backBuffer.width, backBuffer.height, false);
 }
 
 void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> &history, vector<float> &testHistory) {
@@ -207,7 +202,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 									  WINWIDTH, WINHEIGHT, 0, 0, Instance, 0);
 		
 		neural = Net((int)X.rows(), { 8, 8 }, (int)Y.rows(), { Tanh, Tanh, Tanh });
-		trainer = NetTrainer(&neural, &X, &Y, 0.5f, 0.25f, 1.f);
+		trainer = d_NetTrainer(&neural, &X, &Y, 0.5f, 0.25f, 1.f);
 
 		HDC deviceContext = GetDC(window);
 		vector<float> history;

@@ -9,7 +9,7 @@
 
 global_variable bool globalRunning = true;
 global_variable bool discreteOutput = false;
-global_variable bool plotData = true;
+global_variable bool plotData = false;
 global_variable int winTitleHeight = 10;
 static time_t startTime;
 static time_t currentTime;
@@ -92,30 +92,8 @@ void PlotData(MatrixXf X, MatrixXf Y) {
 }
 
 void DrawOutputToScreen(MatrixXf screenCoords) {
-	MatrixXf h = trainer.Visualization(screenCoords);
-	int *pixel = (int *)backBuffer.memory;
-	for(int i = 0; i < h.cols(); ++i) {
-		float percent = (*(h.data() + i));
-		Color blended = Color(0, 0, 0, 0);
-		switch(neural.GetParams().layerActivations.back()) {
-		case Sigmoid:
-			percent = (percent - 0.5f) * 2;
-			break;
-		case Tanh:
-			break;
-		case ReLU:
-			break;
-		default:
-			break;
-		}
-		if(discreteOutput) {
-			blended = percent < 0.f ? negativeColor : positiveColor;
-		} else {
-			blended = percent < 0.f ? Color(255, 255, 255, 255).Blend(negativeColor, -percent)
-				: Color(255, 255, 255, 255).Blend(positiveColor, percent);
-		}
-		*pixel++ = blended.ToBit();
-	}
+	trainer.Visualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height, discreteOutput);
+
 }
 
 void UpdateHistory(vector<float> &history) {
@@ -193,7 +171,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Tanh,
 			Tanh });
 
-		trainer = d_NetTrainer(&neural, &X, &Y, 0.25f,
+		trainer = d_NetTrainer(&neural, &X, &Y, 0.5f,
 							 2.25f, 
 							 20.f);
 
