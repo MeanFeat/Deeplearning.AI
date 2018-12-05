@@ -78,20 +78,20 @@ __global__ void LReLUKernal(float *dst, int N) {
 }
 
 
-void d_Activate(float* dst, int size, int act) {
+void d_Activate(float* dst, int size, Activation act) {
 	switch(act) { //TODO: set up common types
-	case 1: //Sigmoid
+	case Sigmoid:
 		SigmoidKernal << < size, 1 >> > (dst, size);
-	case 2: //Tanh:
+	case Tanh:
 		TanhKernal << < size, 1 >> > (dst, size);
 		break;
-	case 3://ReLU:
+	case ReLU:
 		ReLUKernal<<<size,1>>>(dst, size);
 		break;
-	case 4://LReLU:
+	case LReLU:
 		LReLUKernal << < size, 1>>>(dst, size);
 		break;
-	case 0://Linear: //fall through
+	case Linear: //fall through
 	default:
 		break;
 	}

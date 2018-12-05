@@ -3,17 +3,10 @@
 #include <iostream>
 #include <fstream>
 #include <Eigen/dense>
+#include "types.h"
 
 using namespace Eigen;
 using namespace std;
-
-enum Activation {
-	Linear,
-	Sigmoid,
-	Tanh,
-	ReLU,
-	LReLU
-};
 
 inline MatrixXf CalcSigmoid( const MatrixXf &in) {
 	return ((-1.0f*in).array().exp() + 1).cwiseInverse();
