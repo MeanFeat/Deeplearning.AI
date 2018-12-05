@@ -42,10 +42,10 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>D:\GameDev\ExpertSystems.AI\src\common;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\GameDev\eigen</IncludePath>
+    <IncludePath>..\common;..\es_core;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\GameDev\eigen;</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>D:\GameDev\ExpertSystems.AI\src\common;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\GameDev\eigen</IncludePath>
+    <IncludePath>..\common;..\es_core;$(VC_IncludePath);$(WindowsSDK_IncludePath);D:\GameDev\eigen;</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

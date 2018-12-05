@@ -22,7 +22,7 @@ d_NetTrainer::d_NetTrainer(Net *net, MatrixXf *data, MatrixXf *labels, float wei
 	for(int h = 1; h < (int)network->GetParams().layerSizes.size(); ++h) {
 		AddLayer((int)network->GetParams().layerSizes[h], (int)network->GetParams().layerSizes[h - 1], weightScale);
 	}
-	for(int i = 0; i < cache.d_A.size(); ++i)	{
+	for(int i = 1; i < cache.d_A.size(); ++i)	{
 		cache.d_dZ.push_back(d_MatrixXf(MatrixXf::Zero(cache.d_A[i].rows(), trainExamplesCount)));
 	}
 }
@@ -88,8 +88,10 @@ void d_NetTrainer::BackwardPropagation() {
 	vector<MatrixXf> diffs;
 	float m = (float)trainLabels->cols();
 	float coeff = float(1.f / m);
+
 	MatrixXf dZ = MatrixXf(cache.d_A.back().h_matrix().array() - trainLabels->array());
 	d_subtract(cache.d_dZ.back().d_data(), cache.d_A.back().d_data(), d_trainLabels.d_data(), cache.d_dZ.back().size());
+	cache.d_dZ.back().UpdateHostData();
 	trainParams.dW.back() = coeff * (dZ * cache.d_A[cache.d_A.size() - 2].h_matrix().transpose());
 	trainParams.db.back() = coeff * dZ.rowwise().sum();
 	for(int l = (int)network->GetParams().layerActivations.size() - 2; l >= 0; --l) {
@@ -99,12 +101,14 @@ void d_NetTrainer::BackwardPropagation() {
 			dZ = BackSigmoid(dZ, l + 1);
 			break;
 		case Tanh:
-			d_BackTanh(cache.d_dZ[l+1].d_data(), d_W.d_data(), cache.d_dZ[l + 2].d_data(), cache.d_A[l+1].d_data(), (int)d_W.cols(), (int)d_W.rows(), (int)dZ.cols());
-			cache.d_dZ[l+1].UpdateHostData();			
+			d_BackTanh(cache.d_dZ[l].d_data(), d_W.d_data(), cache.d_dZ[l + 1].d_data(), cache.d_A[l+1].d_data(), (int)d_W.cols(), (int)d_W.rows(), (int)dZ.cols());
+			cache.d_dZ[l].UpdateHostData();		
 			dZ = BackTanh(dZ, l + 1);
-			diffs.push_back(cache.d_dZ[l + 1].h_matrix().array() - (dZ).array());
+			diffs.push_back(cache.d_dZ[l].h_matrix().array() - (dZ).array());
 			break;
 		case ReLU:
+			//d_BackReLU(cache.d_dZ[l].d_data(), d_W.d_data(), cache.d_dZ[l + 1].d_data(), cache.d_A[l + 1].d_data(), (int)d_W.cols(), (int)d_W.rows(), (int)dZ.cols());
+			//cache.d_dZ[l].UpdateHostData();
 			dZ = BackReLU(dZ, l + 1);
 			break;
 		case LReLU:
@@ -113,8 +117,7 @@ void d_NetTrainer::BackwardPropagation() {
 		default:
 			break;
 		}
-
-		trainParams.dW[l] = coeff * MatrixXf((dZ * cache.d_A[l].h_matrix().transpose()).array() 
+		trainParams.dW[l] = coeff * MatrixXf((dZ * cache.d_A[l].h_matrix().transpose()).array()
 											 + (0.5f * (trainParams.regTerm*trainParams.learningMod) * network->GetParams().W[l]).array());
 		trainParams.db[l] = coeff * dZ.rowwise().sum();
 	}

@@ -115,6 +115,23 @@ void d_BackTanh(float *dst, float *d_W, float *d_dZ, const float *d_A, int m, in
 	BackTanhKernel << <dimGrid(m,k), dimBlock() >> > (dst, d_W, d_dZ, d_A, m, n, k);
 }
 
+__global__ void BackReLUKernel(float *dst, float *srcA, float *srcB, const float *d_A, int m, int n, int k) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	if(col < k && row < m) {
+		float tempSum = 0.f;
+		for(int ind = 0; ind < n; ++ind) {
+			tempSum += srcA[row + m * ind] * srcB[col * n + ind];
+		}
+		dst[col * m + row] = tempSum *(d_A[col * m + row] > 0.f ? 1.f : 0.f);
+	}
+}
+
+
+void d_BackReLU(float *dst, float *d_W, float *d_dZ, const float *d_A, int m, int n, int k) {
+	BackReLUKernel << <dimGrid(m, k), dimBlock() >> > (dst, d_W, d_dZ, d_A, m, n, k);
+}
+
 // Helper function for using CUDA to add vectors in parallel.
 void d_add(float *c, const float *a, const float *b, unsigned int size) {
 	addKernel <<<1,size>>> (c, a, b);
