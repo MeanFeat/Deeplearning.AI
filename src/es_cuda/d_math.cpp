@@ -60,13 +60,13 @@ __global__ void DrawPixelsKernel(int *buffer, int m, const float* vals, bool dis
 			unsigned char r = unsigned char(float(255) + (percent*(float(pos.r) - float(255))));
 			unsigned char g = unsigned char(float(255) + (percent*(float(pos.g) - float(255))));
 			unsigned char b = unsigned char(float(255) + (percent*(float(pos.b) - float(255))));
-			unsigned char a = unsigned char(float(255) + (percent*(float(pos.a) - float(255))));
+			//unsigned char a = unsigned char(float(255) + (percent*(float(pos.a) - float(255))));
 			buffer[col * m + row] = ((r << 16) | ((g << 8) | b));
 		} else {
 			unsigned char r = unsigned char(float(255) + (-percent*(float(neg.r) - float(255))));
 			unsigned char g = unsigned char(float(255) + (-percent*(float(neg.g) - float(255))));
 			unsigned char b = unsigned char(float(255) + (-percent*(float(neg.b) - float(255))));
-			unsigned char a = unsigned char(float(255) + (-percent*(float(neg.a) - float(255))));
+			//unsigned char a = unsigned char(float(255) + (-percent*(float(neg.a) - float(255))));
 			buffer[col * m + row] = ((r << 16) | ((g << 8) | b));
 		}
 	}
