@@ -148,7 +148,6 @@
   <ItemGroup>
     <ClInclude Include="..\common\color.h" />
     <ClInclude Include="..\common\types.h" />
-    <ClInclude Include="..\es_cuda\d_matrix.h" />
     <ClInclude Include="d_NetTrainer.h" />
     <ClInclude Include="stdDraw.h" />
     <ClInclude Include="stdNet.h" />
@@ -157,7 +156,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\common\color.cpp" />
-    <ClCompile Include="..\es_cuda\d_Matrix.cpp" />
     <ClCompile Include="d_NetTrainer.cpp" />
     <ClCompile Include="stdNet.cpp" />
     <ClCompile Include="stdNetTrainer.cpp" />

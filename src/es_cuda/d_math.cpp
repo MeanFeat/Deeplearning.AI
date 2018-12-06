@@ -15,11 +15,21 @@ __global__ void addKernel(float *c, const float *a, const float *b) {
 	int i = threadIdx.x;
 	c[i] = a[i] + b[i];
 }
+/* dst = srcA (+) srcB */
+void d_add(d_MatrixXf *dst, d_MatrixXf *srcA, d_MatrixXf *srcB) {
+	addKernel << <1, dst->size() >> > (dst->d_data(), srcA->d_data(), srcB->d_data());
+}
+
 
 __global__ void subtractKernel(float *c, const float *a, const float *b) {
 	int i = threadIdx.x;
 	c[i] = a[i] - b[i];
 }
+/* dst = srcA (-) srcB */
+void d_subtract(d_MatrixXf *dst, d_MatrixXf *srcA, d_MatrixXf *srcB) {
+	subtractKernel << <1, dst->size() >> > (dst->d_data(), srcA->d_data(), srcB->d_data());
+}
+
 
 __global__ void MatrixMultKernel(float *dst,const float *srcA,const float *srcB, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -32,6 +42,32 @@ __global__ void MatrixMultKernel(float *dst,const float *srcA,const float *srcB,
 		dst[col * m + row] = tempSum;
 	}
 }
+/* dst = srcA * srcB */
+void d_matrixMult(d_MatrixXf* dst, d_MatrixXf* srcA, d_MatrixXf* srcB){
+	int m = srcA->rows();
+	int n = srcA->cols();
+	int k = srcB->cols();
+	MatrixMultKernel << <dimGrid(m, k), dimBlock() >> >
+		(dst->d_data(), srcA->d_data(), srcB->d_data(), m, n, k);
+}
+
+
+__global__ void MatrixMult_lhsT_Kernel(float *dst, float *srcA, float *srcB, int m, int n, int k) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	if(col < k && row < m) {
+		float tempSum = 0.f;
+		for(int ind = 0; ind < n; ++ind) {
+			tempSum += srcA[row + m * ind] * srcB[col * n + ind];
+		}
+		dst[col * m + row] = tempSum;
+	}
+}
+/*dst = srcA.T * srcB */
+void d_matrixMult_lhsT(float *dst, float *srcA, float *srcB, int m, int n, int k) {
+	MatrixMult_lhsT_Kernel << <dimGrid(m, k), dimBlock() >> > (dst, srcA, srcB, m, n, k);
+}
+
 
 __global__ void ForwardLayerKernel(float *dst,const float *d_W, const float *d_last, const float * d_bias, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -44,6 +80,20 @@ __global__ void ForwardLayerKernel(float *dst,const float *d_W, const float *d_l
 		dst[col * m + row] = tempSum + d_bias[row];
 	}
 }
+/* dst = d_W * d_last + d_bias */
+void d_forwardLayer(float* dst, const float* d_W, const float* d_last, const float* d_bias, int  m, int n, int k) {
+	ForwardLayerKernel << <dimGrid(m, k), dimBlock() >> >
+		(dst, d_W, d_last, d_bias, m, n, k);
+}
+
+void d_forwardLayer(d_MatrixXf *dst, d_MatrixXf *d_W, d_MatrixXf *d_last, d_MatrixXf *d_bias) {
+	int m = d_W->rows();
+	int n = d_W->cols();
+	int k = d_last->cols();
+	ForwardLayerKernel << <dimGrid(m, k), dimBlock() >> >
+		(dst->d_data(), d_W->d_data(), d_last->d_data(), d_bias->d_data(), m, n, k);
+}
+
 
 __global__ void DrawPixelsKernel(int *buffer, int m, const float* vals, bool discrete, Color neg, Color pos) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -71,7 +121,6 @@ __global__ void DrawPixelsKernel(int *buffer, int m, const float* vals, bool dis
 		}
 	}
 }
-
 void d_drawPixels(int * buffer, int m,int k, const float* vals, bool discrete){ 
 	Color pos = Color(100, 167, 211, 255);
 	Color neg = Color(255, 184, 113, 255);
@@ -79,15 +128,6 @@ void d_drawPixels(int * buffer, int m,int k, const float* vals, bool discrete){
 		(buffer, m, vals, discrete, neg, pos);
 }
 
-void d_forwardLayer(float* dst, const float* d_W, const float* d_last, const float* d_bias, int  m, int n, int k) {	
-	ForwardLayerKernel << <dimGrid(m,k), dimBlock() >> > 
-		(dst, d_W, d_last, d_bias, m, n, k);
-}
-
-void d_matrixMult(float* dst, const float* d_W, const float* d_last, int  m, int n, int k) {
-	MatrixMultKernel << <dimGrid(m, k), dimBlock() >> > 
-		(dst, d_W, d_last, m, n, k);
-}
 
 __global__ void SigmoidKernal(float *dst, int N) {
 	int tid = blockIdx.x;
@@ -113,19 +153,18 @@ __global__ void LReLUKernal(float *dst, int N) {
 		dst[tid] = max(dst[tid] * 0.1f, dst[tid]);
 }
 
-
-void d_Activate(float* dst, int size, Activation act) {
-	switch(act) { //TODO: set up common types
+void d_Activate(d_MatrixXf *dst, Activation act) {
+	switch(act) {
 	case Sigmoid:
-		SigmoidKernal << < size, 1 >> > (dst, size);
+		SigmoidKernal << < dst->size(), 1 >> > (dst->d_data(), dst->size());
 	case Tanh:
-		TanhKernal << < size, 1 >> > (dst, size);
+		TanhKernal << < dst->size(), 1 >> > (dst->d_data(), dst->size());
 		break;
 	case ReLU:
-		ReLUKernal<<<size,1>>>(dst, size);
+		ReLUKernal << <dst->size(), 1 >> > (dst->d_data(), dst->size());
 		break;
 	case LReLU:
-		LReLUKernal << < size, 1>>>(dst, size);
+		LReLUKernal << < dst->size(), 1 >> > (dst->d_data(), dst->size());
 		break;
 	case Linear: //fall through
 	default:
@@ -134,21 +173,23 @@ void d_Activate(float* dst, int size, Activation act) {
 }
 
 
-__global__ void BackTanhKernel(float *dst, float *srcA, float *srcB, const float *d_A, int m, int n, int k) {
+__global__ void BackTanhKernel(float *dst, float *d_W, float *d_dZ, const float *d_A, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if(col < k && row < m) {
 		float tempSum = 0.f;
 		for(int ind = 0; ind < n; ++ind) {
-			tempSum += srcA[row + m * ind] * srcB[col * n + ind];
+			tempSum += d_W[row + m * ind] * d_dZ[col * n + ind];
 		}
 		dst[col * m + row] = tempSum * (1 - d_A[col * m + row] * d_A[col * m + row]);
 	}
 }
-
-
-void d_BackTanh(float *dst, float *d_W, float *d_dZ, const float *d_A, int m, int n, int k) {
-	BackTanhKernel << <dimGrid(m,k), dimBlock() >> > (dst, d_W, d_dZ, d_A, m, n, k);
+/* dst = (d_W.T * d_dZ) (*) d_A^2 */
+void d_BackTanh(d_MatrixXf *dst, d_MatrixXf *d_W, d_MatrixXf *d_dZ, d_MatrixXf *d_A) {
+	int m = d_W->rows();
+	int n = d_W->cols();
+	int k = d_dZ->cols();
+	BackTanhKernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), d_W->d_data(), d_dZ->d_data(), d_A->d_data(), m, n, k);
 }
 
 __global__ void BackReLUKernel(float *dst, float *srcA, float *srcB, const float *d_A, int m, int n, int k) {
@@ -162,18 +203,13 @@ __global__ void BackReLUKernel(float *dst, float *srcA, float *srcB, const float
 		dst[col * m + row] = tempSum *(d_A[col * m + row] > 0.f ? 1.f : 0.f);
 	}
 }
-
-
-void d_BackReLU(float *dst, float *d_W, float *d_dZ, const float *d_A, int m, int n, int k) {
-	BackReLUKernel << <dimGrid(m, k), dimBlock() >> > (dst, d_W, d_dZ, d_A, m, n, k);
+/* dst = (d_W.T * d_dZ) (*) (d_A > 0 ? 1 : 0) */
+void d_BackReLU(d_MatrixXf *dst, d_MatrixXf *d_W, d_MatrixXf *d_dZ, d_MatrixXf *d_A) {
+	int m = d_W->rows();
+	int n = d_W->cols();
+	int k = d_dZ->cols();
+	BackReLUKernel << <dimGrid(m, k), dimBlock() >> > 
+		(dst->d_data(), d_W->d_data(), d_dZ->d_data(), d_A->d_data(), m, n, k);
 }
 
-// Helper function for using CUDA to add vectors in parallel.
-void d_add(float *c, const float *a, const float *b, unsigned int size) {
-	addKernel <<<1,size>>> (c, a, b);
-}
 
-// Helper function for using CUDA to add vectors in parallel.
-void d_subtract(float *c, const float *a, const float *b, unsigned int size) {
-	subtractKernel << <1, size >> > (c, a, b);
-}

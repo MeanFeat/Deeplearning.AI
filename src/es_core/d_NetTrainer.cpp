@@ -82,34 +82,33 @@ void d_NetTrainer::AddLayer(int A, int B, float weightScale) {
 }
 
 void d_NetTrainer::Visualization(MatrixXf screen, int * buffer,int m,int k, bool discrete) {
-	d_MatrixXf d_last = to_device(screen);
-	d_MatrixXf d_out;
+	vector<d_MatrixXf> d_last;
+	d_last.push_back(to_device(screen));
 	for(int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i) {
 		d_MatrixXf d_W = to_device(network->GetParams().W[i]); //TODO: use device memory
 		d_MatrixXf d_b = to_device(network->GetParams().b[i]); //TODO: use device memory
-		d_out = to_device(MatrixXf(d_W.rows(), d_last.cols()));
-		d_forwardLayer(d_out.d_data(), d_W.d_data(), d_last.d_data(), d_b.d_data(), d_W.rows(), d_W.cols(), d_last.cols());
-		d_Activate(d_out.d_data(), d_out.size(), network->GetParams().layerActivations[i]);
-		d_last = d_out;
+		d_last.push_back(to_device(MatrixXf(d_W.rows(), d_last[i].cols())));
+		d_forwardLayer(&d_last[i+1], &d_W, &d_last[i], &d_b);
+		d_Activate(&d_last[i + 1], network->GetParams().layerActivations[i]);
 		d_W.free();
 		d_b.free();
 	}
 	int *d_buffer;
 	cudaMalloc((void **)&d_buffer, m*k * sizeof(int));
-	d_drawPixels(d_buffer, m,k, d_out.d_data(), discrete);
+	d_drawPixels(d_buffer, m,k, d_last.back().d_data(), discrete);
 	cudaMemcpy(buffer, d_buffer, m*k * sizeof(int), cudaMemcpyDeviceToHost);
-	cudaFree(d_buffer);
-	d_last.free();
-	d_out.free();
-
+	cudaFree(d_buffer);	
+	for (int i = 0; i < d_last.size(); ++i){
+		d_last[i].free();
+	}
 }
 
 d_MatrixXf d_NetTrainer::ForwardTrain() {
 	for(int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i) {
 		d_MatrixXf d_W = to_device(network->GetParams().W[i]); //TODO: use device memory
 		d_MatrixXf d_b = to_device(network->GetParams().b[i]); //TODO: use device memory
-		d_forwardLayer(cache.d_A[i + 1].d_data(), d_W.d_data(), cache.d_A[i].d_data(), d_b.d_data(), d_W.rows(), d_W.cols(), cache.d_A[i].cols());
-		d_Activate(cache.d_A[i + 1].d_data(), cache.d_A[i + 1].size(), network->GetParams().layerActivations[i]);
+		d_forwardLayer(&cache.d_A[i + 1], &d_W, &cache.d_A[i], &d_b);
+		d_Activate(&cache.d_A[i + 1], network->GetParams().layerActivations[i]);
 		d_W.free();
 		d_b.free();
 	}
@@ -132,7 +131,7 @@ void d_NetTrainer::BackwardPropagation() {
 	float coeff = float(1.f / m);
 
 	MatrixXf dZ = MatrixXf(to_host(cache.d_A.back()).array() - trainLabels->array());
-	d_subtract(cache.d_dZ.back().d_data(), cache.d_A.back().d_data(), d_trainLabels.d_data(), cache.d_dZ.back().size());
+	d_subtract(&cache.d_dZ.back(), &d_trainLabels, &cache.d_dZ.back());
 	trainParams.dW.back() = coeff * (dZ * to_host(cache.d_A[cache.d_A.size() - 2]).transpose());
 	trainParams.db.back() = coeff * dZ.rowwise().sum();
 	for(int l = (int)network->GetParams().layerActivations.size() - 2; l >= 0; --l) {
@@ -142,13 +141,12 @@ void d_NetTrainer::BackwardPropagation() {
 			dZ = BackSigmoid(dZ, l + 1);
 			break;
 		case Tanh:
-			d_BackTanh(cache.d_dZ[l].d_data(), d_W.d_data(), cache.d_dZ[l + 1].d_data(), cache.d_A[l+1].d_data(), (int)d_W.cols(), (int)d_W.rows(), (int)dZ.cols());		
+			d_BackTanh(&cache.d_dZ[l], &d_W, &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
 			dZ = BackTanh(dZ, l + 1);
 			diffs.push_back(to_host(cache.d_dZ[l]).array() - (dZ).array());
 			break;
 		case ReLU:
-			//d_BackReLU(cache.d_dZ[l].d_data(), d_W.d_data(), cache.d_dZ[l + 1].d_data(), cache.d_A[l + 1].d_data(), (int)d_W.cols(), (int)d_W.rows(), (int)dZ.cols());
-			//cache.d_dZ[l].UpdateHostData();
+			d_BackReLU(&cache.d_dZ[l], &d_W, &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
 			dZ = BackReLU(dZ, l + 1);
 			break;
 		case LReLU:
@@ -197,16 +195,20 @@ void d_NetTrainer::UpdateParametersADAM() {
 }
 
 void d_NetTrainer::UpdateSingleStep() {
+	//d_MatrixXf A = to_device(MatrixXf::Random(8, 5));
+	//d_MatrixXf B = to_device(MatrixXf::Random(5, 777));
+	//d_MatrixXf C = to_device(MatrixXf::Zero(8, 777));
+	////d_matrixMult_lhsT()
+	//MatrixXf expected = to_host(A)*to_host(B);
+	//MatrixXf diff = to_host(C).array() - expected.array();
+	//return;
+
+
 	cache.cost = CalcCost(to_host(ForwardTrain()), *trainLabels);
 	BackwardPropagation();
 	UpdateParametersADAM();
 
-	/*d_MatrixXf A = d_MatrixXf(MatrixXf::Random(8, 5));
-	d_MatrixXf B = d_MatrixXf(MatrixXf::Random(5, 777));
-	d_MatrixXf C = d_MatrixXf(MatrixXf::Zero(8, 777));
-	MatrixXf expected = A.h_matrix()*B.h_matrix();
-	MatrixXf diff = C.h_matrix().array() - expected.array();
-	return;*/
+	
 }
 
 

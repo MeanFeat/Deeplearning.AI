@@ -3,9 +3,6 @@
 #include "cuda.h"
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
-#include "d_math.h"
-
-#define BLOCK_SIZE 32
 
 class d_MatrixXf {
 public:
@@ -31,7 +28,7 @@ public:
 		cudaFree(device_data);
 	}
 
-private:
+	protected:
 	int rowCount;
 	int colCount;
 	float* device_data;

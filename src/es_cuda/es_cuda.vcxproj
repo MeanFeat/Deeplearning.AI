@@ -86,7 +86,11 @@
     <CudaCompile Include="d_math.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\common\d_Matrix.h" />
     <ClInclude Include="d_math.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\common\d_Matrix.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

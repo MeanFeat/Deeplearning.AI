@@ -5,6 +5,7 @@
 #include <Eigen/dense>
 #include "stdNet.h"
 #include "d_Matrix.h"
+#include "d_Math.h"
 
 using namespace Eigen;
 using namespace std;
