@@ -44,25 +44,6 @@ d_NetTrainer::d_NetTrainer(Net *net, MatrixXf *data, MatrixXf *labels, float wei
 d_NetTrainer::~d_NetTrainer() {
 }
 
-MatrixXf d_NetTrainer::BackSigmoid(const MatrixXf dZ, int index) {
-	MatrixXf A = to_host(cache.d_A[index]);
-	return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(MatrixXf::Ones(A.rows(), A.cols()) - A);
-} //TODO: remove
-
-MatrixXf d_NetTrainer::BackTanh(const MatrixXf dZ, int index) {
-	MatrixXf A = to_host(cache.d_A[index]);
-	MatrixXf A1Squared = A.array().pow(2);
-	return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(MatrixXf::Ones(A.rows(), A.cols()) - (A1Squared));
-}//TODO: remove
-
-MatrixXf d_NetTrainer::BackReLU(const MatrixXf dZ, int index) {
-	return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(to_host(cache.d_A[index]).unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.f; }));
-}//TODO: remove
-
-MatrixXf d_NetTrainer::BackLReLU(const MatrixXf dZ, int index) {
-	return (network->GetParams().W[index].transpose() * dZ).cwiseProduct(to_host(cache.d_A[index]).unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.01f; }));
-} //TODO: remove
-
 d_NetTrainParameters d_NetTrainer::GetTrainParams() {
 	return trainParams;
 }
@@ -127,40 +108,36 @@ float d_NetTrainer::CalcCost(const MatrixXf h, MatrixXf Y) {
 
 void d_NetTrainer::BackwardPropagation() {
 	vector<MatrixXf> diffs;
-	float m = (float)trainLabels->cols();
-	float coeff = float(1.f / m);
+	float coeff = float(1.f / trainExamplesCount);
 
 	MatrixXf dZ = MatrixXf(to_host(cache.d_A.back()).array() - trainLabels->array());
-	d_subtract(&cache.d_dZ.back(), &d_trainLabels, &cache.d_dZ.back());
+	d_subtract(&cache.d_dZ.back(), &cache.d_A.back(), &d_trainLabels);
 	trainParams.dW.back() = coeff * (dZ * to_host(cache.d_A[cache.d_A.size() - 2]).transpose());
 	trainParams.db.back() = coeff * dZ.rowwise().sum();
+
 	for(int l = (int)network->GetParams().layerActivations.size() - 2; l >= 0; --l) {
 		d_MatrixXf d_W = to_device(network->GetParams().W[l + 1]); //TODO: replace with device memory
 		switch(network->GetParams().layerActivations[l]) {
 		case Sigmoid:
-			dZ = BackSigmoid(dZ, l + 1);
+			d_BackSigmoid(&cache.d_dZ[l], &d_W, &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
 			break;
 		case Tanh:
 			d_BackTanh(&cache.d_dZ[l], &d_W, &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
-			dZ = BackTanh(dZ, l + 1);
-			diffs.push_back(to_host(cache.d_dZ[l]).array() - (dZ).array());
 			break;
 		case ReLU:
 			d_BackReLU(&cache.d_dZ[l], &d_W, &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
-			dZ = BackReLU(dZ, l + 1);
 			break;
 		case LReLU:
-			dZ = BackLReLU(dZ, l + 1);
+			d_BackLReLU(&cache.d_dZ[l], &d_W, &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
 			break;
 		default:
 			break;
-
 		}
 
-		d_W.free();
-		trainParams.dW[l] = coeff * MatrixXf((dZ * to_host(cache.d_A[l]).transpose()).array()
+		d_W.free(); //TODO: remove
+		trainParams.dW[l] = coeff * MatrixXf((to_host(cache.d_dZ[l]) * to_host(cache.d_A[l]).transpose()).array()
 											 + (0.5f * (trainParams.regTerm*trainParams.learningMod) * network->GetParams().W[l]).array());
-		trainParams.db[l] = coeff * dZ.rowwise().sum();
+		trainParams.db[l] = coeff * to_host(cache.d_dZ[l]).rowwise().sum();
 	}
 }
 
@@ -195,20 +172,9 @@ void d_NetTrainer::UpdateParametersADAM() {
 }
 
 void d_NetTrainer::UpdateSingleStep() {
-	//d_MatrixXf A = to_device(MatrixXf::Random(8, 5));
-	//d_MatrixXf B = to_device(MatrixXf::Random(5, 777));
-	//d_MatrixXf C = to_device(MatrixXf::Zero(8, 777));
-	////d_matrixMult_lhsT()
-	//MatrixXf expected = to_host(A)*to_host(B);
-	//MatrixXf diff = to_host(C).array() - expected.array();
-	//return;
-
-
 	cache.cost = CalcCost(to_host(ForwardTrain()), *trainLabels);
 	BackwardPropagation();
-	UpdateParametersADAM();
-
-	
+	UpdateParametersADAM();	
 }
 
 

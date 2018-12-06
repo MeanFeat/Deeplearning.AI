@@ -8,10 +8,13 @@
 void d_add(d_MatrixXf *dst, d_MatrixXf *srcA, d_MatrixXf *srcB);
 void d_subtract(d_MatrixXf *dst, d_MatrixXf *srcA, d_MatrixXf *srcB);
 void d_matrixMult(d_MatrixXf* dst, d_MatrixXf* srcA, d_MatrixXf* srcB);
+void d_matrixMult_lhsT(d_MatrixXf* dst, d_MatrixXf* srcA, d_MatrixXf* srcB);
 
 void d_forwardLayer(d_MatrixXf *dst, d_MatrixXf *d_W, d_MatrixXf *d_last, d_MatrixXf *d_bias);
 void d_Activate(d_MatrixXf *dst, Activation act);
+void d_BackSigmoid(d_MatrixXf *dst, d_MatrixXf *d_W, d_MatrixXf *d_dZ, d_MatrixXf *d_A);
 void d_BackTanh(d_MatrixXf *dst, d_MatrixXf *d_W, d_MatrixXf *d_dZ, d_MatrixXf *d_A);
 void d_BackReLU(d_MatrixXf *dst, d_MatrixXf *d_W, d_MatrixXf *d_dZ, d_MatrixXf *d_A);
+void d_BackLReLU(d_MatrixXf *dst, d_MatrixXf *d_W, d_MatrixXf *d_dZ, d_MatrixXf *d_A);
 
 void d_drawPixels(int * buffer, int m, int k, const float * vals, bool discrete);

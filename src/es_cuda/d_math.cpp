@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #define BLOCK_SIZE 32
+#define LRELU_LEAK 0.01f
 
 dim3 dimGrid(int m, int k) {
 	return dim3((k + BLOCK_SIZE - 1) / BLOCK_SIZE, (m + BLOCK_SIZE - 1) / BLOCK_SIZE);
@@ -58,14 +59,18 @@ __global__ void MatrixMult_lhsT_Kernel(float *dst, float *srcA, float *srcB, int
 	if(col < k && row < m) {
 		float tempSum = 0.f;
 		for(int ind = 0; ind < n; ++ind) {
-			tempSum += srcA[row + m * ind] * srcB[col * n + ind];
+			tempSum += srcA[row * n + ind] * srcB[col * n + ind];
 		}
 		dst[col * m + row] = tempSum;
 	}
 }
 /*dst = srcA.T * srcB */
-void d_matrixMult_lhsT(float *dst, float *srcA, float *srcB, int m, int n, int k) {
-	MatrixMult_lhsT_Kernel << <dimGrid(m, k), dimBlock() >> > (dst, srcA, srcB, m, n, k);
+void d_matrixMult_lhsT(d_MatrixXf* dst, d_MatrixXf* srcA, d_MatrixXf* srcB) {
+	int m = srcA->cols(); //reverse for transpose
+	int n = srcA->rows(); //reverse for transpose
+	int k = srcB->cols();
+	MatrixMult_lhsT_Kernel << <dimGrid(m, k), dimBlock() >> >
+		(dst->d_data(), srcA->d_data(), srcB->d_data(), m, n, k);
 }
 
 
@@ -150,7 +155,7 @@ __global__ void ReLUKernal(float *dst, int N) {
 __global__ void LReLUKernal(float *dst, int N) {
 	int tid = blockIdx.x;
 	if(tid < N)
-		dst[tid] = max(dst[tid] * 0.1f, dst[tid]);
+		dst[tid] = max(dst[tid] * LRELU_LEAK, dst[tid]);
 }
 
 void d_Activate(d_MatrixXf *dst, Activation act) {
@@ -172,6 +177,24 @@ void d_Activate(d_MatrixXf *dst, Activation act) {
 	}
 }
 
+__global__ void BackSigmoidKernel(float *dst, float *d_W, float *d_dZ, const float *d_A, int m, int n, int k) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	if(col < k && row < m) {
+		float tempSum = 0.f;
+		for(int ind = 0; ind < n; ++ind) {
+			tempSum += d_W[row * n + ind] * d_dZ[col * n + ind];
+		}
+		dst[col * m + row] = tempSum * (1 - d_A[col * m + row]);
+	}
+}
+/* dst = (d_W.T * d_dZ) (*) d_A^2 */
+void d_BackSigmoid(d_MatrixXf *dst, d_MatrixXf *d_W, d_MatrixXf *d_dZ, d_MatrixXf *d_A) {
+	int m = d_W->cols(); //reverse for transpose
+	int n = d_W->rows(); //reverse for transpose
+	int k = d_dZ->cols();
+	BackSigmoidKernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), d_W->d_data(), d_dZ->d_data(), d_A->d_data(), m, n, k);
+}
 
 __global__ void BackTanhKernel(float *dst, float *d_W, float *d_dZ, const float *d_A, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -179,37 +202,56 @@ __global__ void BackTanhKernel(float *dst, float *d_W, float *d_dZ, const float 
 	if(col < k && row < m) {
 		float tempSum = 0.f;
 		for(int ind = 0; ind < n; ++ind) {
-			tempSum += d_W[row + m * ind] * d_dZ[col * n + ind];
+			tempSum += d_W[row * n + ind] * d_dZ[col * n + ind];
 		}
 		dst[col * m + row] = tempSum * (1 - d_A[col * m + row] * d_A[col * m + row]);
 	}
 }
 /* dst = (d_W.T * d_dZ) (*) d_A^2 */
 void d_BackTanh(d_MatrixXf *dst, d_MatrixXf *d_W, d_MatrixXf *d_dZ, d_MatrixXf *d_A) {
-	int m = d_W->rows();
-	int n = d_W->cols();
+	int m = d_W->cols(); //reverse for transpose
+	int n = d_W->rows(); //reverse for transpose
 	int k = d_dZ->cols();
 	BackTanhKernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), d_W->d_data(), d_dZ->d_data(), d_A->d_data(), m, n, k);
 }
 
-__global__ void BackReLUKernel(float *dst, float *srcA, float *srcB, const float *d_A, int m, int n, int k) {
+__global__ void BackReLUKernel(float *dst, float *d_W, float *d_dZ, const float *d_A, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if(col < k && row < m) {
 		float tempSum = 0.f;
 		for(int ind = 0; ind < n; ++ind) {
-			tempSum += srcA[row + m * ind] * srcB[col * n + ind];
+			tempSum += d_W[row * n + ind] * d_dZ[col * n + ind];
 		}
 		dst[col * m + row] = tempSum *(d_A[col * m + row] > 0.f ? 1.f : 0.f);
 	}
 }
 /* dst = (d_W.T * d_dZ) (*) (d_A > 0 ? 1 : 0) */
 void d_BackReLU(d_MatrixXf *dst, d_MatrixXf *d_W, d_MatrixXf *d_dZ, d_MatrixXf *d_A) {
-	int m = d_W->rows();
-	int n = d_W->cols();
+	int m = d_W->cols(); //reverse for transpose
+	int n = d_W->rows(); //reverse for transpose
 	int k = d_dZ->cols();
 	BackReLUKernel << <dimGrid(m, k), dimBlock() >> > 
 		(dst->d_data(), d_W->d_data(), d_dZ->d_data(), d_A->d_data(), m, n, k);
 }
 
+__global__ void BackLReLUKernel(float *dst, float *d_W, float *d_dZ, const float *d_A, int m, int n, int k) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	if(col < k && row < m) {
+		float tempSum = 0.f;
+		for(int ind = 0; ind < n; ++ind) {
+			tempSum += d_W[row * n + ind] * d_dZ[col * n + ind];
+		}
+		dst[col * m + row] = tempSum *(d_A[col * m + row] > 0.f ? 1.f : LRELU_LEAK);
+	}
+}
+/* dst = (d_W.T * d_dZ) (*) (d_A > 0 ? 1 : 0) */
+void d_BackLReLU(d_MatrixXf *dst, d_MatrixXf *d_W, d_MatrixXf *d_dZ, d_MatrixXf *d_A) {
+	int m = d_W->cols(); //reverse for transpose
+	int n = d_W->rows(); //reverse for transpose
+	int k = d_dZ->cols();
+	BackLReLUKernel << <dimGrid(m, k), dimBlock() >> >
+		(dst->d_data(), d_W->d_data(), d_dZ->d_data(), d_A->d_data(), m, n, k);
+}
 

@@ -91,11 +91,6 @@ void PlotData(MatrixXf X, MatrixXf Y) {
 	}
 }
 
-void DrawOutputToScreen(MatrixXf screenCoords) {
-	trainer.Visualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height, discreteOutput);
-
-}
-
 void UpdateHistory(vector<float> &history) {
 	history.push_back(min((trainer.GetCache().cost) * (WINHEIGHT-backBuffer.titleOffset), WINHEIGHT));
 	if(history.size() >= WINWIDTH + WINWIDTH) {
@@ -113,7 +108,7 @@ MatrixXf BuildPolynomials(MatrixXf m) {
 
 void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> &history) {
 	if(globalRunning) {
-		DrawOutputToScreen(screenCoords);
+		trainer.Visualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height, discreteOutput);
 		if(plotData) {
 			PlotData(X, Y);
 		}
