@@ -1,8 +1,6 @@
 #include "d_math.h"
 #include <stdio.h>
 
-#define BLOCK_SIZE 32
-#define LRELU_LEAK 0.01f
 
 dim3 dimGrid(int m, int k) {
 	return dim3((k + BLOCK_SIZE - 1) / BLOCK_SIZE, (m + BLOCK_SIZE - 1) / BLOCK_SIZE);

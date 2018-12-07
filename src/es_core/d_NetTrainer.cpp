@@ -144,8 +144,8 @@ void d_NetTrainer::UpdateParameters() {
 	for(int i = 0; i < (int)trainParams.dW.size(); ++i) {
 		network->GetParams().W[i] -= ((trainParams.learningRate*trainParams.learningMod) * trainParams.dW[i]);
 		network->GetParams().b[i] -= ((trainParams.learningRate*trainParams.learningMod) * trainParams.db[i]);
-		trainParams.d_W[i] = to_device(network->GetParams().W[i]); //TODO: remove
-		trainParams.d_b[i] = to_device(network->GetParams().b[i]); //TODO: remove
+		cudaMemcpy(trainParams.d_W[i].d_data(), network->GetParams().W[i].data(), trainParams.d_W[i].memSize(), cudaMemcpyHostToDevice);//TODO: remove
+		cudaMemcpy(trainParams.d_b[i].d_data(), network->GetParams().b[i].data(), trainParams.d_b[i].memSize(), cudaMemcpyHostToDevice);//TODO: remove
 	}
 }
 
@@ -165,8 +165,8 @@ void d_NetTrainer::UpdateParametersADAM() {
 		sCorrected.db[i] = momentumSqr.db[i] / (1 - pow(BETA2, 2));
 		network->GetParams().W[i] -= (trainParams.learningRate*trainParams.learningMod) * MatrixXf(vCorrected.dW[i].array() / (sCorrected.dW[i].array().sqrt() + FLT_EPSILON));
 		network->GetParams().b[i] -= (trainParams.learningRate*trainParams.learningMod) * MatrixXf(vCorrected.db[i].array() / (sCorrected.db[i].array().sqrt() + FLT_EPSILON));
-		trainParams.d_W[i] = to_device(network->GetParams().W[i]); //TODO: remove
-		trainParams.d_b[i] = to_device(network->GetParams().b[i]); //TODO: remove
+		cudaMemcpy(trainParams.d_W[i].d_data(), network->GetParams().W[i].data(), trainParams.d_W[i].memSize(), cudaMemcpyHostToDevice);//TODO: remove
+		cudaMemcpy(trainParams.d_b[i].d_data(), network->GetParams().b[i].data(), trainParams.d_b[i].memSize(), cudaMemcpyHostToDevice);//TODO: remove
 	}
 }
 
