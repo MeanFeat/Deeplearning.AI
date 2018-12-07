@@ -109,12 +109,13 @@ void d_NetTrainer::BackwardPropagation() {
 	trainParams.dW.back() = coeff * (to_host(cache.d_dZ.back()) * to_host(cache.d_A[cache.d_A.size() - 2]).transpose());
 	trainParams.db.back() = coeff * to_host(cache.d_dZ.back()).rowwise().sum();
 
-	//d_Set_dW(&trainParams.d_dW.back(), &cache.d_dZ.back(), &cache.d_A[cache.d_A.size() - 2], coeff);
-	/*d_matrixMult_rhsT(&trainParams.d_dW.back(), &cache.d_dZ.back(), &cache.d_A[cache.d_A.size() - 2]);
+	d_Set_dW(&trainParams.d_dW.back(), &cache.d_dZ.back(), &cache.d_A[cache.d_A.size() - 2], coeff);
+	d_Set_db(&trainParams.d_db.back(), &cache.d_dZ.back(), coeff);
 
-	MatrixXf expected = (to_host(cache.d_dZ.back()) * to_host(cache.d_A[cache.d_A.size() - 2]).transpose());
-	MatrixXf test = to_host(trainParams.d_dW.back());
-	diffs.push_back(test.array() - expected.array());*/
+	diffs.push_back(trainParams.dW.back().array() - to_host(trainParams.d_dW.back()).array());
+	diffs.push_back(trainParams.db.back().array() - to_host(trainParams.d_db.back()).array());
+	//trainParams.dW.back() = to_host(trainParams.d_dW.back());
+	//trainParams.db.back() = to_host(trainParams.d_db.back());
 
 	for(int l = (int)network->GetParams().layerActivations.size() - 2; l >= 0; --l) {
 		switch(network->GetParams().layerActivations[l]) {
@@ -133,10 +134,18 @@ void d_NetTrainer::BackwardPropagation() {
 		default:
 			break;
 		}
-		
+		d_Set_dW(&trainParams.d_dW[l], &cache.d_dZ[l], &cache.d_A[l], &trainParams.d_W[l], coeff, trainParams.regTerm*trainParams.learningMod);
+		d_Set_db(&trainParams.d_db[l], &cache.d_dZ[l], coeff);
+
 		trainParams.dW[l] = coeff * MatrixXf((to_host(cache.d_dZ[l]) * to_host(cache.d_A[l]).transpose()).array()
 											 + (0.5f * (trainParams.regTerm*trainParams.learningMod) * network->GetParams().W[l]).array());
 		trainParams.db[l] = coeff * to_host(cache.d_dZ[l]).rowwise().sum();
+
+		diffs.push_back(trainParams.dW[l].array() - to_host(trainParams.d_dW[l]).array());
+		diffs.push_back(trainParams.db[l].array() - to_host(trainParams.d_db[l]).array());
+		
+		//trainParams.dW[l] = to_host(trainParams.d_dW[l]);
+		//trainParams.db[l] = to_host(trainParams.d_db[l]);
 	}
 }
 

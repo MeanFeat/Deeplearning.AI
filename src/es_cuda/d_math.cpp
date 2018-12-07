@@ -262,16 +262,51 @@ __global__ void Set_dW_Kernel(float *dst, const float *d_dZ, const float *d_A, f
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if(col < k && row < m) {
 		float tempSum = 0.f;
-		for(int ind = 0; ind < k; ++ind) {
-			tempSum += d_dZ[row + k * ind] * d_A[col + k * ind];
+		for(int ind = 0; ind < n; ++ind) {
+			tempSum += d_dZ[row + m * ind] * d_A[col + k * ind];
 		}
 		dst[col * m + row] = tempSum * coefficient;
 	}
-} /* dst = coeff * (srcA * srcB.T) */
+} /* dst = coeff * (d_dZ * d_A.T) */
 void d_Set_dW(d_MatrixXf* dst, d_MatrixXf* d_dZ, d_MatrixXf* d_A, float coefficient) {
 	int m = d_dZ->rows();
 	int n = d_dZ->cols();
 	int k = d_A->rows();
 	Set_dW_Kernel << <dimGrid(m, k), dimBlock() >> >
 		(dst->d_data(), d_dZ->d_data(), d_A->d_data(), coefficient, m, n, k);
+}
+//trainParams.dW[l] = coeff * MatrixXf((to_host(cache.d_dZ[l]) * to_host(cache.d_A[l]).transpose()).array()
+//									 + (0.5f * (trainParams.regTerm*trainParams.learningMod) * network->GetParams().W[l]).array());
+__global__ void Set_dW_Kernel(float *dst, const float *d_dZ, const float *d_A, const float *d_W, float coefficient, float learn, int m, int n, int k) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	if(col < k && row < m) {
+		float tempSum = 0.f;
+		for(int ind = 0; ind < n; ++ind) {
+			tempSum += d_dZ[row + m * ind] * d_A[col + k * ind];
+		}
+		dst[col * m + row] = coefficient * (tempSum  + (0.5f * learn * d_W[col * m + row]));
+	}
+} /* dst = coeff * (d_dZ * d_A.T) (+) (0.5 * learn * d_W) */
+void d_Set_dW(d_MatrixXf* dst, d_MatrixXf* d_dZ, d_MatrixXf* d_A, d_MatrixXf *d_W, float coefficient, float learn) {
+	int m = d_dZ->rows();
+	int n = d_dZ->cols();
+	int k = d_A->rows();
+	Set_dW_Kernel << <dimGrid(m, k), dimBlock() >> >
+		(dst->d_data(), d_dZ->d_data(), d_A->d_data(), d_W->d_data(), coefficient, learn, m, n, k);
+}
+
+__global__ void Set_db_Kernel(float *dst, const float *d_dZ, float coefficient, int r, int c) {
+	int tid = blockIdx.x;
+	if(tid < r*c){ 
+		float tempSum = 0.f;
+		for(int ind = 0; ind < c; ++ind) {
+			tempSum += d_dZ[r * ind];
+		}
+	dst[tid] = tempSum * coefficient;
+	}
+} /* dst = coeff * (srcA.SumOfRows) */
+void d_Set_db(d_MatrixXf* dst, d_MatrixXf* d_dZ, float coefficient) {
+	Set_db_Kernel << <d_dZ->rows(), 1 >> >
+		(dst->d_data(), d_dZ->d_data(), coefficient, d_dZ->rows(), d_dZ->cols());
 }
