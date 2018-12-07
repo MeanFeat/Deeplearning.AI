@@ -13,6 +13,10 @@ using namespace std;
 struct d_NetTrainParameters {
 	vector<MatrixXf> dW;
 	vector<MatrixXf> db;
+	vector<d_MatrixXf> d_dW;
+	vector<d_MatrixXf> d_db;
+	vector<d_MatrixXf> d_W;
+	vector<d_MatrixXf> d_b;
 	float learningRate;
 	float learningMod;
 	float regTerm;
@@ -41,17 +45,12 @@ public:
 
 	void Visualization(MatrixXf screen, int * buffer, int m, int k, bool discrete);
 	
-	d_MatrixXf ForwardTrain();
+	void ForwardTrain();
 	float CalcCost(const MatrixXf h, const MatrixXf Y);
 	void BackwardPropagation();
 	void UpdateParameters();
-	void CleanUpAll();
 	void UpdateParametersADAM();
 	void UpdateSingleStep();
-	MatrixXf BackSigmoid(const MatrixXf dZ, int index);
-	MatrixXf BackTanh(const MatrixXf dZ, int index);
-	MatrixXf BackReLU(const MatrixXf dZ, int index);
-	MatrixXf BackLReLU(const MatrixXf dZ, int index);
 
 	inline void ModifyLearningRate(float m) {
 		trainParams.learningRate = max(0.001f, trainParams.learningRate + m);
@@ -69,7 +68,6 @@ protected:
 	d_NetTrainParameters trainParams;
 	d_NetTrainParameters momentum;
 	d_NetTrainParameters momentumSqr;
-
 	unsigned int trainExamplesCount;
 };
 
