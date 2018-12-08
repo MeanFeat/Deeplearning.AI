@@ -102,21 +102,10 @@ float d_NetTrainer::CalcCost(const MatrixXf h, MatrixXf Y) {
 }
 
 void d_NetTrainer::BackwardPropagation() {
-	vector<MatrixXf> diffs;//TODO: remove
 	float coeff = float(1.f / trainExamplesCount);
-
 	d_subtract(&cache.d_dZ.back(), &cache.d_A.back(), &d_trainLabels);
-	trainParams.dW.back() = coeff * (to_host(cache.d_dZ.back()) * to_host(cache.d_A[cache.d_A.size() - 2]).transpose());
-	trainParams.db.back() = coeff * to_host(cache.d_dZ.back()).rowwise().sum();
-
 	d_Set_dW(&trainParams.d_dW.back(), &cache.d_dZ.back(), &cache.d_A[cache.d_A.size() - 2], coeff);
 	d_Set_db(&trainParams.d_db.back(), &cache.d_dZ.back(), coeff);
-
-	diffs.push_back(trainParams.dW.back().array() - to_host(trainParams.d_dW.back()).array());
-	diffs.push_back(trainParams.db.back().array() - to_host(trainParams.d_db.back()).array());
-	//trainParams.dW.back() = to_host(trainParams.d_dW.back());
-	//trainParams.db.back() = to_host(trainParams.d_db.back());
-
 	for(int l = (int)network->GetParams().layerActivations.size() - 2; l >= 0; --l) {
 		switch(network->GetParams().layerActivations[l]) {
 		case Sigmoid:
@@ -136,23 +125,13 @@ void d_NetTrainer::BackwardPropagation() {
 		}
 		d_Set_dW(&trainParams.d_dW[l], &cache.d_dZ[l], &cache.d_A[l], &trainParams.d_W[l], coeff, trainParams.regTerm*trainParams.learningMod);
 		d_Set_db(&trainParams.d_db[l], &cache.d_dZ[l], coeff);
-
-		trainParams.dW[l] = coeff * MatrixXf((to_host(cache.d_dZ[l]) * to_host(cache.d_A[l]).transpose()).array()
-											 + (0.5f * (trainParams.regTerm*trainParams.learningMod) * network->GetParams().W[l]).array());
-		trainParams.db[l] = coeff * to_host(cache.d_dZ[l]).rowwise().sum();
-
-		diffs.push_back(trainParams.dW[l].array() - to_host(trainParams.d_dW[l]).array());
-		diffs.push_back(trainParams.db[l].array() - to_host(trainParams.d_db[l]).array());
-		
-		//trainParams.dW[l] = to_host(trainParams.d_dW[l]);
-		//trainParams.db[l] = to_host(trainParams.d_db[l]);
 	}
 }
 
 void d_NetTrainer::UpdateParameters() {
 	for(int i = 0; i < (int)trainParams.dW.size(); ++i) {
-		network->GetParams().W[i] -= ((trainParams.learningRate*trainParams.learningMod) * trainParams.dW[i]);
-		network->GetParams().b[i] -= ((trainParams.learningRate*trainParams.learningMod) * trainParams.db[i]);
+		network->GetParams().W[i] -= ((trainParams.learningRate*trainParams.learningMod) * to_host(trainParams.d_dW[i]));
+		network->GetParams().b[i] -= ((trainParams.learningRate*trainParams.learningMod) * to_host(trainParams.d_db[i]));
 		cudaMemcpy(trainParams.d_W[i].d_data(), network->GetParams().W[i].data(), trainParams.d_W[i].memSize(), cudaMemcpyHostToDevice);//TODO: remove
 		cudaMemcpy(trainParams.d_b[i].d_data(), network->GetParams().b[i].data(), trainParams.d_b[i].memSize(), cudaMemcpyHostToDevice);//TODO: remove
 	}
@@ -164,12 +143,12 @@ void d_NetTrainer::UpdateParametersADAM() {
 	for(int i = 0; i < (int)trainParams.dW.size(); ++i) {
 		d_NetTrainParameters vCorrected = momentum;
 		d_NetTrainParameters sCorrected = momentumSqr;
-		momentum.dW[i] = BETA1 * momentum.dW[i] + (1 - BETA1) * trainParams.dW[i];
-		momentum.db[i] = BETA1 * momentum.db[i] + (1 - BETA1) * trainParams.db[i];
+		momentum.dW[i] = BETA1 * momentum.dW[i] + (1 - BETA1) * to_host(trainParams.d_dW[i]);
+		momentum.db[i] = BETA1 * momentum.db[i] + (1 - BETA1) * to_host(trainParams.d_db[i]);
 		vCorrected.dW[i] = momentum.dW[i] / (1 - pow(BETA1, 2));
 		vCorrected.db[i] = momentum.db[i] / (1 - pow(BETA1, 2));
-		momentumSqr.dW[i] = (BETA2 * momentumSqr.dW[i]) + ((1 - BETA2) * MatrixXf(trainParams.dW[i].array().pow(2)));
-		momentumSqr.db[i] = (BETA2 * momentumSqr.db[i]) + ((1 - BETA2) * MatrixXf(trainParams.db[i].array().pow(2)));
+		momentumSqr.dW[i] = (BETA2 * momentumSqr.dW[i]) + ((1 - BETA2) * MatrixXf(to_host(trainParams.d_dW[i]).array().pow(2)));
+		momentumSqr.db[i] = (BETA2 * momentumSqr.db[i]) + ((1 - BETA2) * MatrixXf(to_host(trainParams.d_db[i]).array().pow(2)));
 		sCorrected.dW[i] = momentumSqr.dW[i] / (1 - pow(BETA2, 2));
 		sCorrected.db[i] = momentumSqr.db[i] / (1 - pow(BETA2, 2));
 		network->GetParams().W[i] -= (trainParams.learningRate*trainParams.learningMod) * MatrixXf(vCorrected.dW[i].array() / (sCorrected.dW[i].array().sqrt() + FLT_EPSILON));
