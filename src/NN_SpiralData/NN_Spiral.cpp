@@ -1,6 +1,8 @@
 #include "win32_ExpertSystems.h"
 #include <time.h>
 
+#define TEST_CPU 0
+
 #define WINWIDTH 200
 #define WINHEIGHT 200
 #define WINHALFWIDTH WINWIDTH * 0.5f
@@ -16,7 +18,12 @@ static time_t currentTime;
 
 Buffer backBuffer;
 Net neural;
+
+#if TEST_CPU
+NetTrainer trainer;
+#else
 d_NetTrainer trainer;
+#endif
 
 global_variable float GraphZoom = 1.f;
 
@@ -106,9 +113,40 @@ MatrixXf BuildPolynomials(MatrixXf m) {
 	return temp;
 }
 
+void DrawOutputToScreen(MatrixXf screenCoords) {
+	MatrixXf h = neural.ForwardPropagation(screenCoords);
+	int *pixel = (int *)backBuffer.memory;
+	for(int i = 0; i < h.cols(); ++i) {
+		float percent = (*(h.data() + i));
+		Color blended = Color(0, 0, 0, 0);
+		switch(neural.GetParams().layerActivations.back()) {
+		case Sigmoid:
+			percent = (percent - 0.5f) * 2;
+			break;
+		case Tanh:
+			break;
+		case ReLU:
+			break;
+		default:
+			break;
+		}
+		if(discreteOutput) {
+			blended = percent < 0.f ? negativeColor : positiveColor;
+		} else {
+			blended = percent < 0.f ? Color(255, 255, 255, 255).Blend(negativeColor, -percent)
+				: Color(255, 255, 255, 255).Blend(positiveColor, percent);
+		}
+		*pixel++ = blended.ToBit();
+	}
+}
+
 void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> &history) {
 	if(globalRunning) {
+#if TEST_CPU
+		DrawOutputToScreen(screenCoords);
+#else
 		trainer.Visualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height, discreteOutput);
+#endif
 		if(plotData) {
 			PlotData(X, Y);
 		}
@@ -165,10 +203,16 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Tanh,
 			Tanh,
 			Tanh });
-
+#if TEST_CPU
+		trainer = NetTrainer(&neural, &X, &Y, 0.25f,
+							   2.25f,
+							   20.f);
+#else
 		trainer = d_NetTrainer(&neural, &X, &Y, 0.25f,
-							 2.25f, 
-							 20.f);
+							   2.25f,
+							   20.f);
+#endif
+		
 
 		time(&startTime);
 		HDC deviceContext = GetDC(window);
@@ -177,7 +221,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 		//Main Loop
 		while(globalRunning) {
-			for(int epoch = 0; epoch < 10; ++epoch) {
+			for(int epoch = 0; epoch < 100; ++epoch) {
 				Win32ProcessPendingMessages();
 				if(!globalRunning) {
 					break;

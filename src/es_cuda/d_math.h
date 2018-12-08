@@ -6,7 +6,7 @@
 #include "d_Matrix.h"
 
 #define BLOCK_SIZE 32
-#define LRELU_LEAK 0.05f
+#define LRELU_LEAK 0.01f
 
 void d_add(d_MatrixXf *dst, d_MatrixXf *srcA, d_MatrixXf *srcB);
 void d_subtract(d_MatrixXf *dst, d_MatrixXf *srcA, d_MatrixXf *srcB);

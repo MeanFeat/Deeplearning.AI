@@ -92,12 +92,12 @@ void d_NetTrainer::ForwardTrain() {
 }
 
 float d_NetTrainer::CalcCost(const MatrixXf h, MatrixXf Y) {
-	float coeff = 1.f / Y.cols();
+	float coeff = 1.f / trainExamplesCount;
 	float sumSqrW = 0.f;
 	for(int w = 0; w < (int)network->GetParams().W.size() - 1; ++w) {
 		sumSqrW += network->GetParams().W[w].array().pow(2).sum();
 	}
-	float regCost = 0.5f * float((trainParams.regTerm*trainParams.learningMod) * (sumSqrW / (2.f * (float)trainLabels->cols())));
+	float regCost = 0.5f * float((trainParams.regTerm*trainParams.learningMod) * (sumSqrW / (2.f * (float)trainExamplesCount)));
 	return ((Y - h).array().pow(2).sum() * coeff) + regCost;
 }
 
