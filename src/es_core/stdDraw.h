@@ -54,9 +54,9 @@ void DrawCircle(HDC *hdc, int x, int y, float d, Color c) {
 	}
 }
 
-void DrawLine(Buffer buffer, float aX, float aY, float bX, float bY, Color col) {
-	float dx = bX - aX;
-	float dy = bY - aY;
+void DrawLine(Buffer buffer, double aX, double aY, double bX, double bY, Color col) {
+	double dx = bX - aX;
+	double dy = bY - aY;
 	if(abs(dx) > abs(dy) && dx) {
 		if(dx) dy /= abs(dx);
 		else dy = 0.f;
@@ -82,16 +82,16 @@ void DrawLine(Buffer buffer, float aX, float aY, float bX, float bY, Color col) 
 	}
 }
 
-void DrawHistory(Buffer buffer, vector<float> hist, Color c) {
-	float compressor = int(hist.size()) > buffer.width ? float(buffer.width) / float(hist.size()) : 1.f;
+void DrawHistory(Buffer buffer, vector<double> hist, Color c) {
+	double compressor = int(hist.size()) > buffer.width ? double(buffer.width) / double(hist.size()) : 1.0;
 	for(int sample = 1; sample < (int)hist.size() - 1; sample++) {
-		DrawLine(buffer, float(int((sample - 1) * compressor)- buffer.width),
-			floor(hist[sample - 1]), float(int(sample * compressor)- buffer.width),
+		DrawLine(buffer, double(int((sample - 1) * compressor)- buffer.width),
+			floor(hist[sample - 1]), double(int(sample * compressor)- buffer.width),
 				 floor(hist[sample]), c);
 	}
 }
 
-void DrawFilledCircle(Buffer buffer, int x, int y, float d, Color c) {
+void DrawFilledCircle(Buffer buffer, int x, int y, double d, Color c) {
 	int r = int(d*0.5);
 	for(int h = -r; h < r; h++) {
 		int height = (int)sqrt(r * r - h * h);
@@ -105,17 +105,17 @@ void DrawFilledCircle(Buffer buffer, int x, int y, float d, Color c) {
 	}
 }
 
-MatrixXf BuildDisplayCoords(Buffer buffer, float scale = 1.f) {
-	MatrixXf out(buffer.width * buffer.height, 2);
-	VectorXf row(buffer.width);
-	VectorXf cols(buffer.width * buffer.height);
-	int halfWidth = int(buffer.width * 0.5f);
+MatrixXd BuildDisplayCoords(Buffer buffer, double scale = 1.0) {
+	MatrixXd out(buffer.width * buffer.height, 2);
+	VectorXd row(buffer.width);
+	VectorXd cols(buffer.width * buffer.height);
+	int halfWidth = int(buffer.width * 0.5);
 	for(int x = 0; x < buffer.width; ++x) {
 		row(x) = float((x - halfWidth) / scale);
 	}
 	for(int y = 0; y < buffer.height; ++y) {
 		for(int x = 0; x < buffer.width; ++x) {
-			cols(y*buffer.width + x) = float((y - halfWidth) / scale);
+			cols(y*buffer.width + x) = double((y - halfWidth) / scale);
 		}
 	}
 	out << row.replicate(buffer.height, 1), cols;

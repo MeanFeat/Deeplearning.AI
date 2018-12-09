@@ -5,8 +5,8 @@
 
 #define WINWIDTH 200
 #define WINHEIGHT 200
-#define WINHALFWIDTH WINWIDTH * 0.5f
-#define WINHALFHEIGHT WINHEIGHT * 0.5f
+#define WINHALFWIDTH WINWIDTH * 0.5
+#define WINHALFHEIGHT WINHEIGHT * 0.5
 #define SCALE 50
 
 global_variable bool globalRunning = true;
@@ -25,7 +25,7 @@ NetTrainer trainer;
 d_NetTrainer trainer;
 #endif
 
-global_variable float GraphZoom = 1.f;
+global_variable double GraphZoom = 1.f;
 
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam) {
 	LRESULT Result = 0;
@@ -89,7 +89,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 	return Result;
 }
 
-void PlotData(MatrixXf X, MatrixXf Y) {
+void PlotData(MatrixXd X, MatrixXd Y) {
 	for(int i = 0; i < X.cols(); ++i) {
 		DrawFilledCircle(backBuffer, int(WINHALFWIDTH + X(0, i) * SCALE), int(WINHALFHEIGHT + -X(1, i) * SCALE), SCALE * 0.11f, Color(255, 255, 255, 255));
 		DrawFilledCircle(backBuffer, int(WINHALFWIDTH + X(0, i) * SCALE),
@@ -98,7 +98,7 @@ void PlotData(MatrixXf X, MatrixXf Y) {
 	}
 }
 
-void UpdateHistory(vector<float> &history) {
+void UpdateHistory(vector<double> &history) {
 	history.push_back(min((trainer.GetCache().cost) * (WINHEIGHT-backBuffer.titleOffset), WINHEIGHT));
 	if(history.size() >= WINWIDTH + WINWIDTH) {
 		for(int i = 1; i < (int)history.size(); i += 2) {
@@ -107,21 +107,21 @@ void UpdateHistory(vector<float> &history) {
 	}
 }
 
-MatrixXf BuildPolynomials(MatrixXf m) {
-	MatrixXf temp = MatrixXf(m.rows() + 3, m.cols());
-	temp << m, MatrixXf(m.array().pow(2)), MatrixXf(m.array().pow(2)).colwise().sum();
+MatrixXd BuildPolynomials(MatrixXd m) {
+	MatrixXd temp = MatrixXd(m.rows() + 3, m.cols());
+	temp << m, MatrixXd(m.array().pow(2)), MatrixXd(m.array().pow(2)).colwise().sum();
 	return temp;
 }
 
-void DrawOutputToScreen(MatrixXf screenCoords) {
-	MatrixXf h = neural.ForwardPropagation(screenCoords);
+void DrawOutputToScreen(MatrixXd screenCoords) {
+	MatrixXd h = neural.ForwardPropagation(screenCoords);
 	int *pixel = (int *)backBuffer.memory;
 	for(int i = 0; i < h.cols(); ++i) {
-		float percent = (*(h.data() + i));
+		double percent = (*(h.data() + i));
 		Color blended = Color(0, 0, 0, 0);
 		switch(neural.GetParams().layerActivations.back()) {
 		case Sigmoid:
-			percent = (percent - 0.5f) * 2;
+			percent = (percent - 0.5) * 2;
 			break;
 		case Tanh:
 			break;
@@ -131,16 +131,16 @@ void DrawOutputToScreen(MatrixXf screenCoords) {
 			break;
 		}
 		if(discreteOutput) {
-			blended = percent < 0.f ? negativeColor : positiveColor;
+			blended = percent < 0.0 ? negativeColor : positiveColor;
 		} else {
-			blended = percent < 0.f ? Color(255, 255, 255, 255).Blend(negativeColor, -percent)
+			blended = percent < 0.0 ? Color(255, 255, 255, 255).Blend(negativeColor, -percent)
 				: Color(255, 255, 255, 255).Blend(positiveColor, percent);
 		}
 		*pixel++ = blended.ToBit();
 	}
 }
 
-void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> &history) {
+void UpdateDisplay(MatrixXd screenCoords, MatrixXd X, MatrixXd Y, vector<double> &history) {
 	if(globalRunning) {
 #if TEST_CPU
 		DrawOutputToScreen(screenCoords);
@@ -150,7 +150,7 @@ void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> 
 		if(plotData) {
 			PlotData(X, Y);
 		}
-		vector<float> zoomedHist;
+		vector<double> zoomedHist;
 		for(int i = GraphZoom > 1.f ? int(GraphZoom * 50) : 0; i < (int)history.size() - 1; ++i) {
 			zoomedHist.push_back(min(WINHEIGHT, history[i] * GraphZoom));
 		}
@@ -173,8 +173,8 @@ void UpdateWinTitle(int &steps, HWND window) {
 }
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode) {
-	MatrixXf X;//= (MatrixXf)BuildMatFromFile("Spiral.csv"); write_binary("Spiral_64.dat", X);
-	MatrixXf Y;//= (MatrixXf)BuildMatFromFile("SpiralLabels.csv"); write_binary("SpiralLabels_64.dat", Y);
+	MatrixXd X;// = (MatrixXd)BuildMatFromFile("Spiral.csv"); write_binary("Spiral_64.dat", X);
+	MatrixXd Y;// = (MatrixXd)BuildMatFromFile("SpiralLabels.csv"); write_binary("SpiralLabels_64.dat", Y);
 
 #if x64
 	read_binary("Spiral_64.dat", X);
@@ -191,7 +191,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 	WNDCLASSA winClass = {};
 	InitializeWindow(&winClass, Instance, Win32MainWindowCallback, &backBuffer, WINWIDTH, WINHEIGHT, "NN_Spiral");
-	MatrixXf screenCoords = BuildPolynomials(BuildDisplayCoords(backBuffer, SCALE).transpose());
+	MatrixXd screenCoords = BuildPolynomials(BuildDisplayCoords(backBuffer, SCALE).transpose());
 
 
 	if(RegisterClassA(&winClass)) {
@@ -203,25 +203,26 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Tanh,
 			Tanh,
 			Tanh });
+
 #if TEST_CPU
-		trainer = NetTrainer(&neural, &X, &Y, 0.25f,
-							   2.25f,
-							   20.f);
+		trainer = NetTrainer(&neural, &X, &Y, 0.25,
+							   2.25,
+							   20.0);
 #else
-		trainer = d_NetTrainer(&neural, &X, &Y, 0.25f,
-							   2.25f,
-							   20.f);
+		trainer = d_NetTrainer(&neural, &X, &Y, 0.25,
+							   2.25,
+							   20.0);
 #endif
 		
 
 		time(&startTime);
 		HDC deviceContext = GetDC(window);
-		vector<float> history;
+		vector<double> history;
 		int steps = 0;
 
 		//Main Loop
 		while(globalRunning) {
-			for(int epoch = 0; epoch < 100; ++epoch) {
+			for(int epoch = 0; epoch < 10; ++epoch) {
 				Win32ProcessPendingMessages();
 				if(!globalRunning) {
 					break;

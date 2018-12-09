@@ -24,17 +24,17 @@ NetParameters &Net::GetParams() {
 	return params;
 }
 
-void Net::SetParams(vector<MatrixXf> W, vector<MatrixXf> b) {
+void Net::SetParams(vector<MatrixXd> W, vector<MatrixXd> b) {
 	params.W = W;
 	params.b = b;
 }
 
 void Net::AddLayer(int A, int B) {
-	params.W.push_back(MatrixXf::Random(A, B));
-	params.b.push_back(VectorXf::Zero(A, 1));
+	params.W.push_back(MatrixXd::Random(A, B));
+	params.b.push_back(MatrixXd::Zero(A, 1));
 }
 
-MatrixXf Net::Activate(Activation act, const MatrixXf &In) {
+MatrixXd Net::Activate(Activation act, const MatrixXd &In) {
 	switch(act) {
 	case Linear:
 		return In;
@@ -57,10 +57,10 @@ MatrixXf Net::Activate(Activation act, const MatrixXf &In) {
 	}
 }
 
-MatrixXf Net::ForwardPropagation(const MatrixXf X) {
-	MatrixXf lastOutput = X;
+MatrixXd Net::ForwardPropagation(const MatrixXd X) {
+	MatrixXd lastOutput = X;
 	for(int i = 0; i < (int)params.layerSizes.size() - 1; ++i) {
-		lastOutput = Activate(params.layerActivations[i], (params.W[i] * lastOutput).colwise() + (VectorXf)params.b[i]);
+		lastOutput = Activate(params.layerActivations[i], (params.W[i] * lastOutput).colwise() + (VectorXd)params.b[i]);
 	}
 	return lastOutput;
 }
