@@ -197,8 +197,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Tanh,
 			Tanh });
 
-		h_trainer =   NetTrainer(&neural, &X, &Y, 0.25f, 2.125f, 0.f);
-		d_trainer = d_NetTrainer(&neural, &X, &Y, 0.25f, 2.125f, 0.f);
+		h_trainer =   NetTrainer(&neural, &X, &Y, 0.15f, 2.f, 20.f);
+		d_trainer = d_NetTrainer(&neural, &X, &Y, 1.f, 2.f, 20.f);
 		
 
 		time(&startTime);
@@ -209,7 +209,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 		//Main Loop
 		while(globalRunning) {
-			for(int epoch = 0; epoch < 1; ++epoch) {
+			for(int epoch = 0; epoch < 100; ++epoch) {
 				Win32ProcessPendingMessages();
 				if(!globalRunning) {
 					break;

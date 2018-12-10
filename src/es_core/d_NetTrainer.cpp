@@ -15,7 +15,6 @@ MatrixXf to_host(d_MatrixXf d_matrix) {
 d_NetTrainer::d_NetTrainer() {
 }
 
-
 d_NetTrainer::d_NetTrainer(Net *net, MatrixXf *data, MatrixXf *labels, float weightScale, float learnRate, float regTerm) {
 	network = net;
 	trainData = data;
@@ -25,8 +24,8 @@ d_NetTrainer::d_NetTrainer(Net *net, MatrixXf *data, MatrixXf *labels, float wei
 	int nodeCount = 0;
 	for(int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i) {
 		nodeCount += network->GetParams().layerSizes[i];
-		trainParams.d_W.push_back(to_device(net->GetParams().W[i] * weightScale));
-		trainParams.d_b.push_back(to_device(net->GetParams().b[i]));
+		trainParams.d_W.push_back(to_device(network->GetParams().W[i] * weightScale));
+		trainParams.d_b.push_back(to_device(network->GetParams().b[i]));
 	}
 	trainParams.learningMod = 1.f / nodeCount;
 	trainParams.learningRate = learnRate;
@@ -123,13 +122,14 @@ void d_NetTrainer::BackwardPropagation() {
 	}
 }
 
-
 void d_NetTrainer::UpdateParameters() {
 	for(int i = 0; i < (int)trainParams.d_dW.size(); ++i) {
-		network->GetParams().W[i] -= ((trainParams.learningRate*trainParams.learningMod) * to_host(trainParams.d_dW[i]));
-		network->GetParams().b[i] -= ((trainParams.learningRate*trainParams.learningMod) * to_host(trainParams.d_db[i]));
-		cudaMemcpy(trainParams.d_W[i].d_data(), network->GetParams().W[i].data(), trainParams.d_W[i].memSize(), cudaMemcpyHostToDevice);//TODO: remove
-		cudaMemcpy(trainParams.d_b[i].d_data(), network->GetParams().b[i].data(), trainParams.d_b[i].memSize(), cudaMemcpyHostToDevice);//TODO: remove
+		MatrixXf newW = to_host(trainParams.d_W[i]);
+		MatrixXf newb = to_host(trainParams.d_b[i]);
+		newW -= ((trainParams.learningRate*trainParams.learningMod) * to_host(trainParams.d_dW[i]));
+		newb -= ((trainParams.learningRate*trainParams.learningMod) * to_host(trainParams.d_db[i]));
+		cudaMemcpy(trainParams.d_W[i].d_data(), newW.data(), trainParams.d_W[i].memSize(), cudaMemcpyHostToDevice);//TODO: remove
+		cudaMemcpy(trainParams.d_b[i].d_data(), newb.data(), trainParams.d_b[i].memSize(), cudaMemcpyHostToDevice);//TODO: remove
 	}
 }
 
