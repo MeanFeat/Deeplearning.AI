@@ -41,7 +41,7 @@ public:
 	MatrixXd *trainLabels;
 	d_Matrix d_trainLabels;
 
-	void AddLayer(int A, int B, double weightScale);
+	void AddLayer(int A, int B);
 
 	void Visualization(MatrixXd screen, int * buffer, int m, int k, bool discrete);
 	
@@ -49,6 +49,7 @@ public:
 	double CalcCost( MatrixXd h, MatrixXd Y);
 	void BackwardPropagation();
 	void UpdateParameters();
+	void UpdateSingleParamADAM(MatrixXd * w, MatrixXd * d, MatrixXd * m, MatrixXd * mS);
 	void UpdateParametersADAM();
 	void UpdateSingleStep();
 

@@ -16,8 +16,8 @@ NetTrainer::NetTrainer(Net *net, MatrixXd *data, MatrixXd *labels, double weight
 	trainParams.learningMod = 1.0 / nodeCount;
 	trainParams.learningRate = learnRate;
 	trainParams.regTerm = regTerm;
-	for(int h = 1; h < (int)network->GetParams().layerSizes.size(); ++h) {
-		AddLayer((int)network->GetParams().layerSizes[h], (int)network->GetParams().layerSizes[h - 1], weightScale);
+	for(int i = 1; i < (int)network->GetParams().layerSizes.size(); ++i) {
+		AddLayer((int)network->GetParams().layerSizes[i], (int)network->GetParams().layerSizes[i - 1]);
 	}
 }
 
@@ -33,7 +33,7 @@ NetCache NetTrainer::GetCache() {
 	return cache;
 }
 
-void NetTrainer::AddLayer(int A, int B, double weightScale) {
+void NetTrainer::AddLayer(int A, int B) {
 	cache.Z.push_back(MatrixXd::Zero(0, 0));
 	cache.A.push_back(MatrixXd::Zero(0, 0));
 	trainParams.dW.push_back(MatrixXd::Zero(0, 0));
@@ -91,7 +91,6 @@ void NetTrainer::BackwardPropagation() {
 		trainParams.dW[l] = coeff * MatrixXd((dZ * lowerA.transpose()).array() + (0.5f * (trainParams.regTerm*trainParams.learningMod) * network->GetParams().W[l]).array());
 		trainParams.db[l] = coeff * dZ.rowwise().sum();
 	}
-
 }
 
 void NetTrainer::UpdateParameters() {
@@ -112,20 +111,17 @@ void NetTrainer::UpdateParametersWithMomentum() {
 
 #define BETA1 0.9
 #define BETA2 (1.f - DBL_EPSILON)
+void NetTrainer::UpdateSingleParamADAM(MatrixXd *w, MatrixXd *d, MatrixXd *m, MatrixXd *mS) {
+	*m = BETA1 * *m + (1 - BETA1) * *d;
+	*mS = (BETA2 * *mS) + MatrixXd((1 - BETA2) * d->array().pow(2));
+	*w -= (trainParams.learningRate*trainParams.learningMod)
+		* MatrixXd((*m / (1 - pow(BETA1, 2))).array() / ((*mS / (1 - pow(BETA2, 2))).array().sqrt() + DBL_EPSILON));
+}
+
 void NetTrainer::UpdateParametersADAM() {
 	for(int i = 0; i < (int)trainParams.dW.size(); ++i) {
-		NetTrainParameters vCorrected = momentum;
-		NetTrainParameters sCorrected = momentumSqr;
-		momentum.dW[i] = BETA1 * momentum.dW[i] + (1 - BETA1) * trainParams.dW[i];
-		momentum.db[i] = BETA1 * momentum.db[i] + (1 - BETA1) * trainParams.db[i];
-		vCorrected.dW[i] = momentum.dW[i] / (1 - pow(BETA1, 2));
-		vCorrected.db[i] = momentum.db[i] / (1 - pow(BETA1, 2));
-		momentumSqr.dW[i] = (BETA2 * momentumSqr.dW[i]) + ((1 - BETA2) * MatrixXd(trainParams.dW[i].array().pow(2)));
-		momentumSqr.db[i] = (BETA2 * momentumSqr.db[i]) + ((1 - BETA2) * MatrixXd(trainParams.db[i].array().pow(2)));
-		sCorrected.dW[i] = momentumSqr.dW[i] / (1 - pow(BETA2, 2));
-		sCorrected.db[i] = momentumSqr.db[i] / (1 - pow(BETA2, 2));
-		network->GetParams().W[i] -= (trainParams.learningRate*trainParams.learningMod) * MatrixXd(vCorrected.dW[i].array() / (sCorrected.dW[i].array().sqrt() + DBL_EPSILON));
-		network->GetParams().b[i] -= (trainParams.learningRate*trainParams.learningMod) * MatrixXd(vCorrected.db[i].array() / (sCorrected.db[i].array().sqrt() + DBL_EPSILON));
+		UpdateSingleParamADAM(&network->GetParams().W[i], &trainParams.dW[i], &momentum.dW[i], &momentumSqr.dW[i]);
+		UpdateSingleParamADAM(&network->GetParams().b[i], &trainParams.db[i], &momentum.db[i], &momentumSqr.db[i]);
 	}
 }
 

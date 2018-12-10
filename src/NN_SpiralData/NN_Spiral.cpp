@@ -198,7 +198,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Tanh });
 
 		h_trainer = NetTrainer(&neural, &X, &Y, 0.150, 2.00, 20.0);
-		d_trainer = d_NetTrainer(&neural, &X, &Y, 1.0, 0.85, 20.0);
+		d_trainer = d_NetTrainer(&neural, &X, &Y, 1.0, 2.00, 20.0);
 		
 
 		time(&startTime);
