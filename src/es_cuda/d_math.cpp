@@ -47,7 +47,6 @@ void d_matrixMult(d_MatrixXf* dst, d_MatrixXf* srcA, d_MatrixXf* srcB){
 		(dst->d_data(), srcA->d_data(), srcB->d_data(), m, n, k);
 }
 
-
 __global__ void MatrixMult_lhsT_Kernel(float *dst, float *srcA, float *srcB, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -275,8 +274,8 @@ void d_Set_dW(d_MatrixXf* dst, d_MatrixXf* d_dZ, d_MatrixXf* d_A, float coeffici
 	Set_dW_Kernel << <dimGrid(m, k), dimBlock() >> >
 		(dst->d_data(), d_dZ->d_data(), d_A->d_data(), coefficient, m, n, k);
 }
-
-__global__ void Set_dW_Kernel(float *dst, const float *d_dZ, const float *d_A, const float *d_W, float coefficient, float learn, int m, int n, int k) {
+ 
+__global__ void Set_dW_Kernel(float *dst, const float *d_dZ, const float *d_A, const float *d_W, float coefficient, float regTerm, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if(col < k && row < m) {
@@ -284,16 +283,15 @@ __global__ void Set_dW_Kernel(float *dst, const float *d_dZ, const float *d_A, c
 		for(int ind = 0; ind < n; ++ind) {
 			tempSum += d_dZ[row + m * ind] * d_A[col + k * ind];
 		}
-		dst[col * m + row] = (coefficient * tempSum) + (coefficient * learn * d_W[col * m + row]); //TODO: why is this better??
-		//dst[col * m + row] = coefficient * (tempSum + (0.5 * learn * d_W[col * m + row])); 
+		dst[col * m + row] = coefficient * (tempSum + (0.5 * regTerm * d_W[col * m + row]));
 	}
 } /* dst = coeff * (d_dZ * d_A.T) (+) (0.5 * learn * d_W) */
-void d_Set_dW(d_MatrixXf* dst, d_MatrixXf* d_dZ, d_MatrixXf* d_A, d_MatrixXf *d_W, float coefficient, float learn) {
+void d_Set_dW(d_MatrixXf* dst, d_MatrixXf* d_dZ, d_MatrixXf* d_A, d_MatrixXf *d_W, float coefficient, float regTerm) {
 	int m = d_dZ->rows();
 	int n = d_dZ->cols();
 	int k = d_A->rows();
 	Set_dW_Kernel << <dimGrid(m, k), dimBlock() >> >
-		(dst->d_data(), d_dZ->d_data(), d_A->d_data(), d_W->d_data(), coefficient, learn, m, n, k);
+		(dst->d_data(), d_dZ->d_data(), d_A->d_data(), d_W->d_data(), coefficient, regTerm, m, n, k);
 }
 
 __global__ void Set_db_Kernel(float *dst, const float *d_dZ, float coefficient, int r, int c) {
