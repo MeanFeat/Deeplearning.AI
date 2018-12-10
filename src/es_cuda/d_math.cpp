@@ -307,3 +307,30 @@ void d_Set_db(d_Matrix* dst, d_Matrix* d_dZ, double coefficient) {
 	Set_db_Kernel << <d_dZ->rows(), 1 >> >
 		(dst->d_data(), d_dZ->d_data(), coefficient, d_dZ->rows(), d_dZ->cols());
 }
+
+#define EPSILON 0.0000000000000001
+#define BETA1 0.9
+#define BETA2 (1.0 - EPSILON)
+__global__ void UpdateParameterADAM_Kernel(double *dst, int N, const double *d_derivative, double *d_momentum, double *d_momentumSqr, double learn) {
+	int tid = blockIdx.x;
+	if(tid < N) {
+		d_momentum[tid] = BETA1 * d_momentum[tid] + (1 - BETA1) * d_derivative[tid];
+		d_momentumSqr[tid] = (BETA2 * d_momentumSqr[tid]) + ((1 - BETA2) * (d_derivative[tid] * d_derivative[tid]));
+		dst[tid] -= learn * (d_momentum[tid]/(1-(BETA1*BETA1)) / (sqrt(d_momentumSqr[tid]/(1-(BETA2*BETA2))) + EPSILON));
+	}
+}
+void d_UpdateParameterADAM(d_Matrix* dst, d_Matrix* d_derivative, d_Matrix* d_momentum, d_Matrix* d_momentumSqr, double learnRate) {
+	UpdateParameterADAM_Kernel << <dst->size(), 1 >> >
+		(dst->d_data(), dst->size(), d_derivative->d_data(), d_momentum->d_data(), d_momentumSqr->d_data(), learnRate);
+}
+
+__global__ void UpdateParameter_Kernel(double *dst, int N, const double *d_derivative, double learn) {
+	int tid = blockIdx.x;
+	if(tid < N) {
+		dst[tid] -= learn * d_derivative[tid];
+	}
+}
+void d_UpdateParameter(d_Matrix* dst, d_Matrix* d_derivative, double learnRate) {
+	UpdateParameter_Kernel << <dst->size(), 1 >> >
+		(dst->d_data(), dst->size(), d_derivative->d_data(), learnRate);
+}

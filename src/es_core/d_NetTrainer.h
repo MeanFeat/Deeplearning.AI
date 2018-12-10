@@ -11,8 +11,6 @@ using namespace Eigen;
 using namespace std;
 
 struct d_NetTrainParameters {
-	vector<MatrixXd> dW;
-	vector<MatrixXd> db;
 	vector<d_Matrix> d_dW;
 	vector<d_Matrix> d_db;
 	vector<d_Matrix> d_W;

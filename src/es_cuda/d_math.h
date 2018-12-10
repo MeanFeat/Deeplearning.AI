@@ -23,5 +23,7 @@ void d_BackLReLU(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A);
 void d_Set_dW(d_Matrix *dst, d_Matrix *d_dZ, d_Matrix *d_A, double coefficient);
 void d_Set_dW(d_Matrix *dst, d_Matrix *d_dZ, d_Matrix *d_A, d_Matrix *d_W, double coefficient, double learn);
 void d_Set_db(d_Matrix *dst, d_Matrix *d_dZ, double coefficient);
+void d_UpdateParameterADAM(d_Matrix * dst, d_Matrix * d_derivative, d_Matrix * d_momentum, d_Matrix * d_momentumSqr, double learnRate);
+void d_UpdateParameter(d_Matrix * dst, d_Matrix * d_derivative, double learnRate);
 
 void d_drawPixels(int * buffer, int m, int k, const double * vals, bool discrete);
