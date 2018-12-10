@@ -150,6 +150,7 @@ MatrixXd BuildRadians(MatrixXd m) {
 }
 
 void UpdatePrediction() {
+	trainer.UpdateNetwork();
 	MatrixXd mouse = MatrixXd(2,1);
 	mouse(0, 0) = mouseX-WINHALFWIDTH;
 	mouse(1, 0) = mouseY-WINHALFHEIGHT;

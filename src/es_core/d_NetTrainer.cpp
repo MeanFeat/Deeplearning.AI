@@ -79,6 +79,13 @@ void d_NetTrainer::Visualization(MatrixXd screen, int * buffer,int m,int k, bool
 	}
 }
 
+void d_NetTrainer::UpdateNetwork() {
+	for(int i = 0; i < trainParams.d_W.size(); ++i) {
+		network->GetParams().W[i] = to_host(trainParams.d_W[i]);
+		network->GetParams().b[i] = to_host(trainParams.d_b[i]);
+	}
+}
+
 void d_NetTrainer::ForwardTrain() {
 	for(int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i) {
 		d_forwardLayer(&cache.d_A[i + 1], &trainParams.d_W[i], &cache.d_A[i], &trainParams.d_b[i]);

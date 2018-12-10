@@ -42,12 +42,13 @@ public:
 	void AddLayer(int A, int B);
 
 	void Visualization(MatrixXd screen, int * buffer, int m, int k, bool discrete);
+
+	void UpdateNetwork();
 	
 	void ForwardTrain();
 	double CalcCost( MatrixXd h, MatrixXd Y);
 	void BackwardPropagation();
 	void UpdateParameters();
-	void UpdateSingleParamADAM(MatrixXd * w, MatrixXd * d, MatrixXd * m, MatrixXd * mS);
 	void UpdateParametersADAM();
 	void UpdateSingleStep();
 
