@@ -111,7 +111,7 @@ MatrixXd BuildDisplayCoords(Buffer buffer, double scale = 1.0) {
 	VectorXd cols(buffer.width * buffer.height);
 	int halfWidth = int(buffer.width * 0.5);
 	for(int x = 0; x < buffer.width; ++x) {
-		row(x) = float((x - halfWidth) / scale);
+		row(x) = double((x - halfWidth) / scale);
 	}
 	for(int y = 0; y < buffer.height; ++y) {
 		for(int x = 0; x < buffer.width; ++x) {

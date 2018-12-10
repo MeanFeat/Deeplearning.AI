@@ -47,7 +47,6 @@ void d_matrixMult(d_Matrix* dst, d_Matrix* srcA, d_Matrix* srcB){
 		(dst->d_data(), srcA->d_data(), srcB->d_data(), m, n, k);
 }
 
-
 __global__ void MatrixMult_lhsT_Kernel(double *dst, double *srcA, double *srcB, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -275,8 +274,6 @@ void d_Set_dW(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, double coefficient) 
 	Set_dW_Kernel << <dimGrid(m, k), dimBlock() >> >
 		(dst->d_data(), d_dZ->d_data(), d_A->d_data(), coefficient, m, n, k);
 }
-
-//coeff * MatrixXd((dZ * lowerA.transpose()).array() + (0.5f * (trainParams.regTerm*trainParams.learningMod) * network->GetParams().W[l]).array())
 __global__ void Set_dW_Kernel(double *dst, const double *d_dZ, const double *d_A, const double *d_W, double coefficient, double regTerm, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -285,8 +282,7 @@ __global__ void Set_dW_Kernel(double *dst, const double *d_dZ, const double *d_A
 		for(int ind = 0; ind < n; ++ind) {
 			tempSum += d_dZ[row + m * ind] * d_A[col + k * ind];
 		}
-		//dst[col * m + row] = (coefficient * tempSum) + (coefficient * regTerm * d_W[col * m + row]); //TODO: why is this better??
-		dst[col * m + row] = coefficient * (tempSum + (0.5 * regTerm * d_W[col * m + row])); 
+		dst[col * m + row] = coefficient * (tempSum + (0.5 * regTerm * d_W[col * m + row]));
 	}
 } /* dst = coeff * (d_dZ * d_A.T) (+) (0.5 * learn * d_W) */
 void d_Set_dW(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, d_Matrix *d_W, double coefficient, double regTerm) {

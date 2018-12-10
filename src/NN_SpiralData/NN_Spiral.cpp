@@ -19,11 +19,8 @@ static time_t currentTime;
 Buffer backBuffer;
 Net neural;
 
-#if TEST_CPU
-NetTrainer trainer;
-#else
-d_NetTrainer trainer;
-#endif
+NetTrainer h_trainer;
+d_NetTrainer d_trainer;
 
 global_variable double GraphZoom = 1.f;
 
@@ -42,16 +39,20 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			discreteOutput = !discreteOutput;
 			break;
 		case 'W':
-			trainer.ModifyLearningRate(0.02f);
+			h_trainer.ModifyLearningRate(0.02);
+			d_trainer.ModifyLearningRate(0.02);
 			break;
 		case 'S':
-			trainer.ModifyLearningRate(-0.02f);
+			h_trainer.ModifyLearningRate(-0.02);
+			d_trainer.ModifyLearningRate(-0.02);
 			break;
 		case 'Q':
-			trainer.ModifyRegTerm(0.02f);
+			h_trainer.ModifyRegTerm(0.02);
+			d_trainer.ModifyRegTerm(0.02);
 			break;
 		case 'A':
-			trainer.ModifyRegTerm(-0.02f);
+			h_trainer.ModifyRegTerm(-0.02);
+			d_trainer.ModifyRegTerm(-0.02);
 			break;
 		case 'P':
 			plotData = !plotData;
@@ -91,15 +92,15 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 
 void PlotData(MatrixXd X, MatrixXd Y) {
 	for(int i = 0; i < X.cols(); ++i) {
-		DrawFilledCircle(backBuffer, int(WINHALFWIDTH + X(0, i) * SCALE), int(WINHALFHEIGHT + -X(1, i) * SCALE), SCALE * 0.11f, Color(255, 255, 255, 255));
+		DrawFilledCircle(backBuffer, int(WINHALFWIDTH + X(0, i) * SCALE), int(WINHALFHEIGHT + -X(1, i) * SCALE), SCALE * 0.11, Color(255, 255, 255, 255));
 		DrawFilledCircle(backBuffer, int(WINHALFWIDTH + X(0, i) * SCALE),
-						 int(WINHALFHEIGHT + -X(1, i) * SCALE), SCALE * 0.08f,
+						 int(WINHALFHEIGHT + -X(1, i) * SCALE), SCALE * 0.08,
 						 (Y(0, i) > 0.f ? positiveColor : negativeColor) - Color(50, 50, 50, 50));
 	}
 }
 
-void UpdateHistory(vector<double> &history) {
-	history.push_back(min((trainer.GetCache().cost) * (WINHEIGHT-backBuffer.titleOffset), WINHEIGHT));
+void UpdateHistory(vector<double> &history, double cost) {
+	history.push_back(min((cost) * (WINHEIGHT-backBuffer.titleOffset), WINHEIGHT));
 	if(history.size() >= WINWIDTH + WINWIDTH) {
 		for(int i = 1; i < (int)history.size(); i += 2) {
 			history.erase(history.begin() + i);
@@ -140,35 +141,27 @@ void DrawOutputToScreen(MatrixXd screenCoords) {
 	}
 }
 
-void UpdateDisplay(MatrixXd screenCoords, MatrixXd X, MatrixXd Y, vector<double> &history) {
+void UpdateDisplay(MatrixXd screenCoords, MatrixXd X, MatrixXd Y, vector<double> &h_history, vector<double> &d_history) {
 	if(globalRunning) {
-#if TEST_CPU
-		DrawOutputToScreen(screenCoords);
-#else
-		trainer.Visualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height, discreteOutput);
-#endif
+		//DrawOutputToScreen(screenCoords);
+		//d_trainer.Visualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height, discreteOutput);
+		int *pixel = (int *)backBuffer.memory;
+		for(int i = 0; i < WINWIDTH*WINHEIGHT; ++i) {
+			*pixel++ = ((0 << 16) | ((0 << 8) | 0));
+		}
 		if(plotData) {
 			PlotData(X, Y);
 		}
-		vector<double> zoomedHist;
-		for(int i = GraphZoom > 1.f ? int(GraphZoom * 50) : 0; i < (int)history.size() - 1; ++i) {
-			zoomedHist.push_back(min(WINHEIGHT, history[i] * GraphZoom));
-		}
-		DrawHistory(backBuffer, zoomedHist, Color(200,100,100,255));
+		DrawHistory(backBuffer, h_history, Color(200, 100, 100, 255));
+		DrawHistory(backBuffer, d_history, Color(100, 100, 200, 255));
 	}
 }
 
 void UpdateWinTitle(int &steps, HWND window) {
 	time(&currentTime);
 	char s[255];
-	sprintf_s(s, "SpiralData || Epoch %d | Time: %0.1f | Cost %0.10f | LearnRate %0.3f | RegTerm %0.3f | "
-			  , steps++, difftime(currentTime, startTime), trainer.GetCache().cost, trainer.GetTrainParams().learningRate, trainer.GetTrainParams().regTerm);
-	
-	/*for(int l = 0; l < (int)neural.GetParams().layerSizes.size(); ++l) {
-		char layer[255];
-		sprintf_s(layer, "[%d]", neural.GetParams().layerSizes[l]);
-		strcat_s(s, layer);
-	}*/
+	sprintf_s(s, "SpiralData || Epoch %d | Time: %0.1f | h_Cost %0.10f | d_Cost %0.10f  "
+			  , steps++, difftime(currentTime, startTime), h_trainer.GetCache().cost, d_trainer.GetCache().cost);
 	SetWindowText(window, LPCSTR(s));
 }
 
@@ -204,20 +197,14 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Tanh,
 			Tanh });
 
-#if TEST_CPU
-		trainer = NetTrainer(&neural, &X, &Y, 0.25,
-							   2.25,
-							   20.0);
-#else
-		trainer = d_NetTrainer(&neural, &X, &Y, 0.25,
-							   2.25,
-							   20.0);
-#endif
+		h_trainer = NetTrainer(&neural, &X, &Y, 0.150, 2.00, 20.0);
+		d_trainer = d_NetTrainer(&neural, &X, &Y, 1.0, 0.85, 20.0);
 		
 
 		time(&startTime);
 		HDC deviceContext = GetDC(window);
-		vector<double> history;
+		vector<double> h_history;
+		vector<double> d_history;
 		int steps = 0;
 
 		//Main Loop
@@ -227,12 +214,13 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 				if(!globalRunning) {
 					break;
 				}
-				trainer.UpdateSingleStep();
-				UpdateHistory(history);
+				h_trainer.UpdateSingleStep();
+				d_trainer.UpdateSingleStep();
+				UpdateHistory(h_history, h_trainer.GetCache().cost);
+				UpdateHistory(d_history, d_trainer.GetCache().cost);
 				UpdateWinTitle(steps, window);
 			}
-
-			UpdateDisplay(screenCoords, X, Y, history);
+			UpdateDisplay(screenCoords, X, Y, h_history, d_history);
 			Win32DisplayBufferInWindow(deviceContext, window, backBuffer);
 		}
 		DeleteDC(deviceContext);

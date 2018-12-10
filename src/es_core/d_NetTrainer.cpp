@@ -25,7 +25,8 @@ d_NetTrainer::d_NetTrainer(Net *net, MatrixXd *data, MatrixXd *labels, double we
 	int nodeCount = 0;
 	for(int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i) {
 		nodeCount += network->GetParams().layerSizes[i];
-		network->GetParams().W[i] *= weightScale;
+		trainParams.d_W.push_back(to_device(network->GetParams().W[i] * weightScale));
+		trainParams.d_b.push_back(to_device(network->GetParams().b[i]));
 	}
 	trainParams.learningMod = 1.0 / (double)nodeCount;
 	trainParams.learningRate = learnRate;
@@ -36,10 +37,6 @@ d_NetTrainer::d_NetTrainer(Net *net, MatrixXd *data, MatrixXd *labels, double we
 	}
 	for(int i = 1; i < cache.d_A.size(); ++i)	{
 		cache.d_dZ.push_back(to_device(MatrixXd::Zero(cache.d_A[i].rows(), trainExamplesCount)));
-	}
-	for(int w = 0; w < net->GetParams().W.size(); ++w) {
-		trainParams.d_W.push_back(to_device(net->GetParams().W[w]));
-		trainParams.d_b.push_back(to_device(net->GetParams().b[w]));
 	}
 }
 
@@ -56,9 +53,7 @@ d_NetCache d_NetTrainer::GetCache() {
 
 void d_NetTrainer::AddLayer(int A, int B, double weightScale) {
 	cache.d_A.push_back(to_device(MatrixXd::Zero(A, trainExamplesCount)));
-	trainParams.dW.push_back(MatrixXd::Zero(A, B));
 	trainParams.d_dW.push_back(to_device(MatrixXd::Zero(A, B)));
-	trainParams.db.push_back(MatrixXd::Zero(A, 1));
 	trainParams.d_db.push_back(to_device(MatrixXd::Zero(A, 1)));
 	momentum.dW.push_back(MatrixXd::Zero(A, B));
 	momentum.db.push_back(MatrixXd::Zero(A, 1));
@@ -94,8 +89,8 @@ void d_NetTrainer::ForwardTrain() {
 double d_NetTrainer::CalcCost(MatrixXd h, MatrixXd Y) {
 	double coeff = 1.0 / trainExamplesCount;
 	double sumSqrW = 0.0;
-	for(int w = 0; w < (int)network->GetParams().W.size() - 1; ++w) {
-		sumSqrW += network->GetParams().W[w].array().pow(2).sum();
+	for(int w = 0; w < (int)trainParams.d_W.size() - 1; ++w) {
+		sumSqrW += to_host(trainParams.d_W[w]).array().pow(2).sum();
 	}
 	double regCost = 0.5 * double((trainParams.regTerm*trainParams.learningMod) * (sumSqrW / (2.0 * (double)trainExamplesCount)));
 	return ((Y-h).array().pow(2).sum() * coeff) + regCost;
@@ -141,18 +136,20 @@ void d_NetTrainer::BackwardPropagation() {
 }
 
 void d_NetTrainer::UpdateParameters() {
-	for(int i = 0; i < (int)trainParams.dW.size(); ++i) {
-		network->GetParams().W[i] -= ((trainParams.learningRate*trainParams.learningMod) * to_host(trainParams.d_dW[i]));
-		network->GetParams().b[i] -= ((trainParams.learningRate*trainParams.learningMod) * to_host(trainParams.d_db[i]));
-		cudaMemcpy(trainParams.d_W[i].d_data(), network->GetParams().W[i].data(), trainParams.d_W[i].memSize(), cudaMemcpyHostToDevice);//TODO: remove
-		cudaMemcpy(trainParams.d_b[i].d_data(), network->GetParams().b[i].data(), trainParams.d_b[i].memSize(), cudaMemcpyHostToDevice);//TODO: remove
+	for(int i = 0; i < (int)trainParams.d_dW.size(); ++i) {
+		MatrixXd newW = to_host(trainParams.d_W[i]);
+		MatrixXd newb = to_host(trainParams.d_b[i]);
+		newW -= ((trainParams.learningRate*trainParams.learningMod) * to_host(trainParams.d_dW[i]));
+		newb -= ((trainParams.learningRate*trainParams.learningMod) * to_host(trainParams.d_db[i]));
+		cudaMemcpy(trainParams.d_W[i].d_data(), newW.data(), trainParams.d_W[i].memSize(), cudaMemcpyHostToDevice);//TODO: remove
+		cudaMemcpy(trainParams.d_b[i].d_data(), newb.data(), trainParams.d_b[i].memSize(), cudaMemcpyHostToDevice);//TODO: remove
 	}
 }
 
 #define BETA1 0.9
 #define BETA2 (1.0 - DBL_EPSILON)
 void d_NetTrainer::UpdateParametersADAM() {
-	for(int i = 0; i < (int)trainParams.dW.size(); ++i) {
+	for(int i = 0; i < (int)trainParams.d_dW.size(); ++i) {
 		d_NetTrainParameters vCorrected = momentum;
 		d_NetTrainParameters sCorrected = momentumSqr;
 		momentum.dW[i] = BETA1 * momentum.dW[i] + (1 - BETA1) * to_host(trainParams.d_dW[i]);
@@ -163,10 +160,12 @@ void d_NetTrainer::UpdateParametersADAM() {
 		momentumSqr.db[i] = (BETA2 * momentumSqr.db[i]) + ((1 - BETA2) * MatrixXd(to_host(trainParams.d_db[i]).array().pow(2)));
 		sCorrected.dW[i] = momentumSqr.dW[i] / (1 - pow(BETA2, 2));
 		sCorrected.db[i] = momentumSqr.db[i] / (1 - pow(BETA2, 2));
-		network->GetParams().W[i] -= (trainParams.learningRate*trainParams.learningMod) * MatrixXd(vCorrected.dW[i].array() / (sCorrected.dW[i].array().sqrt() + DBL_EPSILON));
-		network->GetParams().b[i] -= (trainParams.learningRate*trainParams.learningMod) * MatrixXd(vCorrected.db[i].array() / (sCorrected.db[i].array().sqrt() + DBL_EPSILON));
-		cudaMemcpy(trainParams.d_W[i].d_data(), network->GetParams().W[i].data(), trainParams.d_W[i].memSize(), cudaMemcpyHostToDevice);//TODO: remove
-		cudaMemcpy(trainParams.d_b[i].d_data(), network->GetParams().b[i].data(), trainParams.d_b[i].memSize(), cudaMemcpyHostToDevice);//TODO: remove
+		MatrixXd newW = to_host(trainParams.d_W[i]);
+		MatrixXd newb = to_host(trainParams.d_b[i]);
+		newW -= (trainParams.learningRate*trainParams.learningMod) * MatrixXd(vCorrected.dW[i].array() / (sCorrected.dW[i].array().sqrt() + DBL_EPSILON));
+		newb -= (trainParams.learningRate*trainParams.learningMod) * MatrixXd(vCorrected.db[i].array() / (sCorrected.db[i].array().sqrt() + DBL_EPSILON));
+		cudaMemcpy(trainParams.d_W[i].d_data(), newW.data(), trainParams.d_W[i].memSize(), cudaMemcpyHostToDevice);//TODO: remove
+		cudaMemcpy(trainParams.d_b[i].d_data(), newb.data(), trainParams.d_b[i].memSize(), cudaMemcpyHostToDevice);//TODO: remove
 	}
 }
 
