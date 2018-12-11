@@ -100,14 +100,14 @@ void PlotData(MatrixXd X, MatrixXd Y) {
 	}
 }
 
-void DrawOutputToScreen(MatrixXd normScreen) {
-	trainer.Visualization(normScreen, (int*)backBuffer.memory, backBuffer.width, backBuffer.height, false);
+void DrawOutputToScreen(MatrixXd normScreen, cudaStream_t *stream) {
+	trainer.Visualization((int*)backBuffer.memory, backBuffer.width, backBuffer.height, false, stream);
 }
 
-void UpdateDisplay(MatrixXd screenCoords, MatrixXd X, MatrixXd Y, vector<double> &history, vector<double> &testHistory) {
+void UpdateDisplay(MatrixXd screenCoords, MatrixXd X, MatrixXd Y, vector<double> &history, vector<double> &testHistory, cudaStream_t *stream) {
 	if(globalRunning) {
 		if(drawOutput) {
-			DrawOutputToScreen(screenCoords);
+			DrawOutputToScreen(screenCoords, stream);
 		} else {
 			ClearScreen(backBuffer);
 		}
@@ -208,7 +208,9 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		HDC deviceContext = GetDC(window);
 		vector<double> history;
 		vector<double> testHistory;
-
+		cudaStream_t stream;
+		cudaStreamCreate(&stream);
+		trainer.BuildVisualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height);
 		int steps = 0;
 		//Main Loop
 		while(globalRunning) {
@@ -216,11 +218,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			if (isTraining) {
 				trainer.UpdateSingleStep();
 				UpdateHistory(history, trainer.GetCache().cost);
-				UpdateHistory(testHistory, trainer.CalcCost(neural.ForwardPropagation(testX), testY));
+				//UpdateHistory(testHistory, trainer.CalcCost(neural.ForwardPropagation(testX), testY));
 				steps++;
 			} else {
 			}
-			UpdateDisplay(screenCoords, X, Y, history, testHistory);
+			UpdateDisplay(screenCoords, X, Y, history, testHistory, &stream);
 			UpdatePrediction();
 			Win32DisplayBufferInWindow(deviceContext, window, backBuffer);
 			

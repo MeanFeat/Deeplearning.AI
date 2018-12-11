@@ -60,7 +60,7 @@ double NetTrainer::CalcCost(const MatrixXd h, MatrixXd Y) {
 	for(int w = 0; w < (int)network->GetParams().W.size() - 1; ++w) {
 		sumSqrW += network->GetParams().W[w].array().pow(2).sum();
 	}
-	double regCost = 0.5f * double((trainParams.regTerm*trainParams.learningMod) * (sumSqrW / (2.f * (double)trainLabels->cols())));
+	double regCost = 0.5 * double((trainParams.regTerm*trainParams.learningMod) * (sumSqrW / (2.0 * (double)trainLabels->cols())));
 	return ((Y - h).array().pow(2).sum() * coeff) + regCost;
 }
 
@@ -148,7 +148,8 @@ void NetTrainer::BuildDropoutMask() {
 
 void NetTrainer::UpdateSingleStep() {
 	//BuildDropoutMask();
-	cache.cost = CalcCost(ForwardTrain(), *trainLabels);
+	ForwardTrain();
+	cache.cost = CalcCost(cache.A.back(), *trainLabels);
 	BackwardPropagation();
 	UpdateParametersADAM();
 }

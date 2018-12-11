@@ -245,7 +245,7 @@ __global__ void BackLReLUKernel(double *dst, double *d_W, double *d_dZ, const do
 		for(int ind = 0; ind < n; ++ind) {
 			tempSum += d_W[row * n + ind] * d_dZ[col * n + ind];
 		}
-		dst[col * m + row] = tempSum *(d_A[col * m + row] > 0.f ? 1.f : LRELU_LEAK);
+		dst[col * m + row] = tempSum * (d_A[col * m + row] > 0.f ? 1.f : LRELU_LEAK);
 	}
 } /* dst = (d_W.T * d_dZ) (*) (d_A > 0 ? 1 : 0) */
 void d_BackLReLU(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A) {
@@ -298,13 +298,13 @@ __global__ void Set_db_Kernel(double *dst, const double *d_dZ, double coefficien
 	if(tid < r*c){ 
 		double tempSum = 0.0;
 		for(int ind = 0; ind < c; ++ind) {
-			tempSum += d_dZ[r * ind];
+			tempSum += d_dZ[tid + ind*r];
 		}
 	dst[tid] = tempSum * coefficient;
 	}
 } /* dst = coeff * (srcA.SumOfRows) */
 void d_Set_db(d_Matrix* dst, d_Matrix* d_dZ, double coefficient) {
-	Set_db_Kernel << <d_dZ->rows(), 1 >> >
+	Set_db_Kernel << <dst->rows(), 1 >> >
 		(dst->d_data(), d_dZ->d_data(), coefficient, d_dZ->rows(), d_dZ->cols());
 }
 

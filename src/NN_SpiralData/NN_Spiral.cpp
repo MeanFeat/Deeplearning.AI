@@ -141,14 +141,14 @@ void DrawOutputToScreen(MatrixXd screenCoords) {
 	}
 }
 
-void UpdateDisplay(MatrixXd screenCoords, MatrixXd X, MatrixXd Y, vector<double> &h_history, vector<double> &d_history) {
+void UpdateDisplay(MatrixXd screenCoords, MatrixXd X, MatrixXd Y, vector<double> &h_history, vector<double> &d_history, cudaStream_t *stream) {
 	if(globalRunning) {
 		//DrawOutputToScreen(screenCoords);
-		//d_trainer.Visualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height, discreteOutput);
-		int *pixel = (int *)backBuffer.memory;
+		d_trainer.Visualization((int *)backBuffer.memory, backBuffer.width, backBuffer.height, discreteOutput, stream);
+		/*int *pixel = (int *)backBuffer.memory;
 		for(int i = 0; i < WINWIDTH*WINHEIGHT; ++i) {
 			*pixel++ = ((0 << 16) | ((0 << 8) | 0));
-		}
+		}*/
 		if(plotData) {
 			PlotData(X, Y);
 		}
@@ -197,16 +197,17 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Tanh,
 			Tanh });
 
-		h_trainer = NetTrainer(&neural, &X, &Y, 0.150, 2.00, 20.0);
-		d_trainer = d_NetTrainer(&neural, &X, &Y, 1.0, 2.00, 20.0);
-		
+		h_trainer = NetTrainer(&neural, &X, &Y, 0.25, 2.00, 20.0);
+		d_trainer = d_NetTrainer(&neural, &X, &Y, 1.0, 2.0, 20.0);
 
 		time(&startTime);
 		HDC deviceContext = GetDC(window);
 		vector<double> h_history;
 		vector<double> d_history;
 		int steps = 0;
-
+		cudaStream_t stream;
+		cudaStreamCreate(&stream);
+		d_trainer.BuildVisualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height);
 		//Main Loop
 		while(globalRunning) {
 			for(int epoch = 0; epoch < 10; ++epoch) {
@@ -220,7 +221,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 				UpdateHistory(d_history, d_trainer.GetCache().cost);
 				UpdateWinTitle(steps, window);
 			}
-			UpdateDisplay(screenCoords, X, Y, h_history, d_history);
+			UpdateDisplay(screenCoords, X, Y, h_history, d_history, &stream);
 			Win32DisplayBufferInWindow(deviceContext, window, backBuffer);
 		}
 		DeleteDC(deviceContext);

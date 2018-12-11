@@ -18,6 +18,9 @@ struct d_NetTrainParameters {
 	double learningRate;
 	double learningMod;
 	double regTerm;
+	double regMod;
+	double coefficiant;
+	unsigned int trainExamplesCount;
 };
 
 struct d_NetCache {
@@ -40,27 +43,28 @@ public:
 	d_Matrix d_trainLabels;
 
 	void AddLayer(int A, int B);
-
-	void Visualization(MatrixXd screen, int * buffer, int m, int k, bool discrete);
-
-	void UpdateNetwork();
-	
+	void BuildVisualization(MatrixXd screen, int * buffer, int m, int k);
+	void Visualization(int * buffer, int m, int k, bool discrete, cudaStream_t * stream);
+	void UpdateNetwork();	
 	void ForwardTrain();
-	double CalcCost( MatrixXd h, MatrixXd Y);
+	double CalcCost();
 	void BackwardPropagation();
 	void UpdateParameters();
 	void UpdateParametersADAM();
 	void UpdateSingleStep();
+	double Coeff() {
+		return trainParams.coefficiant;
+	}
 
 	inline void ModifyLearningRate(double m) {
-		trainParams.learningRate = max(0.001, trainParams.learningRate + m);
+		trainParams.learningMod = max(DBL_EPSILON, trainParams.learningMod + m);
 	}
 	inline void ModifyRegTerm(double m) {
-		trainParams.regTerm = max(DBL_EPSILON, trainParams.regTerm + m);
+		trainParams.regMod = max(DBL_EPSILON, trainParams.regMod + m);
 	}
 
-	unsigned int GetExamplesCount() {
-		return trainExamplesCount;
+	unsigned int TrainExamplesCount() {
+		return trainParams.trainExamplesCount;
 	}
 	
 protected:
@@ -68,7 +72,8 @@ protected:
 	d_NetTrainParameters trainParams;
 	d_NetTrainParameters momentum;
 	d_NetTrainParameters momentumSqr;
-	unsigned int trainExamplesCount;
+	int *d_Buffer;
+	vector<d_Matrix> d_VisualA;
 };
 
 
