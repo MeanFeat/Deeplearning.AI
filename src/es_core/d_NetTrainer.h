@@ -11,16 +11,19 @@ using namespace Eigen;
 using namespace std;
 
 struct d_NetTrainParameters {
-	vector<d_Matrix> d_dW;
-	vector<d_Matrix> d_db;
-	vector<d_Matrix> d_W;
-	vector<d_Matrix> d_b;
 	double learningRate;
 	double learningMod;
 	double regTerm;
 	double regMod;
 	double coefficiant;
 	unsigned int trainExamplesCount;
+};
+
+struct d_NetTrainDerivatives {
+	vector<d_Matrix> d_dW;
+	vector<d_Matrix> d_db;
+	vector<d_Matrix> d_W;
+	vector<d_Matrix> d_b;
 };
 
 struct d_NetCache {
@@ -38,8 +41,6 @@ public:
 	d_NetTrainParameters GetTrainParams();
 	d_NetCache GetCache();
 	Net *network;
-	MatrixXd *trainData;
-	MatrixXd *trainLabels;
 	d_Matrix d_trainLabels;
 
 	void AddLayer(int A, int B);
@@ -70,8 +71,9 @@ public:
 protected:
 	d_NetCache cache;
 	d_NetTrainParameters trainParams;
-	d_NetTrainParameters momentum;
-	d_NetTrainParameters momentumSqr;
+	d_NetTrainDerivatives derivative;
+	d_NetTrainDerivatives momentum;
+	d_NetTrainDerivatives momentumSqr;
 	int *d_Buffer;
 	vector<d_Matrix> d_VisualA;
 };
