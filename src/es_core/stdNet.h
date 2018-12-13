@@ -47,6 +47,10 @@ public:
 	static MatrixXd Activate(Activation act, const MatrixXd &In);
 	MatrixXd ForwardPropagation(const MatrixXd X);
 
+	int Depth() {
+		return (int)GetParams().layerSizes.size() - 1;
+	}
+
 	void SaveNetwork();
 	void LoadNetwork();
 

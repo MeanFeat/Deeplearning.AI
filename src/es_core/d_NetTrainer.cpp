@@ -22,7 +22,7 @@ d_NetTrainer::d_NetTrainer(Net *net, MatrixXd *data, MatrixXd *labels, double we
 	trainParams.trainExamplesCount = (unsigned int)data->cols();
 	trainParams.coefficiant = 1.0 / (double)trainParams.trainExamplesCount;
 	int nodeCount = 0;
-	for(int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i) {
+	for(int i = 0; i < network->Depth(); ++i) {
 		nodeCount += network->GetParams().layerSizes[i];
 		derivative.d_W.push_back(to_device(network->GetParams().W[i] * weightScale));
 		derivative.d_b.push_back(to_device(network->GetParams().b[i]));
@@ -62,14 +62,14 @@ void d_NetTrainer::AddLayer(int A, int B) {
 void d_NetTrainer::BuildVisualization(MatrixXd screen, int * buffer, int m, int k) {
 	cudaMalloc((void **)&d_Buffer, m*k * sizeof(int));
 	d_VisualA.push_back(to_device(screen));
-	for(int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i) {
+	for(int i = 0; i < network->Depth(); ++i) {
 		d_VisualA.push_back(to_device(MatrixXd(derivative.d_W[i].rows(), d_VisualA[i].cols())));
 	}
 }
 
 void d_NetTrainer::Visualization(int * buffer, int m, int k, bool discrete, cudaStream_t *stream) {
-	for(int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i) {
-		d_forwardLayer(&d_VisualA[i+1], &derivative.d_W[i], &d_VisualA[i], &derivative.d_b[i]);
+	for(int i = 0; i < network->Depth(); ++i) {
+		d_forwardLayer(&d_VisualA[i + 1], &derivative.d_W[i], &d_VisualA[i], &derivative.d_b[i]);
 		d_Activate(&d_VisualA[i + 1], network->GetParams().layerActivations[i]);
 	}
 	d_drawPixels(d_Buffer, m,k, d_VisualA.back().d_data(), discrete);
@@ -84,7 +84,7 @@ void d_NetTrainer::UpdateNetwork() {
 }
 
 void d_NetTrainer::ForwardTrain() {
-	for(int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i) {
+	for(int i = 0; i < network->Depth(); ++i) {
 		d_forwardLayer(&cache.d_A[i + 1], &derivative.d_W[i], &cache.d_A[i], &derivative.d_b[i]);
 		d_Activate(&cache.d_A[i + 1], network->GetParams().layerActivations[i]);
 	}
@@ -103,7 +103,7 @@ void d_NetTrainer::BackwardPropagation() {
 	d_subtract(&cache.d_dZ.back(), &cache.d_A.back(), &d_trainLabels);
 	d_Set_dW(&derivative.d_dW.back(), &cache.d_dZ.back(), &cache.d_A[cache.d_A.size() - 2], Coeff());
 	d_Set_db(&derivative.d_db.back(), &cache.d_dZ.back(), Coeff());
-	for(int l = (int)network->GetParams().layerActivations.size() - 2; l >= 0; --l) {
+	for(int l = network->Depth() - 1; l >= 0; --l) {
 		switch(network->GetParams().layerActivations[l]) {
 		case Sigmoid:
 			d_BackSigmoid(&cache.d_dZ[l], &derivative.d_W[l+1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
@@ -143,7 +143,5 @@ void d_NetTrainer::UpdateSingleStep() {
 	ForwardTrain();
 	BackwardPropagation();
 	UpdateParametersADAM();
-	//cache.cost = CalcCost();
+	cache.cost = CalcCost();
 }
-
-
