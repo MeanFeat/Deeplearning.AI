@@ -1,7 +1,22 @@
 #include "d_NetTrainer.h"
 
 using namespace Eigen;
+#define TEST_CMAJ 0
 
+#if TEST_CMAJ
+d_Matrix to_device(MatrixXd matrix) {
+	//transpose data only to Column Major
+	MatrixXd temp = matrix.transpose();
+	return d_Matrix(temp.data(), (int)matrix.rows(), (int)matrix.cols());
+}
+
+MatrixXd to_host(d_Matrix d_matrix) {
+	// return to Row Major order
+	MatrixXd out = MatrixXd(d_matrix.cols(), d_matrix.rows());
+	cudaMemcpy(out.data(), d_matrix.d_data(), d_matrix.memSize(), cudaMemcpyDeviceToHost);
+	return out.transpose();
+}
+#else
 d_Matrix to_device(MatrixXd matrix) {
 	return d_Matrix(matrix.data(), (int)matrix.rows(), (int)matrix.cols());
 }
@@ -11,6 +26,8 @@ MatrixXd to_host(d_Matrix d_matrix) {
 	cudaMemcpy(out.data(), d_matrix.d_data(), d_matrix.memSize(), cudaMemcpyDeviceToHost);
 	return out;
 }
+#endif //TEST_CMAJ
+
 
 d_NetTrainer::d_NetTrainer() {
 }
@@ -24,8 +41,8 @@ d_NetTrainer::d_NetTrainer(Net *net, MatrixXd *data, MatrixXd *labels, double we
 	int nodeCount = 0;
 	for(int i = 0; i < network->Depth(); ++i) {
 		nodeCount += network->GetParams().layerSizes[i];
-		derivative.d_W.push_back(to_device(network->GetParams().W[i] * weightScale));
-		derivative.d_b.push_back(to_device(network->GetParams().b[i]));
+		trainParams.d_W.push_back(to_device(network->GetParams().W[i] * weightScale));
+		trainParams.d_b.push_back(to_device(network->GetParams().b[i]));
 	}
 	trainParams.learningRate = learnRate;
 	trainParams.learningMod = learnRate / (double)nodeCount;
@@ -63,13 +80,13 @@ void d_NetTrainer::BuildVisualization(MatrixXd screen, int * buffer, int m, int 
 	cudaMalloc((void **)&d_Buffer, m*k * sizeof(int));
 	d_VisualA.push_back(to_device(screen));
 	for(int i = 0; i < network->Depth(); ++i) {
-		d_VisualA.push_back(to_device(MatrixXd(derivative.d_W[i].rows(), d_VisualA[i].cols())));
+		d_VisualA.push_back(to_device(MatrixXd(trainParams.d_W[i].rows(), d_VisualA[i].cols())));
 	}
 }
 
 void d_NetTrainer::Visualization(int * buffer, int m, int k, bool discrete, cudaStream_t *stream) {
 	for(int i = 0; i < network->Depth(); ++i) {
-		d_forwardLayer(&d_VisualA[i + 1], &derivative.d_W[i], &d_VisualA[i], &derivative.d_b[i]);
+		d_forwardLayer(&d_VisualA[i + 1], &trainParams.d_W[i], &d_VisualA[i], &trainParams.d_b[i]);
 		d_Activate(&d_VisualA[i + 1], network->GetParams().layerActivations[i]);
 	}
 	d_drawPixels(d_Buffer, m,k, d_VisualA.back().d_data(), discrete);
@@ -77,23 +94,24 @@ void d_NetTrainer::Visualization(int * buffer, int m, int k, bool discrete, cuda
 }
 
 void d_NetTrainer::UpdateNetwork() {
-	for(int i = 0; i < derivative.d_W.size(); ++i) {
-		network->GetParams().W[i] = to_host(derivative.d_W[i]);
-		network->GetParams().b[i] = to_host(derivative.d_b[i]);
+	for(int i = 0; i < trainParams.d_W.size(); ++i) {
+		network->GetParams().W[i] = to_host(trainParams.d_W[i]);
+		network->GetParams().b[i] = to_host(trainParams.d_b[i]);
 	}
 }
 
 void d_NetTrainer::ForwardTrain() {
 	for(int i = 0; i < network->Depth(); ++i) {
-		d_forwardLayer(&cache.d_A[i + 1], &derivative.d_W[i], &cache.d_A[i], &derivative.d_b[i]);
+		d_forwardLayer(&cache.d_A[i + 1], &trainParams.d_W[i], &cache.d_A[i], &trainParams.d_b[i]);
 		d_Activate(&cache.d_A[i + 1], network->GetParams().layerActivations[i]);
+
 	}
 }
 
 double d_NetTrainer::CalcCost() { //TODO: calculate on device
 	double sumSqrW = 0.0;
-	for(int w = 0; w < (int)derivative.d_W.size() - 1; ++w) {
-		sumSqrW += to_host(derivative.d_W[w]).array().pow(2).sum();
+	for(int w = 0; w < (int)trainParams.d_W.size() - 1; ++w) {
+		sumSqrW += to_host(trainParams.d_W[w]).array().pow(2).sum();
 	}
 	double regCost = 0.5 * double((trainParams.regMod) * (sumSqrW / (2.0 * (double)TrainExamplesCount())));
 	return ((to_host(d_trainLabels) - to_host(cache.d_A.back())).array().pow(2).sum() * Coeff()) + regCost;
@@ -106,40 +124,40 @@ void d_NetTrainer::BackwardPropagation() {
 	for(int l = network->Depth() - 1; l >= 0; --l) {
 		switch(network->GetParams().layerActivations[l]) {
 		case Sigmoid:
-			d_BackSigmoid(&cache.d_dZ[l], &derivative.d_W[l+1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
+			d_BackSigmoid(&cache.d_dZ[l], &trainParams.d_W[l+1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
 			break;
 		case Tanh:
-			d_BackTanh(&cache.d_dZ[l], &derivative.d_W[l + 1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
+			d_BackTanh(&cache.d_dZ[l], &trainParams.d_W[l + 1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
 			break;
 		case ReLU:
-			d_BackReLU(&cache.d_dZ[l], &derivative.d_W[l + 1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
+			d_BackReLU(&cache.d_dZ[l], &trainParams.d_W[l + 1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
 			break;
 		case LReLU:
-			d_BackLReLU(&cache.d_dZ[l], &derivative.d_W[l + 1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
+			d_BackLReLU(&cache.d_dZ[l], &trainParams.d_W[l + 1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
 			break;
 		default:
 			break;
 		}
-		d_Set_dW(&derivative.d_dW[l], &cache.d_dZ[l], &cache.d_A[l], &derivative.d_W[l], Coeff(), trainParams.regMod);
+		d_Set_dW(&derivative.d_dW[l], &cache.d_dZ[l], &cache.d_A[l], &trainParams.d_W[l], Coeff(), trainParams.regMod);
 		d_Set_db(&derivative.d_db[l], &cache.d_dZ[l], Coeff());
 	}
 }
 
 void d_NetTrainer::UpdateParameters() {
 	for(int i = 0; i < (int)derivative.d_dW.size(); ++i) {
-		d_UpdateParameter(&derivative.d_W[i], &derivative.d_dW[i], trainParams.learningMod);
-		d_UpdateParameter(&derivative.d_b[i], &derivative.d_db[i], trainParams.learningMod);
+		d_UpdateParameter(&trainParams.d_W[i], &derivative.d_dW[i], trainParams.learningMod);
+		d_UpdateParameter(&trainParams.d_b[i], &derivative.d_db[i], trainParams.learningMod);
 	}
 }
 
 void d_NetTrainer::UpdateParametersADAM() {
 	for(int i = 0; i < (int)derivative.d_dW.size(); ++i) {
-		d_UpdateParameterADAM(&derivative.d_W[i], &derivative.d_dW[i], &momentum.d_dW[i], &momentumSqr.d_dW[i], trainParams.learningMod);
-		d_UpdateParameterADAM(&derivative.d_b[i], &derivative.d_db[i], &momentum.d_db[i], &momentumSqr.d_db[i], trainParams.learningMod);
+		d_UpdateParameterADAM(&trainParams.d_W[i], &derivative.d_dW[i], &momentum.d_dW[i], &momentumSqr.d_dW[i], trainParams.learningMod);
+		d_UpdateParameterADAM(&trainParams.d_b[i], &derivative.d_db[i], &momentum.d_db[i], &momentumSqr.d_db[i], trainParams.learningMod);
 	}
 }
 
-void d_NetTrainer::UpdateSingleStep() {
+void d_NetTrainer::UpdateSingleStep() {	
 	ForwardTrain();
 	BackwardPropagation();
 	UpdateParametersADAM();

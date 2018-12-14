@@ -27,6 +27,61 @@ void d_subtract(d_Matrix *dst, d_Matrix *srcA, d_Matrix *srcB) {
 	subtractKernel << <1, dst->size() >> > (dst->d_data(), srcA->d_data(), srcB->d_data());
 }
 
+__global__ void MatrixMult_CMaj_Kernel(double *dst, double *srcA, double *srcB, int m, int n, int k) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	double sum = 0.0;
+	if(col < k && row < m) {
+		for(int i = 0; i < n; i++) {
+			sum += srcA[row * n + i] * srcB[i * k + col];
+		}
+		dst[row * k + col] = sum;
+	}
+}
+void d_matrixMult_CMaj(d_Matrix* dst, d_Matrix* srcA, d_Matrix* srcB) {
+	int m = srcA->rows();
+	int n = srcA->cols();
+	int k = srcB->cols();
+	MatrixMult_CMaj_Kernel << <dimGrid(m, k), dimBlock() >> >
+		(dst->d_data(), srcA->d_data(), srcB->d_data(), m, n, k);
+}
+__global__ void MatrixMult_lhsT_CMaj_Kernel(double *dst, double *srcA, double *srcB, int m, int n, int k) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	if(col < k && row < m) {
+		double tempSum = 0.0;
+		for(int i = 0; i < n; ++i) {
+			tempSum += srcA[row + m * i] * srcB[i * k + col];
+		}
+		dst[row * k + col] = tempSum;
+	}
+} /*dst = srcA.T * srcB */
+void d_matrixMult_lhsT_CMaj(d_Matrix* dst, d_Matrix* srcA, d_Matrix* srcB) {
+	int m = srcA->cols(); //reverse for transpose
+	int n = srcA->rows(); //reverse for transpose
+	int k = srcB->cols();
+	MatrixMult_lhsT_CMaj_Kernel << <dimGrid(m, k), dimBlock() >> >
+		(dst->d_data(), srcA->d_data(), srcB->d_data(), m, n, k);
+}
+
+__global__ void MatrixMult_rhsT_CMaj_Kernel(double *dst, const double *srcA, const double *srcB, int m, int n, int k) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	double sum = 0.0;
+	if(col < k && row < m) {
+		for(int i = 0; i < n; i++) {
+			sum += srcA[row * n + i] * srcB[col * n + i];
+		}
+		dst[row * k + col] = sum;
+	}
+} /* dst = srcA * srcB.T */
+void d_matrixMult_rhsT_CMaj(d_Matrix* dst, d_Matrix* srcA, d_Matrix* srcB) {
+	int m = srcA->rows();
+	int n = srcA->cols();
+	int k = srcB->rows(); //reverse for transpose
+	MatrixMult_rhsT_CMaj_Kernel << <dimGrid(m, k), dimBlock() >> >
+		(dst->d_data(), srcA->d_data(), srcB->d_data(), m, n, k);
+}
 
 __global__ void MatrixMultKernel(double *dst,const double *srcA,const double *srcB, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -274,6 +329,8 @@ void d_Set_dW(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, double coefficient) 
 	Set_dW_Kernel << <dimGrid(m, k), dimBlock() >> >
 		(dst->d_data(), d_dZ->d_data(), d_A->d_data(), coefficient, m, n, k);
 }
+
+
 __global__ void Set_dW_Kernel(double *dst, const double *d_dZ, const double *d_A, const double *d_W, double coefficient, double regTerm, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;

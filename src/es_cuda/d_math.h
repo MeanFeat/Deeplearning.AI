@@ -10,6 +10,9 @@
 
 void d_add(d_Matrix *dst, d_Matrix *srcA, d_Matrix *srcB);
 void d_subtract(d_Matrix *dst, d_Matrix *srcA, d_Matrix *srcB);
+void d_matrixMult_CMaj(d_Matrix * dst, d_Matrix * srcA, d_Matrix * srcB);
+void d_matrixMult_lhsT_CMaj(d_Matrix * dst, d_Matrix * srcA, d_Matrix * srcB);
+void d_matrixMult_rhsT_CMaj(d_Matrix * dst, d_Matrix * srcA, d_Matrix * srcB);
 void d_matrixMult(d_Matrix* dst, d_Matrix* srcA, d_Matrix* srcB);
 void d_matrixMult_lhsT(d_Matrix* dst, d_Matrix* srcA, d_Matrix* srcB);
 void d_matrixMult_rhsT(d_Matrix* dst, d_Matrix* srcA, d_Matrix* srcB);
