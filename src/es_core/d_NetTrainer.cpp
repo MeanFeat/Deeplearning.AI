@@ -121,7 +121,7 @@ void d_NetTrainer::BackwardPropagation() {
 	d_subtract(&cache.d_dZ.back(), &cache.d_A.back(), &d_trainLabels);
 	d_Set_dW(&derivative.d_dW.back(), &cache.d_dZ.back(), &cache.d_A[cache.d_A.size() - 2], Coeff());
 	d_Set_db(&derivative.d_db.back(), &cache.d_dZ.back(), Coeff());
-	for(int l = network->Depth() - 1; l >= 0; --l) {
+	for(int l = (int)network->GetParams().layerActivations.size() - 2; l >= 0; --l) {
 		switch(network->GetParams().layerActivations[l]) {
 		case Sigmoid:
 			d_BackSigmoid(&cache.d_dZ[l], &trainParams.d_W[l+1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
