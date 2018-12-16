@@ -1,9 +1,6 @@
 #include "d_NetTrainer.h"
 
 using namespace Eigen;
-#define TEST_CMAJ 0
-
-#if TEST_CMAJ
 d_Matrix to_device(MatrixXd matrix) {
 	//transpose data only to Column Major
 	MatrixXd temp = matrix.transpose();
@@ -16,18 +13,6 @@ MatrixXd to_host(d_Matrix d_matrix) {
 	cudaMemcpy(out.data(), d_matrix.d_data(), d_matrix.memSize(), cudaMemcpyDeviceToHost);
 	return out.transpose();
 }
-#else
-d_Matrix to_device(MatrixXd matrix) {
-	return d_Matrix(matrix.data(), (int)matrix.rows(), (int)matrix.cols());
-}
-
-MatrixXd to_host(d_Matrix d_matrix) {
-	MatrixXd out = MatrixXd(d_matrix.rows(), d_matrix.cols());
-	cudaMemcpy(out.data(), d_matrix.d_data(), d_matrix.memSize(), cudaMemcpyDeviceToHost);
-	return out;
-}
-#endif //TEST_CMAJ
-
 
 d_NetTrainer::d_NetTrainer() {
 }
@@ -104,7 +89,6 @@ void d_NetTrainer::ForwardTrain() {
 	for(int i = 0; i < network->Depth(); ++i) {
 		d_forwardLayer(&cache.d_A[i + 1], &trainParams.d_W[i], &cache.d_A[i], &trainParams.d_b[i]);
 		d_Activate(&cache.d_A[i + 1], network->GetParams().layerActivations[i]);
-
 	}
 }
 
@@ -158,7 +142,7 @@ void d_NetTrainer::UpdateParametersADAM() {
 }
 
 void d_NetTrainer::UpdateSingleStep() {	
-	ForwardTrain();
+	ForwardTrain(); 
 	BackwardPropagation();
 	UpdateParametersADAM();
 	cache.cost = CalcCost();
