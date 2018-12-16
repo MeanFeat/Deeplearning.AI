@@ -152,4 +152,5 @@ void NetTrainer::UpdateSingleStep() {
 	cache.cost = CalcCost(cache.A.back(), *trainLabels);
 	BackwardPropagation();
 	UpdateParametersADAM();
+	cache.cost = CalcCost(cache.A.back(), *trainLabels);
 }

@@ -49,11 +49,11 @@ __global__ void MatrixMult_lhsT_CMaj_Kernel(double *dst, double *srcA, double *s
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if(col < k && row < m) {
-		double tempSum = 0.0;
+		double sum = 0.0;
 		for(int i = 0; i < n; ++i) {
-			tempSum += srcA[row + m * i] * srcB[i * k + col];
+			sum += srcA[row + m * i] * srcB[i * k + col];
 		}
-		dst[row * k + col] = tempSum;
+		dst[row * k + col] = sum;
 	}
 } /*dst = srcA.T * srcB */
 void d_matrixMult_lhsT_CMaj(d_Matrix* dst, d_Matrix* srcA, d_Matrix* srcB) {
@@ -143,12 +143,12 @@ void d_matrixMult_rhsT(d_Matrix* dst, d_Matrix* srcA, d_Matrix* srcB) {
 __global__ void ForwardLayerKernel(double *dst,const double *d_W, const double *d_last, const double * d_bias, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	double sum = 0.0;
 	if(col < k && row < m) {
-		double tempSum = 0.0;
-		for(int ind = 0; ind < n; ++ind) {
-			tempSum += d_W[row + m * ind] * d_last[col * n + ind];
+		for(int i = 0; i < n; i++) {
+			sum += d_W[row * n + i] * d_last[i * k + col];
 		}
-		dst[col * m + row] = tempSum + d_bias[row];
+		dst[row * k + col] = sum + d_bias[row];
 	}
 } /* dst = d_W * d_last + d_bias */
 void d_forwardLayer(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_last, d_Matrix *d_bias) {
@@ -160,15 +160,15 @@ void d_forwardLayer(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_last, d_Matrix *d_
 }
 
 
-__global__ void DrawPixelsKernel(int *buffer, int m, const double* vals, bool discrete, Color neg, Color pos) {
+__global__ void DrawPixelsKernel(int *buffer, int k, const double* vals, bool discrete, Color neg, Color pos) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
-	double percent = vals[col * m + row];
+	double percent = vals[row * k + col];
 	if(discrete) {
 		if (percent > 0.0) {
-			buffer[col * m + row] = ((pos.r << 16) | ((pos.g << 8) | pos.b));
+			buffer[row * k + col] = ((pos.r << 16) | ((pos.g << 8) | pos.b));
 		} else {
-			buffer[col * m + row] = ((neg.r << 16) | ((neg.g << 8) | neg.b));
+			buffer[row * k + col] = ((neg.r << 16) | ((neg.g << 8) | neg.b));
 		}
 	} else {
 		if(percent > 0.) {
@@ -176,13 +176,13 @@ __global__ void DrawPixelsKernel(int *buffer, int m, const double* vals, bool di
 			unsigned char g = unsigned char(double(255) + (percent*(double(pos.g) - double(255))));
 			unsigned char b = unsigned char(double(255) + (percent*(double(pos.b) - double(255))));
 			//unsigned char a = unsigned char(double(255) + (percent*(double(pos.a) - double(255))));
-			buffer[col * m + row] = ((r << 16) | ((g << 8) | b));
+			buffer[row * k + col] = ((r << 16) | ((g << 8) | b));
 		} else {
 			unsigned char r = unsigned char(double(255) + (-percent*(double(neg.r) - double(255))));
 			unsigned char g = unsigned char(double(255) + (-percent*(double(neg.g) - double(255))));
 			unsigned char b = unsigned char(double(255) + (-percent*(double(neg.b) - double(255))));
 			//unsigned char a = unsigned char(double(255) + (-percent*(double(neg.a) - double(255))));
-			buffer[col * m + row] = ((r << 16) | ((g << 8) | b));
+			buffer[row * k + col] = ((r << 16) | ((g << 8) | b));
 		}
 	}
 }
@@ -190,7 +190,7 @@ void d_drawPixels(int * buffer, int m,int k, const double* vals, bool discrete){
 	Color pos = Color(100, 167, 211, 255);
 	Color neg = Color(255, 184, 113, 255);
 	DrawPixelsKernel << <dimGrid(m, k), dimBlock() >> >
-		(buffer, m, vals, discrete, neg, pos);
+		(buffer, k, vals, discrete, neg, pos);
 }
 
 
@@ -241,11 +241,11 @@ __global__ void BackSigmoidKernel(double *dst, double *d_W, double *d_dZ, const 
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if(col < k && row < m) {
-		double tempSum = 0.0;
-		for(int ind = 0; ind < n; ++ind) {
-			tempSum += d_W[row * n + ind] * d_dZ[col * n + ind];
+		double sum = 0.0;
+		for(int i = 0; i < n; ++i) {
+			sum += d_W[row + m * i] * d_dZ[i * k + col];
 		}
-		dst[col * m + row] = tempSum * (1 - d_A[col * m + row]);
+		dst[row * k + col] = sum * (1 - d_A[row * k + col]);
 	}
 } /* dst = (d_W.T * d_dZ) (*) d_A^2 */
 void d_BackSigmoid(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A) {
@@ -259,11 +259,11 @@ __global__ void BackTanhKernel(double *dst, double *d_W, double *d_dZ, const dou
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if(col < k && row < m) {
-		double tempSum = 0.0;
-		for(int ind = 0; ind < n; ++ind) {
-			tempSum += d_W[row * n + ind] * d_dZ[col * n + ind];
+		double sum = 0.0;
+		for(int i = 0; i < n; ++i) {
+			sum += d_W[row + m * i] * d_dZ[i * k + col];
 		}
-		dst[col * m + row] = tempSum * (1 - d_A[col * m + row] * d_A[col * m + row]);
+		dst[row * k + col] = sum * (1 - d_A[row * k + col] * d_A[row * k + col]);
 	}
 } /* dst = (d_W.T * d_dZ) (*) d_A^2 */
 void d_BackTanh(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A) {
@@ -277,11 +277,11 @@ __global__ void BackReLUKernel(double *dst, double *d_W, double *d_dZ, const dou
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if(col < k && row < m) {
-		double tempSum = 0.0;
-		for(int ind = 0; ind < n; ++ind) {
-			tempSum += d_W[row * n + ind] * d_dZ[col * n + ind];
+		double sum = 0.0;
+		for(int i = 0; i < n; ++i) {
+			sum += d_W[row + m * i] * d_dZ[i * k + col];
 		}
-		dst[col * m + row] = tempSum *(d_A[col * m + row] > 0.f ? 1.f : 0.f);
+		dst[row * k + col] = sum *(d_A[row * k + col] > 0.f ? 1.f : 0.f);
 	}
 } /* dst = (d_W.T * d_dZ) (*) (d_A > 0 ? 1 : 0) */
 void d_BackReLU(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A) {
@@ -296,11 +296,11 @@ __global__ void BackLReLUKernel(double *dst, double *d_W, double *d_dZ, const do
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if(col < k && row < m) {
-		double tempSum = 0.0;
-		for(int ind = 0; ind < n; ++ind) {
-			tempSum += d_W[row * n + ind] * d_dZ[col * n + ind];
+		double sum = 0.0;
+		for(int i = 0; i < n; ++i) {
+			sum += d_W[row + m * i] * d_dZ[i * k + col];
 		}
-		dst[col * m + row] = tempSum * (d_A[col * m + row] > 0.f ? 1.f : LRELU_LEAK);
+		dst[row * k + col] = sum * (d_A[row * k + col] > 0.f ? 1.f : LRELU_LEAK);
 	}
 } /* dst = (d_W.T * d_dZ) (*) (d_A > 0 ? 1 : 0) */
 void d_BackLReLU(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A) {
@@ -314,12 +314,12 @@ void d_BackLReLU(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A) {
 __global__ void Set_dW_Kernel(double *dst, const double *d_dZ, const double *d_A, double coefficient, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	double sum = 0.0;
 	if(col < k && row < m) {
-		double tempSum = 0.0;
-		for(int ind = 0; ind < n; ++ind) {
-			tempSum += d_dZ[row + m * ind] * d_A[col + k * ind];
+		for(int i = 0; i < n; i++) {
+			sum += d_dZ[row * n + i] * d_A[col * n + i];
 		}
-		dst[col * m + row] = tempSum * coefficient;
+		dst[row * k + col] = sum * coefficient;
 	}
 } /* dst = coeff * (d_dZ * d_A.T) */
 void d_Set_dW(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, double coefficient) {
@@ -334,12 +334,12 @@ void d_Set_dW(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, double coefficient) 
 __global__ void Set_dW_Kernel(double *dst, const double *d_dZ, const double *d_A, const double *d_W, double coefficient, double regTerm, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	double sum = 0.0;
 	if(col < k && row < m) {
-		double tempSum = 0.0;
-		for(int ind = 0; ind < n; ++ind) {
-			tempSum += d_dZ[row + m * ind] * d_A[col + k * ind];
+		for(int i = 0; i < n; i++) {
+			sum += d_dZ[row * n + i] * d_A[col * n + i];
 		}
-		dst[col * m + row] = coefficient * (tempSum + (0.5 * regTerm * d_W[col * m + row]));
+		dst[row * k + col] = coefficient * (sum + (0.5 * regTerm * d_W[row * k + col]));
 	}
 } /* dst = coeff * (d_dZ * d_A.T) (+) (0.5 * learn * d_W) */
 void d_Set_dW(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, d_Matrix *d_W, double coefficient, double regTerm) {
@@ -352,12 +352,12 @@ void d_Set_dW(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, d_Matrix *d_W, doubl
 
 __global__ void Set_db_Kernel(double *dst, const double *d_dZ, double coefficient, int r, int c) {
 	int tid = blockIdx.x;
-	if(tid < r*c){ 
+	if(tid < r) {
 		double tempSum = 0.0;
 		for(int ind = 0; ind < c; ++ind) {
-			tempSum += d_dZ[tid + ind*r];
+			tempSum += d_dZ[tid * c + ind];
 		}
-	dst[tid] = tempSum * coefficient;
+		dst[tid] = tempSum * coefficient;
 	}
 } /* dst = coeff * (srcA.SumOfRows) */
 void d_Set_db(d_Matrix* dst, d_Matrix* d_dZ, double coefficient) {
