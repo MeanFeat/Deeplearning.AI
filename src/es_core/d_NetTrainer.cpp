@@ -103,41 +103,41 @@ double d_NetTrainer::CalcCost() { //TODO: calculate on device
 
 void d_NetTrainer::BackwardPropagation() {
 	d_subtract(&cache.d_dZ.back(), &cache.d_A.back(), &d_trainLabels);
-	d_Set_dW(&derivative.d_dW.back(), &cache.d_dZ.back(), &cache.d_A[cache.d_A.size() - 2], Coeff());
-	d_Set_db(&derivative.d_db.back(), &cache.d_dZ.back(), Coeff());
+	d_set_dW(&derivative.d_dW.back(), &cache.d_dZ.back(), &cache.d_A[cache.d_A.size() - 2], Coeff());
+	d_set_db(&derivative.d_db.back(), &cache.d_dZ.back(), Coeff());
 	for(int l = (int)network->GetParams().layerActivations.size() - 2; l >= 0; --l) {
 		switch(network->GetParams().layerActivations[l]) {
 		case Sigmoid:
-			d_BackSigmoid(&cache.d_dZ[l], &trainParams.d_W[l+1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
+			d_backSigmoid(&cache.d_dZ[l], &trainParams.d_W[l+1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
 			break;
 		case Tanh:
-			d_BackTanh(&cache.d_dZ[l], &trainParams.d_W[l + 1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
+			d_backTanh(&cache.d_dZ[l], &trainParams.d_W[l + 1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
 			break;
 		case ReLU:
-			d_BackReLU(&cache.d_dZ[l], &trainParams.d_W[l + 1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
+			d_backReLU(&cache.d_dZ[l], &trainParams.d_W[l + 1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
 			break;
 		case LReLU:
-			d_BackLReLU(&cache.d_dZ[l], &trainParams.d_W[l + 1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
+			d_backLReLU(&cache.d_dZ[l], &trainParams.d_W[l + 1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
 			break;
 		default:
 			break;
 		}
-		d_Set_dW(&derivative.d_dW[l], &cache.d_dZ[l], &cache.d_A[l], &trainParams.d_W[l], Coeff(), trainParams.regMod);
-		d_Set_db(&derivative.d_db[l], &cache.d_dZ[l], Coeff());
+		d_set_dW(&derivative.d_dW[l], &cache.d_dZ[l], &cache.d_A[l], &trainParams.d_W[l], Coeff(), trainParams.regMod);
+		d_set_db(&derivative.d_db[l], &cache.d_dZ[l], Coeff());
 	}
 }
 
 void d_NetTrainer::UpdateParameters() {
 	for(int i = 0; i < (int)derivative.d_dW.size(); ++i) {
-		d_UpdateParameter(&trainParams.d_W[i], &derivative.d_dW[i], trainParams.learningMod);
-		d_UpdateParameter(&trainParams.d_b[i], &derivative.d_db[i], trainParams.learningMod);
+		d_updateParameter(&trainParams.d_W[i], &derivative.d_dW[i], trainParams.learningMod);
+		d_updateParameter(&trainParams.d_b[i], &derivative.d_db[i], trainParams.learningMod);
 	}
 }
 
 void d_NetTrainer::UpdateParametersADAM() {
 	for(int i = 0; i < (int)derivative.d_dW.size(); ++i) {
-		d_UpdateParameterADAM(&trainParams.d_W[i], &derivative.d_dW[i], &momentum.d_dW[i], &momentumSqr.d_dW[i], trainParams.learningMod);
-		d_UpdateParameterADAM(&trainParams.d_b[i], &derivative.d_db[i], &momentum.d_db[i], &momentumSqr.d_db[i], trainParams.learningMod);
+		d_updateParameterADAM(&trainParams.d_W[i], &derivative.d_dW[i], &momentum.d_dW[i], &momentumSqr.d_dW[i], trainParams.learningMod);
+		d_updateParameterADAM(&trainParams.d_b[i], &derivative.d_db[i], &momentum.d_db[i], &momentumSqr.d_db[i], trainParams.learningMod);
 	}
 }
 
