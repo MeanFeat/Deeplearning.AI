@@ -11,6 +11,8 @@ using namespace Eigen;
 using namespace std;
 
 struct d_NetTrainParameters {
+	vector<d_Matrix> d_W;
+	vector<d_Matrix> d_b;
 	double learningRate;
 	double learningMod;
 	double regTerm;
@@ -22,8 +24,6 @@ struct d_NetTrainParameters {
 struct d_NetTrainDerivatives {
 	vector<d_Matrix> d_dW;
 	vector<d_Matrix> d_db;
-	vector<d_Matrix> d_W;
-	vector<d_Matrix> d_b;
 };
 
 struct d_NetCache {

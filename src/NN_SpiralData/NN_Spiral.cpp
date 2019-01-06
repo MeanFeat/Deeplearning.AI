@@ -210,7 +210,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		d_trainer.BuildVisualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height);
 		//Main Loop
 		while(globalRunning) {
-			for(int epoch = 0; epoch < 10; ++epoch) {
+			for(int epoch = 0; epoch < 100; ++epoch) {
 				Win32ProcessPendingMessages();
 				if(!globalRunning) {
 					break;
