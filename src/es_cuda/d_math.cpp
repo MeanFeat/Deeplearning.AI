@@ -18,13 +18,17 @@ void d_add(d_Matrix *dst, d_Matrix *srcA, d_Matrix *srcB) {
 	add_Kernel << <1, dst->size() >> > (dst->d_data(), srcA->d_data(), srcB->d_data());
 }
 
-
 __global__ void subtract_Kernel(double *c, const double *a, const double *b) {
 	int i = threadIdx.x;
 	c[i] = a[i] - b[i];
 } /* dst = srcA (-) srcB */
 void d_subtract(d_Matrix *dst, d_Matrix *srcA, d_Matrix *srcB) {
 	subtract_Kernel << <1, dst->size() >> > (dst->d_data(), srcA->d_data(), srcB->d_data());
+}
+
+__global__ void mult_elem_Kernel(double *c, double *a, double b) {
+	int i = threadIdx.x;
+	c[i] = a[i] * b;
 }
 
 __global__ void mult_Kernel(double *dst, double *srcA, double *srcB, int m, int n, int k) {
@@ -102,7 +106,6 @@ void d_forwardLayer(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_last, d_Matrix *d_
 		(dst->d_data(), d_W->d_data(), d_last->d_data(), d_bias->d_data(), m, n, k);
 }
 
-
 __global__ void drawPixels_Kernel(int *buffer, int k, const double* vals, bool discrete, Color neg, Color pos) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -135,7 +138,6 @@ void d_drawPixels(int * buffer, int m,int k, const double* vals, bool discrete){
 	drawPixels_Kernel << <dimGrid(m, k), dimBlock() >> >
 		(buffer, k, vals, discrete, neg, pos);
 }
-
 
 __global__ void Sigmoid_Kernal(double *dst, int N) {
 	int tid = blockIdx.x;
@@ -273,7 +275,6 @@ void d_set_dW(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, double coefficient) 
 		(dst->d_data(), d_dZ->d_data(), d_A->d_data(), coefficient, m, n, k);
 }
 
-
 __global__ void set_dW_Kernel(double *dst, const double *d_dZ, const double *d_A, const double *d_W, double coefficient, double regTerm, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -333,4 +334,57 @@ __global__ void updateParameter_Kernel(double *dst, int N, const double *d_deriv
 void d_updateParameter(d_Matrix* dst, d_Matrix* d_derivative, double learnRate) {
 	updateParameter_Kernel << <dst->size(), 1 >> >
 		(dst->d_data(), dst->size(), d_derivative->d_data(), learnRate);
+}
+
+__global__ void sum_Kernel(double *dst, double *src, int len) {
+	int tid = threadIdx.x;
+	int step = 2;
+	int get = 1;
+	while(get < len) {
+		if (tid * step + get < len) {
+			src[tid*step] += src[tid*step + get];
+			__syncthreads();
+		}
+		step *= 2;
+		get *= 2;
+	}
+	if(tid == 0) {
+		if(len % 2 > 0) {
+			src[0] += src[len];
+		}
+		dst[0] = src[0];		
+	}
+}
+void d_sum(double *dst, d_Matrix* src) {
+	int m = src->size();
+	d_Matrix sums = *src;
+	sum_Kernel << < 1, m / 2 >> > (dst, src->d_data(), m);
+	sums.free();
+}
+
+__global__ void square_Kernel(double *dst, double *src) {
+	int tid = threadIdx.x;
+	dst[tid] = src[tid] * src[tid];
+}
+void d_square(double *dst, d_Matrix* src) {
+	square_Kernel << <1, src->size() >> > (dst, src->d_data());
+}
+
+void d_squareSum(double *dst, d_Matrix* src) {
+	double* d_temp;
+	cudaMalloc((void**)&d_temp, src->memSize());
+	square_Kernel << <1, src->size() >> > (d_temp, src->d_data());
+	int m = src->size();
+	sum_Kernel << <1, m / 2 >> > (dst, d_temp, m);
+	cudaFree(d_temp);
+}
+
+void d_calcCost(double *dst, d_Matrix* d_modelErr, double coeff) {
+	double* d_diff;
+	cudaMalloc((void**)&d_diff, d_modelErr->memSize());
+	square_Kernel << <1,d_modelErr->size() >> > (d_diff, d_modelErr->d_data());
+	int m = d_modelErr->size();
+	sum_Kernel << <1, m/2 >> > (dst, d_diff, m);
+	mult_elem_Kernel<<<1,1>>>(dst, dst, coeff);
+	cudaFree(d_diff);
 }

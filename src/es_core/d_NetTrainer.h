@@ -30,6 +30,7 @@ struct d_NetCache {
 	vector<d_Matrix> d_A;
 	vector<d_Matrix> d_dZ;
 	double cost;
+	float stepTime;
 };
 
 class d_NetTrainer {
@@ -43,16 +44,16 @@ public:
 	Net *network;
 	d_Matrix d_trainLabels;
 
-	void AddLayer(int A, int B);
 	void BuildVisualization(MatrixXd screen, int * buffer, int m, int k);
-	void Visualization(int * buffer, int m, int k, bool discrete, cudaStream_t * stream);
-	void UpdateNetwork();	
-	void ForwardTrain();
-	double CalcCost();
-	void BackwardPropagation();
-	void UpdateParameters();
-	void UpdateParametersADAM();
+	void Visualization(int * buffer, int m, int k, bool discrete);
+	void UpdateHostNetwork();
 	void UpdateSingleStep();
+	double CalcCost();
+
+	double GetCost() {
+		return GetCache().cost;
+	}
+
 	double Coeff() {
 		return trainParams.coefficiant;
 	}
@@ -76,6 +77,13 @@ protected:
 	d_NetTrainDerivatives momentumSqr;
 	int *d_Buffer;
 	vector<d_Matrix> d_VisualA;
+
+private:
+	void AddLayer(int A, int B);
+	void ForwardTrain();
+	void BackwardPropagation();
+	void UpdateParameters();
+	void UpdateParametersADAM();
 };
 
 

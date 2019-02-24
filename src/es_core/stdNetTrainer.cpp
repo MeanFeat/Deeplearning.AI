@@ -149,7 +149,6 @@ void NetTrainer::BuildDropoutMask() {
 void NetTrainer::UpdateSingleStep() {
 	//BuildDropoutMask();
 	ForwardTrain();
-	cache.cost = CalcCost(cache.A.back(), *trainLabels);
 	BackwardPropagation();
 	UpdateParametersADAM();
 	cache.cost = CalcCost(cache.A.back(), *trainLabels);

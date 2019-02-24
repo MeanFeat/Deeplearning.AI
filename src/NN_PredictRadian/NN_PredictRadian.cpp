@@ -100,14 +100,14 @@ void PlotData(MatrixXd X, MatrixXd Y) {
 	}
 }
 
-void DrawOutputToScreen(MatrixXd normScreen, cudaStream_t *stream) {
-	trainer.Visualization((int*)backBuffer.memory, backBuffer.width, backBuffer.height, false, stream);
+void DrawOutputToScreen(MatrixXd normScreen) {
+	trainer.Visualization((int*)backBuffer.memory, backBuffer.width, backBuffer.height, false);
 }
 
-void UpdateDisplay(MatrixXd screenCoords, MatrixXd X, MatrixXd Y, vector<double> &history, vector<double> &testHistory, cudaStream_t *stream) {
+void UpdateDisplay(MatrixXd screenCoords, MatrixXd X, MatrixXd Y, vector<double> &history, vector<double> &testHistory) {
 	if(globalRunning) {
 		if(drawOutput) {
-			DrawOutputToScreen(screenCoords, stream);
+			DrawOutputToScreen(screenCoords);
 		} else {
 			ClearScreen(backBuffer);
 		}
@@ -150,7 +150,7 @@ MatrixXd BuildRadians(MatrixXd m) {
 }
 
 void UpdatePrediction() {
-	trainer.UpdateNetwork();
+	trainer.UpdateHostNetwork();
 	MatrixXd mouse = MatrixXd(2,1);
 	mouse(0, 0) = mouseX-WINHALFWIDTH;
 	mouse(1, 0) = mouseY-WINHALFHEIGHT;
@@ -222,7 +222,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 				steps++;
 			} else {
 			}
-			UpdateDisplay(screenCoords, X, Y, history, testHistory, &stream);
+			UpdateDisplay(screenCoords, X, Y, history, testHistory);
 			UpdatePrediction();
 			Win32DisplayBufferInWindow(deviceContext, window, backBuffer);
 			

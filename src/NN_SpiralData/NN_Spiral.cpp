@@ -141,14 +141,9 @@ void DrawOutputToScreen(MatrixXd screenCoords) {
 	}
 }
 
-void UpdateDisplay(MatrixXd screenCoords, MatrixXd X, MatrixXd Y, vector<double> &h_history, vector<double> &d_history, cudaStream_t *stream) {
+void UpdateDisplay(MatrixXd screenCoords, MatrixXd X, MatrixXd Y, vector<double> &h_history, vector<double> &d_history) {
 	if(globalRunning) {
-		//DrawOutputToScreen(screenCoords);
-		d_trainer.Visualization((int *)backBuffer.memory, backBuffer.width, backBuffer.height, discreteOutput, stream);
-		/*int *pixel = (int *)backBuffer.memory;
-		for(int i = 0; i < WINWIDTH*WINHEIGHT; ++i) {
-			*pixel++ = ((0 << 16) | ((0 << 8) | 0));
-		}*/
+		d_trainer.Visualization((int *)backBuffer.memory, backBuffer.width, backBuffer.height, discreteOutput);
 		if(plotData) {
 			PlotData(X, Y);
 		}
@@ -160,8 +155,8 @@ void UpdateDisplay(MatrixXd screenCoords, MatrixXd X, MatrixXd Y, vector<double>
 void UpdateWinTitle(int &steps, HWND window) {
 	time(&currentTime);
 	char s[255];
-	sprintf_s(s, "SpiralData || Epoch %d | Time: %0.1f | h_Cost %0.10f | d_Cost %0.10f  "
-			  , steps++, difftime(currentTime, startTime), h_trainer.GetCache().cost, d_trainer.GetCache().cost);
+	sprintf_s(s, "SpiralData || Epoch %d | Time: %0.1f | milliseconds %0.10f | d_Cost %0.10f  "
+			  , steps++, difftime(currentTime, startTime), d_trainer.GetCache().stepTime, d_trainer.GetCache().cost);
 	SetWindowText(window, LPCSTR(s));
 }
 
@@ -210,18 +205,18 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		d_trainer.BuildVisualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height);
 		//Main Loop
 		while(globalRunning) {
-			for(int epoch = 0; epoch < 100; ++epoch) {
+			for(int epoch = 0; epoch < 50; ++epoch) {
 				Win32ProcessPendingMessages();
 				if(!globalRunning) {
 					break;
 				}
-				h_trainer.UpdateSingleStep();
+				//h_trainer.UpdateSingleStep();
 				d_trainer.UpdateSingleStep();
-				UpdateHistory(h_history, h_trainer.GetCache().cost);
+				//UpdateHistory(h_history, h_trainer.GetCache().cost);
 				UpdateHistory(d_history, d_trainer.GetCache().cost);
 				UpdateWinTitle(steps, window);
 			}
-			UpdateDisplay(screenCoords, X, Y, h_history, d_history, &stream);
+			UpdateDisplay(screenCoords, X, Y, h_history, d_history);
 			Win32DisplayBufferInWindow(deviceContext, window, backBuffer);
 		}
 		DeleteDC(deviceContext);

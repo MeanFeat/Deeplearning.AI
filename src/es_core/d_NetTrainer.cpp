@@ -1,5 +1,9 @@
 #include "d_NetTrainer.h"
 
+
+static cudaStream_t cuda_stream;
+cudaEvent_t start, stop;
+
 using namespace Eigen;
 d_Matrix to_device(MatrixXd matrix) {
 	//transpose data only to Column Major
@@ -19,6 +23,9 @@ d_NetTrainer::d_NetTrainer() {
 
 
 d_NetTrainer::d_NetTrainer(Net *net, MatrixXd *data, MatrixXd *labels, double weightScale, double learnRate, double regTerm) {
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+	cudaStreamCreate(&cuda_stream);
 	network = net;
 	d_trainLabels = to_device(*labels);
 	trainParams.trainExamplesCount = (unsigned int)data->cols();
@@ -69,16 +76,16 @@ void d_NetTrainer::BuildVisualization(MatrixXd screen, int * buffer, int m, int 
 	}
 }
 
-void d_NetTrainer::Visualization(int * buffer, int m, int k, bool discrete, cudaStream_t *stream) {
+void d_NetTrainer::Visualization(int * buffer, int m, int k, bool discrete) {
 	for(int i = 0; i < network->Depth(); ++i) {
 		d_forwardLayer(&d_VisualA[i + 1], &trainParams.d_W[i], &d_VisualA[i], &trainParams.d_b[i]);
 		d_Activate(&d_VisualA[i + 1], network->GetParams().layerActivations[i]);
 	}
 	d_drawPixels(d_Buffer, m,k, d_VisualA.back().d_data(), discrete);
-	cudaMemcpyAsync(buffer, d_Buffer, m*k * sizeof(int), cudaMemcpyDeviceToHost, *stream);
+	cudaMemcpyAsync(buffer, d_Buffer, m*k * sizeof(int), cudaMemcpyDeviceToHost, cuda_stream);
 }
 
-void d_NetTrainer::UpdateNetwork() {
+void d_NetTrainer::UpdateHostNetwork() {
 	for(int i = 0; i < trainParams.d_W.size(); ++i) {
 		network->GetParams().W[i] = to_host(trainParams.d_W[i]);
 		network->GetParams().b[i] = to_host(trainParams.d_b[i]);
@@ -93,12 +100,31 @@ void d_NetTrainer::ForwardTrain() {
 }
 
 double d_NetTrainer::CalcCost() { //TODO: calculate on device
-	double sumSqrW = 0.0;
+	/*double sumSqrW = 0.0;
 	for(int w = 0; w < (int)trainParams.d_W.size() - 1; ++w) {
 		sumSqrW += to_host(trainParams.d_W[w]).array().pow(2).sum();
-	}
-	double regCost = 0.5 * double((trainParams.regMod) * (sumSqrW / (2.0 * (double)TrainExamplesCount())));
-	return ((to_host(d_trainLabels) - to_host(cache.d_A.back())).array().pow(2).sum() * Coeff()) + regCost;
+	}*/
+	double *d_cost;
+	cudaMalloc((void**)&d_cost, sizeof(double));
+	d_calcCost(d_cost, &cache.d_dZ.back(), Coeff());
+	/*
+	if (trainParams.regMod > 0.0){
+		double *d_reg;
+		double *d_sumSqrW;
+		cudaMalloc((void**)&d_reg, sizeof(double));
+		cudaMalloc((void**)&d_sumSqrW, sizeof(double) * (int)trainParams.d_W.size() - 1);
+		for(int w = 0; w < (int)trainParams.d_W.size() - 1; ++w) {
+			d_squareSum(&d_sumSqrW[w], &trainParams.d_W[w]);
+		}
+		cudaFree(d_reg);
+		cudaFree(d_sumSqrW);
+	}*/
+
+	cudaMemcpyAsync(&cache.cost, d_cost, sizeof(double), cudaMemcpyDeviceToHost, cuda_stream);
+	cudaFree(d_cost);
+	return cache.cost;
+	//double regCost = 0.5 * double((trainParams.regMod) * (sumSqrW / (2.0 * (double)TrainExamplesCount())));
+	//return ((to_host(d_trainLabels) - to_host(cache.d_A.back())).array().pow(2).sum() * Coeff()) + regCost;
 }
 
 void d_NetTrainer::BackwardPropagation() {
@@ -142,8 +168,24 @@ void d_NetTrainer::UpdateParametersADAM() {
 }
 
 void d_NetTrainer::UpdateSingleStep() {	
+	/*MatrixXd A = MatrixXd::Random(800, 1);
+	d_Matrix d_A = to_device(A);
+	double *d_C = 0;
+	cudaMalloc((void**)&d_C, sizeof(double));
+	double expected = A.sum();
+	d_sum(d_C, &d_A);
+	double out = 0.0;
+	cudaMemcpy(&out, d_C, sizeof(double), cudaMemcpyDeviceToHost);
+	MatrixXd test = to_host(d_A);
+	double diffSum = out - expected;*/
+
+	cudaEventRecord(start);
 	ForwardTrain(); 
 	BackwardPropagation();
 	UpdateParametersADAM();
-	cache.cost = CalcCost();
+	CalcCost();
+	cudaEventRecord(stop);
+	cudaEventSynchronize(stop);
+	float stepTime = 0.0;
+	cudaEventElapsedTime(&cache.stepTime, start, stop);
 }
