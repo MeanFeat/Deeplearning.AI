@@ -1,8 +1,6 @@
 #pragma once
 
-#include "cuda.h"
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
+#include "d_cudahelpers.h"
 
 class d_Matrix {
 public:

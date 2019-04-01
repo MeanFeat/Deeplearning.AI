@@ -1,6 +1,6 @@
 #pragma once
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
+
+#include "d_cudahelpers.h"
 #include "types.h"
 #include "color.h"
 #include "d_Matrix.h"
@@ -27,3 +27,5 @@ void d_updateParameterADAM(d_Matrix * dst, d_Matrix * d_derivative, d_Matrix * d
 void d_updateParameter(d_Matrix * dst, d_Matrix * d_derivative, double learnRate);
 
 void d_drawPixels(int * buffer, int m, int k, const double * vals, bool discrete);
+
+

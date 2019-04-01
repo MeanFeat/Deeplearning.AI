@@ -86,6 +86,7 @@
     <CudaCompile Include="d_math.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\common\d_cudahelpers.h" />
     <ClInclude Include="..\common\d_Matrix.h" />
     <ClInclude Include="d_math.h" />
   </ItemGroup>
