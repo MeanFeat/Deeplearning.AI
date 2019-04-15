@@ -14,7 +14,7 @@ d_Matrix to_device(MatrixXd matrix) {
 MatrixXd to_host(d_Matrix d_matrix) {
 	// return to Row Major order
 	MatrixXd out = MatrixXd(d_matrix.cols(), d_matrix.rows());
-	cudaMemcpy(out.data(), d_matrix.d_data(), d_matrix.memSize(), cudaMemcpyDeviceToHost);
+	d_check(cudaMemcpy(out.data(), d_matrix.d_data(), d_matrix.memSize(), cudaMemcpyDeviceToHost));
 	return out.transpose();
 }
 
@@ -69,7 +69,7 @@ void d_NetTrainer::AddLayer(int A, int B) {
 }
 
 void d_NetTrainer::BuildVisualization(MatrixXd screen, int * buffer, int m, int k) {
-	cudaMalloc((void **)&d_Buffer, m*k * sizeof(int));
+	d_check(cudaMalloc((void **)&d_Buffer, m*k * sizeof(int)));
 	d_VisualA.push_back(to_device(screen));
 	for(int i = 0; i < network->Depth(); ++i) {
 		d_VisualA.push_back(to_device(MatrixXd(trainParams.d_W[i].rows(), d_VisualA[i].cols())));
