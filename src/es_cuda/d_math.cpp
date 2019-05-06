@@ -372,11 +372,45 @@ __global__ void sum_Kernel(double *dst, double *src, int len) {
 		dst[0] = src[0];		
 	}
 }
+
+__global__ void sumMatrix_Kernel(double *dst, double *src, int m, int k) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int len = m * k;
+	int step = 2;
+	int get = 1;
+	int tid = col + row * k;
+	while(get < len) {
+		if( tid * step + get < len) {
+			src[tid*step] += src[tid*step + get];
+			__syncthreads();
+		}
+		step *= 2;
+		get *= 2;
+		__syncthreads();
+	}
+	if(tid == 0) {
+		if(len % 2 > 0) {
+			src[0] += src[len];
+		}
+		dst[0] = src[0];
+	}
+}
+
 void d_sum(double *dst, d_Matrix* src) {
 	int m = src->size();
 	d_Matrix sums = *src;
 	sum_Kernel << < 1, m / 2 >> > (dst, src->d_data(), m);
 	sums.free();
+}
+
+
+__global__ void square_Kernel(double *dst, double *src, int m, int k) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	if(col < k && row < m) {
+		dst[row * k + col] = src[row * k + col] * src[row * k + col];
+	}
 }
 
 __global__ void square_Kernel(double *dst, double *src) {
@@ -387,21 +421,41 @@ void d_square(double *dst, d_Matrix* src) {
 	square_Kernel << <1, src->size() >> > (dst, src->d_data());
 }
 
-void d_squareSum(double *dst, d_Matrix* src) {
-	double* d_temp;
-	cudaMalloc((void**)&d_temp, src->memSize());
-	square_Kernel << <1, src->size() >> > (d_temp, src->d_data());
-	int m = src->size();
-	sum_Kernel << <1, m / 2 >> > (dst, d_temp, m);
-	cudaFree(d_temp);
+__global__ void finalCost_Kernel(double *dst, double *sumTotal, double regMult, double trainCount) {
+	dst[0] = dst[0] + (0.5 * (regMult * (sumTotal[0] / (trainCount*2.0))));
 }
 
-void d_calcCost(double *dst, d_Matrix* d_modelErr, double coeff) {
-	double* d_diff;
+__global__ void setZero_Kernel(double *dst) {
+	dst[0] = 0.0;
+}
+
+void d_calcCost(double *dst, d_Matrix* d_modelErr, vector<d_Matrix>* d_modelWeights, double regMult, double coeff, double trainLableCount) {
+	double* d_diff;	
 	cudaMalloc((void**)&d_diff, d_modelErr->memSize());
-	square_Kernel << <1,d_modelErr->size() >> > (d_diff, d_modelErr->d_data());
 	int m = d_modelErr->size();
-	sum_Kernel << <1, m/2 >> > (dst, d_diff, m);
-	mult_elem_Kernel<<<1,1>>>(dst, dst, coeff);
-	cudaFree(d_diff);
+	square_Kernel << <1,m >> > (d_diff, d_modelErr->d_data()); d_catchErr();
+	sum_Kernel << <1, m/2 >> > (dst, d_diff, m); d_catchErr();
+	mult_elem_Kernel << <1, 1 >> > (dst, dst, coeff);	d_catchErr(); 
+	return;
+	// Add Regularization
+	double* d_sqrSumTotal;
+	cudaMalloc((void**)&d_sqrSumTotal, sizeof(double));
+	setZero_Kernel << <1, 1 >> > (d_sqrSumTotal); d_catchErr();
+	for(int i = 0; i < (int)d_modelWeights->size()-1; ++i) {
+		int m = d_modelWeights->at(i).rows();
+		int k = d_modelWeights->at(i).cols();
+		double* d_squared;
+		double* d_sqrSum;
+		d_check(cudaMalloc((void**)&d_sqrSum, sizeof(double)));
+		d_check(cudaMalloc((void**)&d_squared, d_modelWeights->at(i).memSize()));		
+		square_Kernel << <dimBlock(), dimGrid(m, k) >> > (d_squared, d_modelWeights->at(i).d_data(), m, k); d_catchErr();
+		sumMatrix_Kernel << <dimBlock(),dimGrid(m, k) >> > (d_sqrSum, d_squared, m, k); d_catchErr();
+		add_Kernel << <1, 1 >> > (d_sqrSumTotal, d_sqrSumTotal, d_sqrSum); d_catchErr();
+		d_check(cudaFree(d_sqrSum));
+		d_check(cudaFree(d_squared));
+	}
+	finalCost_Kernel << <1, 1 >> > (dst, d_sqrSumTotal, regMult, trainLableCount); d_catchErr();
+	cudaFree(d_sqrSumTotal);
+	cudaFree(d_diff); 
+	d_catchErr();
 }

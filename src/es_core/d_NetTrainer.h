@@ -13,10 +13,12 @@ using namespace std;
 struct d_NetTrainParameters {
 	vector<d_Matrix> d_W;
 	vector<d_Matrix> d_b;
-	double learningRate;
-	double learningMod;
+	double learnRate;
+	double learnCoeff;
+	double learnMult;
 	double regTerm;
 	double regMod;
+	double regMult;
 	double coefficiant;
 	unsigned int trainExamplesCount;
 };
@@ -57,9 +59,12 @@ public:
 	double Coeff() {
 		return trainParams.coefficiant;
 	}
+	double RegMultipier() {
+		return trainParams.regMult;
+	}
 
 	inline void ModifyLearningRate(double m) {
-		trainParams.learningMod = max(DBL_EPSILON, trainParams.learningMod + m);
+		trainParams.learnCoeff = max(DBL_EPSILON, trainParams.learnCoeff + m);
 	}
 	inline void ModifyRegTerm(double m) {
 		trainParams.regMod = max(DBL_EPSILON, trainParams.regMod + m);

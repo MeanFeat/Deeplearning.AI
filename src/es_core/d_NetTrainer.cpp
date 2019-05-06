@@ -36,10 +36,12 @@ d_NetTrainer::d_NetTrainer(Net *net, MatrixXd *data, MatrixXd *labels, double we
 		trainParams.d_W.push_back(to_device(network->GetParams().W[i] * weightScale));
 		trainParams.d_b.push_back(to_device(network->GetParams().b[i]));
 	}
-	trainParams.learningRate = learnRate;
-	trainParams.learningMod = learnRate / (double)nodeCount;
+	trainParams.learnRate = learnRate;
+	trainParams.learnCoeff = 1.0 / (double)nodeCount;
+	trainParams.learnMult = trainParams.learnRate*trainParams.learnCoeff;
 	trainParams.regTerm = regTerm;
 	trainParams.regMod = regTerm / (double)nodeCount;
+	trainParams.regMult = double((trainParams.regTerm*trainParams.learnCoeff));
 	cache.d_A.push_back(to_device(*data));
 	for(int h = 1; h < (int)network->GetParams().layerSizes.size(); ++h) {
 		AddLayer((int)network->GetParams().layerSizes[h], (int)network->GetParams().layerSizes[h - 1]);
@@ -100,31 +102,12 @@ void d_NetTrainer::ForwardTrain() {
 }
 
 double d_NetTrainer::CalcCost() { //TODO: calculate on device
-	/*double sumSqrW = 0.0;
-	for(int w = 0; w < (int)trainParams.d_W.size() - 1; ++w) {
-		sumSqrW += to_host(trainParams.d_W[w]).array().pow(2).sum();
-	}*/
 	double *d_cost;
 	cudaMalloc((void**)&d_cost, sizeof(double));
-	d_calcCost(d_cost, &cache.d_dZ.back(), Coeff());
-	/*
-	if (trainParams.regMod > 0.0){
-		double *d_reg;
-		double *d_sumSqrW;
-		cudaMalloc((void**)&d_reg, sizeof(double));
-		cudaMalloc((void**)&d_sumSqrW, sizeof(double) * (int)trainParams.d_W.size() - 1);
-		for(int w = 0; w < (int)trainParams.d_W.size() - 1; ++w) {
-			d_squareSum(&d_sumSqrW[w], &trainParams.d_W[w]);
-		}
-		cudaFree(d_reg);
-		cudaFree(d_sumSqrW);
-	}*/
-
+	d_calcCost(d_cost, &cache.d_dZ.back(), &trainParams.d_W, RegMultipier(), Coeff(), trainParams.trainExamplesCount);
 	cudaMemcpyAsync(&cache.cost, d_cost, sizeof(double), cudaMemcpyDeviceToHost, cuda_stream);
 	cudaFree(d_cost);
 	return cache.cost;
-	//double regCost = 0.5 * double((trainParams.regMod) * (sumSqrW / (2.0 * (double)TrainExamplesCount())));
-	//return ((to_host(d_trainLabels) - to_host(cache.d_A.back())).array().pow(2).sum() * Coeff()) + regCost;
 }
 
 void d_NetTrainer::BackwardPropagation() {
@@ -155,15 +138,15 @@ void d_NetTrainer::BackwardPropagation() {
 
 void d_NetTrainer::UpdateParameters() {
 	for(int i = 0; i < (int)derivative.d_dW.size(); ++i) {
-		d_updateParameter(&trainParams.d_W[i], &derivative.d_dW[i], trainParams.learningMod);
-		d_updateParameter(&trainParams.d_b[i], &derivative.d_db[i], trainParams.learningMod);
+		d_updateParameter(&trainParams.d_W[i], &derivative.d_dW[i], trainParams.learnMult);
+		d_updateParameter(&trainParams.d_b[i], &derivative.d_db[i], trainParams.learnMult);
 	}
 }
 
 void d_NetTrainer::UpdateParametersADAM() {
 	for(int i = 0; i < (int)derivative.d_dW.size(); ++i) {
-		d_updateParameterADAM(&trainParams.d_W[i], &derivative.d_dW[i], &momentum.d_dW[i], &momentumSqr.d_dW[i], trainParams.learningMod);
-		d_updateParameterADAM(&trainParams.d_b[i], &derivative.d_db[i], &momentum.d_db[i], &momentumSqr.d_db[i], trainParams.learningMod);
+		d_updateParameterADAM(&trainParams.d_W[i], &derivative.d_dW[i], &momentum.d_dW[i], &momentumSqr.d_dW[i], trainParams.learnMult);
+		d_updateParameterADAM(&trainParams.d_b[i], &derivative.d_db[i], &momentum.d_db[i], &momentumSqr.d_db[i], trainParams.learnMult);
 	}
 }
 

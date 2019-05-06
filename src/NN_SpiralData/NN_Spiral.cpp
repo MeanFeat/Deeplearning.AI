@@ -18,6 +18,7 @@ static time_t currentTime;
 
 Buffer backBuffer;
 Net neural;
+Net d_neural;
 
 NetTrainer h_trainer;
 d_NetTrainer d_trainer;
@@ -187,13 +188,14 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 									  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH*4, WINHEIGHT*4, 0, 0, Instance, 0);
 
-		neural = Net((int)X.rows(), { 8,8 }, (int)Y.rows(), {
+		neural = Net((int)X.rows(), { 999, 999 }, (int)Y.rows(), {
 			Tanh,
 			Tanh,
 			Tanh });
+		d_neural = Net(neural);
 
-		h_trainer = NetTrainer(&neural, &X, &Y, 0.25, 2.00, 20.0);
-		d_trainer = d_NetTrainer(&neural, &X, &Y, 1.0, 2.0, 20.0);
+		h_trainer = NetTrainer(&neural, &X, &Y, 0.25, 0.5, 20.0);
+		d_trainer = d_NetTrainer(&d_neural, &X, &Y, 0.25, 0.5, 20.0);
 
 		time(&startTime);
 		HDC deviceContext = GetDC(window);
