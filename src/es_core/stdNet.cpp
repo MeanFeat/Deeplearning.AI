@@ -1,9 +1,18 @@
 ﻿#include "stdNet.h"
+#include "windows.h"
+#include <iostream>
 
 Net::Net(){
 }
 
 Net::Net(int inputSize, std::vector<int> hiddenSizes, int outputSize, vector<Activation> activations) {
+	if (hiddenSizes.size() != activations.size()-1) { //do not include the output layer
+		char txt[256] = {0};
+		_snprintf_s(txt, 256, "ERROR:: Layer count(%i) and Activation count(%i)  do not match\n", 
+					(int)hiddenSizes.size(), (int)activations.size()-1);
+		OutputDebugStringA(txt);
+		exit(-1);
+	}
 	params.layerActivations = activations;
 	params.layerSizes.push_back(inputSize);
 	for(int l = 0; l < (int)hiddenSizes.size(); ++l) {

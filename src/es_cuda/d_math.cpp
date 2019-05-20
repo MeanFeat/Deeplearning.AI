@@ -435,7 +435,7 @@ void d_calcCost(double *dst, d_Matrix* d_modelErr, vector<d_Matrix>* d_modelWeig
 	int m = d_modelErr->size();
 	square_Kernel << <1,m >> > (d_diff, d_modelErr->d_data()); d_catchErr();
 	sum_Kernel << <1, m/2 >> > (dst, d_diff, m); d_catchErr();
-	mult_elem_Kernel << <1, 1 >> > (dst, dst, coeff);	d_catchErr(); 
+	mult_elem_Kernel << <1, 1 >> > (dst, dst, coeff); d_catchErr();
 	return;
 	// Add Regularization
 	double* d_sqrSumTotal;
@@ -448,8 +448,8 @@ void d_calcCost(double *dst, d_Matrix* d_modelErr, vector<d_Matrix>* d_modelWeig
 		double* d_sqrSum;
 		d_check(cudaMalloc((void**)&d_sqrSum, sizeof(double)));
 		d_check(cudaMalloc((void**)&d_squared, d_modelWeights->at(i).memSize()));		
-		square_Kernel << <dimBlock(), dimGrid(m, k) >> > (d_squared, d_modelWeights->at(i).d_data(), m, k); d_catchErr();
-		sumMatrix_Kernel << <dimBlock(),dimGrid(m, k) >> > (d_sqrSum, d_squared, m, k); d_catchErr();
+		square_Kernel << < dimGrid(m, k), dimBlock() >> > (d_squared, d_modelWeights->at(i).d_data(), m, k); d_catchErr();
+		sumMatrix_Kernel << <dimGrid(m, k), dimBlock() >> > (d_sqrSum, d_squared, m, k); d_catchErr();
 		add_Kernel << <1, 1 >> > (d_sqrSumTotal, d_sqrSumTotal, d_sqrSum); d_catchErr();
 		d_check(cudaFree(d_sqrSum));
 		d_check(cudaFree(d_squared));

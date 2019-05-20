@@ -131,7 +131,7 @@ void UpdateWinTitle(int &steps, HWND window) {
 	time(&currentTime);
 	char s[255];
 	sprintf_s(s, "%d|T:%0.f|C:%0.10f|LR:%0.2f|RT:%0.2f|"
-			  , steps,difftime(currentTime, startTime), trainer.GetCache().cost, trainer.GetTrainParams().learningRate, trainer.GetTrainParams().regTerm);
+			  , steps,difftime(currentTime, startTime), trainer.GetCache().cost, trainer.GetTrainParams().learnRate, trainer.GetTrainParams().regTerm);
 	char r[255];	
 	sprintf_s(r, " |%0.2f|%0.2f| ", atan2((mouseX - WINHALFWIDTH), (mouseY - WINHALFHEIGHT)), predictions[0]*Pi32);
 	strcat_s(s, r);

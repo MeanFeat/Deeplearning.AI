@@ -9,6 +9,13 @@
 #define CUDA_ERROR_CHECK
 #define d_check( err ) checkErr( err, __FILE__, __LINE__ )
 #define d_catchErr()    catchErr( __FILE__, __LINE__ )
+#define d_profile(start,stop,output, args ) cudaEventRecord(start); args; profileStop(start,stop,output)
+
+inline void profileStop(cudaEvent_t start, cudaEvent_t stop, float *output) {
+	cudaEventRecord(stop);
+	cudaEventSynchronize(stop);
+	cudaEventElapsedTime(output, start, stop);
+}
 
 inline void checkErr(cudaError err, const char *file, const int line) {
 #ifdef CUDA_ERROR_CHECK

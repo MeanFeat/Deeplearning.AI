@@ -8,7 +8,7 @@
 #include <vector>
 using namespace std;
 
-#define BLOCK_SIZE 32
+#define BLOCK_SIZE 16
 #define LRELU_LEAK 0.01
 
 void d_add(d_Matrix *dst, d_Matrix *srcA, d_Matrix *srcB);

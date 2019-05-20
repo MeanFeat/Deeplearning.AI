@@ -32,7 +32,13 @@ struct d_NetCache {
 	vector<d_Matrix> d_A;
 	vector<d_Matrix> d_dZ;
 	double cost;
-	float stepTime;
+};
+
+struct d_NetProfiler {
+	float forwardTime;
+	float backpropTime;
+	float updateTime;
+	float calcCostTime;
 };
 
 class d_NetTrainer {
@@ -43,6 +49,7 @@ public:
 	
 	d_NetTrainParameters GetTrainParams();
 	d_NetCache GetCache();
+	d_NetProfiler GetProfiler();
 	Net *network;
 	d_Matrix d_trainLabels;
 
@@ -82,6 +89,7 @@ protected:
 	d_NetTrainDerivatives momentumSqr;
 	int *d_Buffer;
 	vector<d_Matrix> d_VisualA;
+	d_NetProfiler profiler;
 
 private:
 	void AddLayer(int A, int B);

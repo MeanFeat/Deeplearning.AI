@@ -1,9 +1,7 @@
 #include "d_NetTrainer.h"
 
-
 static cudaStream_t cuda_stream;
 cudaEvent_t start, stop;
-
 using namespace Eigen;
 d_Matrix to_device(MatrixXd matrix) {
 	//transpose data only to Column Major
@@ -21,6 +19,20 @@ MatrixXd to_host(d_Matrix d_matrix) {
 d_NetTrainer::d_NetTrainer() {
 }
 
+d_NetTrainer::~d_NetTrainer() {
+}
+
+d_NetTrainParameters d_NetTrainer::GetTrainParams() {
+	return trainParams;
+}
+
+d_NetCache d_NetTrainer::GetCache() {
+	return cache;
+}
+
+d_NetProfiler d_NetTrainer::GetProfiler() {
+	return profiler;
+}
 
 d_NetTrainer::d_NetTrainer(Net *net, MatrixXd *data, MatrixXd *labels, double weightScale, double learnRate, double regTerm) {
 	cudaEventCreate(&start);
@@ -46,17 +58,6 @@ d_NetTrainer::d_NetTrainer(Net *net, MatrixXd *data, MatrixXd *labels, double we
 	for(int h = 1; h < (int)network->GetParams().layerSizes.size(); ++h) {
 		AddLayer((int)network->GetParams().layerSizes[h], (int)network->GetParams().layerSizes[h - 1]);
 	}
-}
-
-d_NetTrainer::~d_NetTrainer() {
-}
-
-d_NetTrainParameters d_NetTrainer::GetTrainParams() {
-	return trainParams;
-}
-
-d_NetCache d_NetTrainer::GetCache() {
-	return cache;
 }
 
 void d_NetTrainer::AddLayer(int A, int B) {
@@ -162,13 +163,13 @@ void d_NetTrainer::UpdateSingleStep() {
 	MatrixXd test = to_host(d_A);
 	double diffSum = out - expected;*/
 
-	cudaEventRecord(start);
-	ForwardTrain(); 
-	BackwardPropagation();
-	UpdateParametersADAM();
-	CalcCost();
-	cudaEventRecord(stop);
-	cudaEventSynchronize(stop);
-	float stepTime = 0.0;
-	cudaEventElapsedTime(&cache.stepTime, start, stop);
+	d_profile(start, stop, &profiler.forwardTime, ForwardTrain()); 
+	d_catchErr();
+	d_profile(start, stop, &profiler.backpropTime, BackwardPropagation());
+	d_catchErr();
+	d_profile(start, stop, &profiler.updateTime, UpdateParametersADAM());
+	d_catchErr();
+	d_profile(start, stop, &profiler.calcCostTime, CalcCost());
+	d_catchErr();
+	
 }

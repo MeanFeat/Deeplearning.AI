@@ -12,6 +12,7 @@
 global_variable bool globalRunning = true;
 global_variable bool discreteOutput = false;
 global_variable bool plotData = false;
+global_variable bool profile = true;
 global_variable int winTitleHeight = 10;
 static time_t startTime;
 static time_t currentTime;
@@ -55,8 +56,11 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			h_trainer.ModifyRegTerm(-0.02);
 			d_trainer.ModifyRegTerm(-0.02);
 			break;
-		case 'P':
+		case 'V':
 			plotData = !plotData;
+			break;
+		case 'P':
+			profile = !profile;
 			break;
 		default:
 			break;
@@ -155,9 +159,16 @@ void UpdateDisplay(MatrixXd screenCoords, MatrixXd X, MatrixXd Y, vector<double>
 
 void UpdateWinTitle(int &steps, HWND window) {
 	time(&currentTime);
+	d_NetProfiler *profiler = &d_trainer.GetProfiler();
+	float totalTime = profiler->forwardTime + profiler->backpropTime + profiler->updateTime + profiler->calcCostTime;
 	char s[255];
-	sprintf_s(s, "SpiralData || Epoch %d | Time: %0.1f | milliseconds %0.10f | d_Cost %0.10f  "
-			  , steps++, difftime(currentTime, startTime), d_trainer.GetCache().stepTime, d_trainer.GetCache().cost);
+	if (profile) {
+		sprintf_s(s, "Total %0.5f | F %0.5f | B %0.5f | U %0.5f | C %0.5f |"
+				  , totalTime, profiler->forwardTime, profiler->backpropTime, profiler->updateTime, profiler->calcCostTime);
+	} else {
+		sprintf_s(s, "SpiralData || Epoch %d | Time: %0.1f | milliseconds %0.10f | d_Cost %0.10f  "
+				  , steps++, difftime(currentTime, startTime), totalTime, d_trainer.GetCache().cost);
+	}	
 	SetWindowText(window, LPCSTR(s));
 }
 
