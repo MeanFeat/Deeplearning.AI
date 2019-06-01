@@ -12,7 +12,7 @@
 global_variable bool globalRunning = true;
 global_variable bool discreteOutput = false;
 global_variable bool plotData = false;
-global_variable bool profile = true;
+global_variable bool profile = false;
 global_variable int winTitleHeight = 10;
 static time_t startTime;
 static time_t currentTime;
@@ -24,7 +24,7 @@ Net d_neural;
 NetTrainer h_trainer;
 d_NetTrainer d_trainer;
 
-global_variable double GraphZoom = 1.f;
+global_variable float GraphZoom = 1.f;
 
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam) {
 	LRESULT Result = 0;
@@ -41,20 +41,20 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			discreteOutput = !discreteOutput;
 			break;
 		case 'W':
-			h_trainer.ModifyLearningRate(0.02);
-			d_trainer.ModifyLearningRate(0.02);
+			h_trainer.ModifyLearningRate(0.02f);
+			d_trainer.ModifyLearningRate(0.02f);
 			break;
 		case 'S':
-			h_trainer.ModifyLearningRate(-0.02);
-			d_trainer.ModifyLearningRate(-0.02);
+			h_trainer.ModifyLearningRate(-0.02f);
+			d_trainer.ModifyLearningRate(-0.02f);
 			break;
 		case 'Q':
-			h_trainer.ModifyRegTerm(0.02);
-			d_trainer.ModifyRegTerm(0.02);
+			h_trainer.ModifyRegTerm(0.02f);
+			d_trainer.ModifyRegTerm(0.02f);
 			break;
 		case 'A':
-			h_trainer.ModifyRegTerm(-0.02);
-			d_trainer.ModifyRegTerm(-0.02);
+			h_trainer.ModifyRegTerm(-0.02f);
+			d_trainer.ModifyRegTerm(-0.02f);
 			break;
 		case 'V':
 			plotData = !plotData;
@@ -74,11 +74,11 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 	{
 		if(((short)HIWORD(WParam)) / 120 > 0) {
 			PostMessage(Window, WM_VSCROLL, SB_LINEUP, (LPARAM)0);
-			GraphZoom += 0.5;
+			GraphZoom += 0.5f;
 		}
 		if(((short)HIWORD(WParam)) / 120 < 0) {
 			PostMessage(Window, WM_VSCROLL, SB_LINEDOWN, (LPARAM)0);
-			GraphZoom *= 0.5;
+			GraphZoom *= 0.5f;
 		}
 	}
 	break;
@@ -95,16 +95,16 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 	return Result;
 }
 
-void PlotData(MatrixXd X, MatrixXd Y) {
+void PlotData(MatrixXf X, MatrixXf Y) {
 	for(int i = 0; i < X.cols(); ++i) {
 		DrawFilledCircle(backBuffer, int(WINHALFWIDTH + X(0, i) * SCALE), int(WINHALFHEIGHT + -X(1, i) * SCALE), SCALE * 0.11, Color(255, 255, 255, 255));
 		DrawFilledCircle(backBuffer, int(WINHALFWIDTH + X(0, i) * SCALE),
-						 int(WINHALFHEIGHT + -X(1, i) * SCALE), SCALE * 0.08,
+						 int(WINHALFHEIGHT + -X(1, i) * SCALE), SCALE * 0.08f,
 						 (Y(0, i) > 0.f ? positiveColor : negativeColor) - Color(50, 50, 50, 50));
 	}
 }
 
-void UpdateHistory(vector<double> &history, double cost) {
+void UpdateHistory(vector<float> &history, float cost) {
 	history.push_back(min((cost) * (WINHEIGHT-backBuffer.titleOffset), WINHEIGHT));
 	if(history.size() >= WINWIDTH + WINWIDTH) {
 		for(int i = 1; i < (int)history.size(); i += 2) {
@@ -113,21 +113,21 @@ void UpdateHistory(vector<double> &history, double cost) {
 	}
 }
 
-MatrixXd BuildPolynomials(MatrixXd m) {
-	MatrixXd temp = MatrixXd(m.rows() + 3, m.cols());
-	temp << m, MatrixXd(m.array().pow(2)), MatrixXd(m.array().pow(2)).colwise().sum();
+MatrixXf BuildPolynomials(MatrixXf m) {
+	MatrixXf temp = MatrixXf(m.rows() + 3, m.cols());
+	temp << m, MatrixXf(m.array().pow(2)), MatrixXf(m.array().pow(2)).colwise().sum();
 	return temp;
 }
 
-void DrawOutputToScreen(MatrixXd screenCoords) {
-	MatrixXd h = neural.ForwardPropagation(screenCoords);
+void DrawOutputToScreen(MatrixXf screenCoords) {
+	MatrixXf h = neural.ForwardPropagation(screenCoords);
 	int *pixel = (int *)backBuffer.memory;
 	for(int i = 0; i < h.cols(); ++i) {
-		double percent = (*(h.data() + i));
+		float percent = (*(h.data() + i));
 		Color blended = Color(0, 0, 0, 0);
 		switch(neural.GetParams().layerActivations.back()) {
 		case Sigmoid:
-			percent = (percent - 0.5) * 2;
+			percent = (percent - 0.5f) * 2.f;
 			break;
 		case Tanh:
 			break;
@@ -137,16 +137,16 @@ void DrawOutputToScreen(MatrixXd screenCoords) {
 			break;
 		}
 		if(discreteOutput) {
-			blended = percent < 0.0 ? negativeColor : positiveColor;
+			blended = percent < 0.0f ? negativeColor : positiveColor;
 		} else {
-			blended = percent < 0.0 ? Color(255, 255, 255, 255).Blend(negativeColor, -percent)
+			blended = percent < 0.0f ? Color(255, 255, 255, 255).Blend(negativeColor, -percent)
 				: Color(255, 255, 255, 255).Blend(positiveColor, percent);
 		}
 		*pixel++ = blended.ToBit();
 	}
 }
 
-void UpdateDisplay(MatrixXd screenCoords, MatrixXd X, MatrixXd Y, vector<double> &h_history, vector<double> &d_history) {
+void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> &h_history, vector<float> &d_history) {
 	if(globalRunning) {
 		d_trainer.Visualization((int *)backBuffer.memory, backBuffer.width, backBuffer.height, discreteOutput);
 		if(plotData) {
@@ -173,16 +173,19 @@ void UpdateWinTitle(int &steps, HWND window) {
 }
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode) {
-	MatrixXd X;// = (MatrixXd)BuildMatFromFile("Spiral.csv"); write_binary("Spiral_64.dat", X);
-	MatrixXd Y;// = (MatrixXd)BuildMatFromFile("SpiralLabels.csv"); write_binary("SpiralLabels_64.dat", Y);
+	MatrixXf X;// = (MatrixXf)BuildMatFromFile("Spiral.csv"); write_binary("Spiral_64.dat", X);
+	MatrixXf Y;// = (MatrixXf)BuildMatFromFile("SpiralLabels.csv"); write_binary("SpiralLabels_64.dat", Y);
 
-#if x64
-	read_binary("Spiral_64.dat", X);
-	read_binary("SpiralLabels_64.dat", Y);
-#else
-	read_binary("Spiral.dat", X);
-	read_binary("SpiralLabels.dat", Y);
-#endif
+	X = (MatrixXf)BuildMatFromFile("Spiral.csv"); //write_binary("Spiral_64.dat", X);
+	Y = (MatrixXf)BuildMatFromFile("SpiralLabels.csv"); //write_binary("SpiralLabels_64.dat", Y);
+//#if x64
+//	read_binary("Spiral_64.dat", X);
+//	read_binary("SpiralLabels_64.dat", Y);
+//#else
+//	read_binary("Spiral.dat", X);
+//	read_binary("SpiralLabels.dat", Y);
+//#endif
+
 
 	X = BuildPolynomials(X);
 
@@ -191,7 +194,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 	WNDCLASSA winClass = {};
 	InitializeWindow(&winClass, Instance, Win32MainWindowCallback, &backBuffer, WINWIDTH, WINHEIGHT, "NN_Spiral");
-	MatrixXd screenCoords = BuildPolynomials(BuildDisplayCoords(backBuffer, SCALE).transpose());
+	MatrixXf screenCoords = BuildPolynomials(BuildDisplayCoords(backBuffer, SCALE).transpose());
 
 
 	if(RegisterClassA(&winClass)) {
@@ -199,19 +202,19 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 									  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH*4, WINHEIGHT*4, 0, 0, Instance, 0);
 
-		neural = Net((int)X.rows(), { 999, 999 }, (int)Y.rows(), {
+		neural = Net((int)X.rows(), { 8, 8 }, (int)Y.rows(), {
 			Tanh,
 			Tanh,
 			Tanh });
 		d_neural = Net(neural);
 
-		h_trainer = NetTrainer(&neural, &X, &Y, 0.25, 0.5, 20.0);
-		d_trainer = d_NetTrainer(&d_neural, &X, &Y, 0.25, 0.5, 20.0);
+		h_trainer = NetTrainer(&neural, &X, &Y, 0.25f, 0.5f, 20.0f);
+		d_trainer = d_NetTrainer(&d_neural, &X, &Y, 0.25f, 0.5f, 20.f);
 
 		time(&startTime);
 		HDC deviceContext = GetDC(window);
-		vector<double> h_history;
-		vector<double> d_history;
+		vector<float> h_history;
+		vector<float> d_history;
 		int steps = 0;
 		cudaStream_t stream;
 		cudaStreamCreate(&stream);
@@ -223,9 +226,9 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 				if(!globalRunning) {
 					break;
 				}
-				//h_trainer.UpdateSingleStep();
+				h_trainer.UpdateSingleStep();
 				d_trainer.UpdateSingleStep();
-				//UpdateHistory(h_history, h_trainer.GetCache().cost);
+				UpdateHistory(h_history, h_trainer.GetCache().cost);
 				UpdateHistory(d_history, d_trainer.GetCache().cost);
 				UpdateWinTitle(steps, window);
 			}

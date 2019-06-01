@@ -7,7 +7,7 @@
 using namespace Eigen;
 using namespace std;
 
-typedef Matrix<double, Dynamic, Dynamic> MatrixDynamic;
+typedef Matrix<float, Dynamic, Dynamic> MatrixDynamic;
 namespace Eigen {
 
 	template<class Matrix>
@@ -30,15 +30,15 @@ namespace Eigen {
 		in.close();
 	}
 
-	MatrixXd BuildMatFromFile(string fName) {
-		vector<vector<double>> tempMat;
+	MatrixXf BuildMatFromFile(string fName) {
+		vector<vector<float>> tempMat;
 		ifstream file(fName);
 		std::string line;
 		int count = 0;
-		double temp;
+		float temp;
 		int row = 0;
 		while (file.good()) {
-			vector<double> row;
+			vector<float> row;
 			std::getline(file, line);
 			std::stringstream iss(line); 
 			std::string val;
@@ -50,7 +50,7 @@ namespace Eigen {
 			}
 			tempMat.push_back(row);
 		}
-		MatrixXd outMat(tempMat.size(), tempMat[0].size());
+		MatrixXf outMat(tempMat.size(), tempMat[0].size());
 		for (int i =0; i < (int)tempMat.size(); i++){
 			for(int j = 0; j < (int)tempMat[i].size(); j++) {
 				outMat(i, j) = tempMat[i][j];
@@ -60,12 +60,12 @@ namespace Eigen {
 	}
 
 	const static IOFormat CSVFormat(StreamPrecision, DontAlignCols, ", ", "\n");
-	void writeToCSVfile(string name, MatrixXd matrix) {
+	void writeToCSVfile(string name, MatrixXf matrix) {
 		ofstream file(name.c_str());
 		file << matrix.format(CSVFormat);
 	}
 
-	void removeColumn(Eigen::MatrixXd& matrix, unsigned int colToRemove) {
+	void removeColumn(Eigen::MatrixXf& matrix, unsigned int colToRemove) {
 		unsigned int numRows = (unsigned int)matrix.rows();
 		unsigned int numCols = (unsigned int)matrix.cols() - 1;
 

@@ -5,9 +5,9 @@
 class d_Matrix {
 public:
 	d_Matrix();
-	d_Matrix(double *host_data, int rows, int cols_);
+	d_Matrix(float *host_data, int rows, int cols_);
 	~d_Matrix();
-	double* d_data() {
+	float* d_data() {
 		return device_data;
 	}
 	int rows() {
@@ -20,7 +20,7 @@ public:
 		return rowCount * colCount;
 	}
 	size_t memSize() {
-		return size() * sizeof(double);
+		return size() * sizeof(float);
 	}
 	void free() {
 		cudaFree(device_data);
@@ -29,5 +29,5 @@ public:
 	protected:
 	int rowCount;
 	int colCount;
-	double* device_data;
+	float* device_data;
 };

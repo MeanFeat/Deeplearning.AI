@@ -13,13 +13,13 @@ using namespace std;
 struct d_NetTrainParameters {
 	vector<d_Matrix> d_W;
 	vector<d_Matrix> d_b;
-	double learnRate;
-	double learnCoeff;
-	double learnMult;
-	double regTerm;
-	double regMod;
-	double regMult;
-	double coefficiant;
+	float learnRate;
+	float learnCoeff;
+	float learnMult;
+	float regTerm;
+	float regMod;
+	float regMult;
+	float coefficiant;
 	unsigned int trainExamplesCount;
 };
 
@@ -31,7 +31,7 @@ struct d_NetTrainDerivatives {
 struct d_NetCache {
 	vector<d_Matrix> d_A;
 	vector<d_Matrix> d_dZ;
-	double cost;
+	float cost;
 };
 
 struct d_NetProfiler {
@@ -44,7 +44,7 @@ struct d_NetProfiler {
 class d_NetTrainer {
 public:
 	d_NetTrainer();
-	d_NetTrainer(Net *net, MatrixXd *data, MatrixXd *labels, double weightScale, double learnRate, double regTerm);
+	d_NetTrainer(Net *net, MatrixXf *data, MatrixXf *labels, float weightScale, float learnRate, float regTerm);
 	~d_NetTrainer();
 	
 	d_NetTrainParameters GetTrainParams();
@@ -53,28 +53,28 @@ public:
 	Net *network;
 	d_Matrix d_trainLabels;
 
-	void BuildVisualization(MatrixXd screen, int * buffer, int m, int k);
+	void BuildVisualization(MatrixXf screen, int * buffer, int m, int k);
 	void Visualization(int * buffer, int m, int k, bool discrete);
 	void UpdateHostNetwork();
 	void UpdateSingleStep();
-	double CalcCost();
+	float CalcCost();
 
-	double GetCost() {
+	float GetCost() {
 		return GetCache().cost;
 	}
 
-	double Coeff() {
+	float Coeff() {
 		return trainParams.coefficiant;
 	}
-	double RegMultipier() {
+	float RegMultipier() {
 		return trainParams.regMult;
 	}
 
-	inline void ModifyLearningRate(double m) {
-		trainParams.learnCoeff = max(DBL_EPSILON, trainParams.learnCoeff + m);
+	inline void ModifyLearningRate(float m) {
+		trainParams.learnCoeff = max(FLT_EPSILON, trainParams.learnCoeff + m);
 	}
-	inline void ModifyRegTerm(double m) {
-		trainParams.regMod = max(DBL_EPSILON, trainParams.regMod + m);
+	inline void ModifyRegTerm(float m) {
+		trainParams.regMod = max(FLT_EPSILON, trainParams.regMod + m);
 	}
 
 	unsigned int TrainExamplesCount() {

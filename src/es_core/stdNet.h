@@ -8,32 +8,32 @@
 using namespace Eigen;
 using namespace std;
 
-inline MatrixXd CalcSigmoid( const MatrixXd &in) {
-	return ((-1.0*in).array().exp() + 1).cwiseInverse();
+inline MatrixXf CalcSigmoid( const MatrixXf &in) {
+	return ((-1.f*in).array().exp() + 1).cwiseInverse();
 }
 
-inline MatrixXd CalcTanh(const MatrixXd &in) {
+inline MatrixXf CalcTanh(const MatrixXf &in) {
 	return (in.array().tanh());
 }
 
-inline MatrixXd CalcReLU(const MatrixXd &in) {
+inline MatrixXf CalcReLU(const MatrixXf &in) {
 	return (in.cwiseMax(0.f));
 }
 
-inline MatrixXd CalcLReLU(const MatrixXd &in) {
-	return in.unaryExpr([](double elem) { return elem > 0.0 ? elem : elem * 0.01; });
+inline MatrixXf CalcLReLU(const MatrixXf &in) {
+	return in.unaryExpr([](float elem) { return elem > 0.0f ? elem : elem * 0.01f; });
 }
 
 
-inline MatrixXd Log(const MatrixXd &in) {
+inline MatrixXf Log(const MatrixXf &in) {
 	return in.array().log();
 }
 
 struct NetParameters {
 	vector<int> layerSizes;
 	vector<Activation> layerActivations;
-	vector<MatrixXd> W;
-	vector<MatrixXd> b;
+	vector<MatrixXf> W;
+	vector<MatrixXf> b;
 };
 
 class Net {
@@ -42,10 +42,10 @@ public:
 	Net(int inputSize, std::vector<int> hiddenSizes, int outputSize, vector<Activation> activations);
 	~Net();
 	NetParameters &GetParams();
-	void SetParams(vector<MatrixXd> W, vector<MatrixXd> b);
+	void SetParams(vector<MatrixXf> W, vector<MatrixXf> b);
 	void AddLayer(int A, int B);
-	static MatrixXd Activate(Activation act, const MatrixXd &In);
-	MatrixXd ForwardPropagation(const MatrixXd X);
+	static MatrixXf Activate(Activation act, const MatrixXf &In);
+	MatrixXf ForwardPropagation(const MatrixXf X);
 
 	int Depth() {
 		return (int)GetParams().layerSizes.size() - 1;

@@ -33,7 +33,7 @@ typedef uint32_t uint32;
 typedef uint64_t uint64;
 
 typedef float real32;
-typedef double real64;
+typedef float real64;
 
 #define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
 #define clamp(x,lo,hi) min( hi, max(lo,x) )
