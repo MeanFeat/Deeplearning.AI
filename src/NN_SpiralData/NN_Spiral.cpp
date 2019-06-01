@@ -176,8 +176,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	MatrixXf X;// = (MatrixXf)BuildMatFromFile("Spiral.csv"); write_binary("Spiral_64.dat", X);
 	MatrixXf Y;// = (MatrixXf)BuildMatFromFile("SpiralLabels.csv"); write_binary("SpiralLabels_64.dat", Y);
 
-	X = (MatrixXf)BuildMatFromFile("Spiral.csv"); //write_binary("Spiral_64.dat", X);
-	Y = (MatrixXf)BuildMatFromFile("SpiralLabels.csv"); //write_binary("SpiralLabels_64.dat", Y);
+	//X = (MatrixXf)BuildMatFromFile("Spiral.csv"); write_binary("Spiral_64_float.dat", X);
+	//Y = (MatrixXf)BuildMatFromFile("SpiralLabels.csv"); write_binary("SpiralLabels_64_float.dat", Y);
 //#if x64
 //	read_binary("Spiral_64.dat", X);
 //	read_binary("SpiralLabels_64.dat", Y);
@@ -185,7 +185,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 //	read_binary("Spiral.dat", X);
 //	read_binary("SpiralLabels.dat", Y);
 //#endif
-
+	read_binary("Spiral_64_float.dat", X);
+	read_binary("SpiralLabels_64_float.dat", Y);
 
 	X = BuildPolynomials(X);
 
@@ -202,14 +203,14 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 									  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH*4, WINHEIGHT*4, 0, 0, Instance, 0);
 
-		neural = Net((int)X.rows(), { 8, 8 }, (int)Y.rows(), {
+		neural = Net((int)X.rows(), {8, 8}, (int)Y.rows(), {
 			Tanh,
 			Tanh,
-			Tanh });
+			Tanh});
 		d_neural = Net(neural);
 
-		h_trainer = NetTrainer(&neural, &X, &Y, 0.25f, 0.5f, 20.0f);
-		d_trainer = d_NetTrainer(&d_neural, &X, &Y, 0.25f, 0.5f, 20.f);
+		//h_trainer = NetTrainer(&neural, &X, &Y, 0.25, 0.5, 20.0);
+		d_trainer = d_NetTrainer(&d_neural, &X, &Y, 0.15, 0.15, 20.0);
 
 		time(&startTime);
 		HDC deviceContext = GetDC(window);
@@ -221,14 +222,14 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		d_trainer.BuildVisualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height);
 		//Main Loop
 		while(globalRunning) {
-			for(int epoch = 0; epoch < 50; ++epoch) {
+			for(int epoch = 0; epoch < 1; ++epoch) {
 				Win32ProcessPendingMessages();
 				if(!globalRunning) {
 					break;
 				}
-				h_trainer.UpdateSingleStep();
+				//h_trainer.UpdateSingleStep();
 				d_trainer.UpdateSingleStep();
-				UpdateHistory(h_history, h_trainer.GetCache().cost);
+				//UpdateHistory(h_history, h_trainer.GetCache().cost);
 				UpdateHistory(d_history, d_trainer.GetCache().cost);
 				UpdateWinTitle(steps, window);
 			}
