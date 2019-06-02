@@ -10,7 +10,7 @@ dim3 dimBlock() {
 	return dim3(BLOCK_SIZE, BLOCK_SIZE);
 }
 
-__global__ void add_Kernel(double *c, const double *a, const double *b) {
+__global__ void add_Kernel(float *c, const float *a, const float *b) {
 	int i = threadIdx.x;
 	c[i] = a[i] + b[i];
 } /* dst = srcA (+) srcB */
@@ -19,7 +19,7 @@ void d_add(d_Matrix *dst, d_Matrix *srcA, d_Matrix *srcB) {
 	d_catchErr();
 }
 
-__global__ void subtract_Kernel(double *c, const double *a, const double *b) {
+__global__ void subtract_Kernel(float *c, const float *a, const float *b) {
 	int i = threadIdx.x;
 	c[i] = a[i] - b[i];
 } /* dst = srcA (-) srcB */
@@ -28,15 +28,15 @@ void d_subtract(d_Matrix *dst, d_Matrix *srcA, d_Matrix *srcB) {
 	d_catchErr();
 }
 
-__global__ void mult_elem_Kernel(double *c, double *a, double b) {
+__global__ void mult_elem_Kernel(float *c, float *a, float b) {
 	int i = threadIdx.x;
 	c[i] = a[i] * b;
 }
 
-__global__ void mult_Kernel(double *dst, double *srcA, double *srcB, int m, int n, int k) {
+__global__ void mult_Kernel(float *dst, float *srcA, float *srcB, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
-	double sum = 0.0;
+	float sum = 0.0;
 	if(col < k && row < m) {
 		for(int i = 0; i < n; i++) {
 			sum += srcA[row * n + i] * srcB[i * k + col];
@@ -53,11 +53,11 @@ void d_mult(d_Matrix* dst, d_Matrix* srcA, d_Matrix* srcB) {
 	d_catchErr();
 }
 
-__global__ void mult_lhsT_Kernel(double *dst, double *srcA, double *srcB, int m, int n, int k) {
+__global__ void mult_lhsT_Kernel(float *dst, float *srcA, float *srcB, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if(col < k && row < m) {
-		double sum = 0.0;
+		float sum = 0.0;
 		for(int i = 0; i < n; ++i) {
 			sum += srcA[row + m * i] * srcB[i * k + col];
 		}
@@ -73,10 +73,10 @@ void d_mult_lhsT(d_Matrix* dst, d_Matrix* srcA, d_Matrix* srcB) {
 	d_catchErr();
 }
 
-__global__ void mult_rhsT_Kernel(double *dst, const double *srcA, const double *srcB, int m, int n, int k) {
+__global__ void mult_rhsT_Kernel(float *dst, const float *srcA, const float *srcB, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
-	double sum = 0.0;
+	float sum = 0.0;
 	if(col < k && row < m) {
 		for(int i = 0; i < n; i++) {
 			sum += srcA[row * n + i] * srcB[col * n + i];
@@ -93,10 +93,10 @@ void d_mult_rhsT(d_Matrix* dst, d_Matrix* srcA, d_Matrix* srcB) {
 	d_catchErr();
 }
 
-__global__ void forwardLayer_Kernel(double *dst,const double *d_W, const double *d_last, const double * d_bias, int m, int n, int k) {
+__global__ void forwardLayer_Kernel(float *dst,const float *d_W, const float *d_last, const float * d_bias, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
-	double sum = 0.0;
+	float sum = 0.0;
 	if(col < k && row < m) {
 		for(int i = 0; i < n; i++) {
 			sum += d_W[row * n + i] * d_last[i * k + col];
@@ -113,10 +113,10 @@ void d_forwardLayer(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_last, d_Matrix *d_
 	d_catchErr();
 }
 
-__global__ void drawPixels_Kernel(int *buffer, int k, const double* vals, bool discrete, Color neg, Color pos) {
+__global__ void drawPixels_Kernel(int *buffer, int k, const float* vals, bool discrete, Color neg, Color pos) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
-	double percent = vals[row * k + col];
+	float percent = vals[row * k + col];
 	if(discrete) {
 		if (percent > 0.0) {
 			buffer[row * k + col] = ((pos.r << 16) | ((pos.g << 8) | pos.b));
@@ -125,21 +125,21 @@ __global__ void drawPixels_Kernel(int *buffer, int k, const double* vals, bool d
 		}
 	} else {
 		if(percent > 0.) {
-			unsigned char r = unsigned char(double(255) + (percent*(double(pos.r) - double(255))));
-			unsigned char g = unsigned char(double(255) + (percent*(double(pos.g) - double(255))));
-			unsigned char b = unsigned char(double(255) + (percent*(double(pos.b) - double(255))));
-			//unsigned char a = unsigned char(double(255) + (percent*(double(pos.a) - double(255))));
+			unsigned char r = unsigned char(float(255) + (percent*(float(pos.r) - float(255))));
+			unsigned char g = unsigned char(float(255) + (percent*(float(pos.g) - float(255))));
+			unsigned char b = unsigned char(float(255) + (percent*(float(pos.b) - float(255))));
+			//unsigned char a = unsigned char(float(255) + (percent*(float(pos.a) - float(255))));
 			buffer[row * k + col] = ((r << 16) | ((g << 8) | b));
 		} else {
-			unsigned char r = unsigned char(double(255) + (-percent*(double(neg.r) - double(255))));
-			unsigned char g = unsigned char(double(255) + (-percent*(double(neg.g) - double(255))));
-			unsigned char b = unsigned char(double(255) + (-percent*(double(neg.b) - double(255))));
-			//unsigned char a = unsigned char(double(255) + (-percent*(double(neg.a) - double(255))));
+			unsigned char r = unsigned char(float(255) + (-percent*(float(neg.r) - float(255))));
+			unsigned char g = unsigned char(float(255) + (-percent*(float(neg.g) - float(255))));
+			unsigned char b = unsigned char(float(255) + (-percent*(float(neg.b) - float(255))));
+			//unsigned char a = unsigned char(float(255) + (-percent*(float(neg.a) - float(255))));
 			buffer[row * k + col] = ((r << 16) | ((g << 8) | b));
 		}
 	}
 }
-void d_drawPixels(int * buffer, int m,int k, const double* vals, bool discrete){ 
+void d_drawPixels(int * buffer, int m,int k, const float* vals, bool discrete){ 
 	Color pos = Color(100, 167, 211, 255);
 	Color neg = Color(255, 184, 113, 255);
 	drawPixels_Kernel << <dimGrid(m, k), dimBlock() >> >
@@ -147,25 +147,25 @@ void d_drawPixels(int * buffer, int m,int k, const double* vals, bool discrete){
 	d_catchErr();
 }
 
-__global__ void Sigmoid_Kernal(double *dst, int N) {
+__global__ void Sigmoid_Kernal(float *dst, int N) {
 	int tid = blockIdx.x;
 	if(tid < N)
 		dst[tid] = 1/(1+exp(-dst[tid]));
 }
 
-__global__ void Tanh_Kernal(double *dst, int N) {
+__global__ void Tanh_Kernal(float *dst, int N) {
 		int tid = blockIdx.x;
 		if(tid < N)
 			dst[tid] = tanh(dst[tid]);
 }
 
-__global__ void ReLU_Kernal(double *dst, int N) {
+__global__ void ReLU_Kernal(float *dst, int N) {
 	int tid = blockIdx.x;
 	if(tid < N)
 		dst[tid] = max(0.f, dst[tid]);
 }
 
-__global__ void LReLU_Kernal(double *dst, int N) {
+__global__ void LReLU_Kernal(float *dst, int N) {
 	int tid = blockIdx.x;
 	if(tid < N)
 		dst[tid] = max(dst[tid] * LRELU_LEAK, dst[tid]);
@@ -190,11 +190,11 @@ void d_Activate(d_Matrix *dst, Activation act) {
 	}
 }
 
-__global__ void backSigmoid_Kernel(double *dst, double *d_W, double *d_dZ, const double *d_A, int m, int n, int k) {
+__global__ void backSigmoid_Kernel(float *dst, float *d_W, float *d_dZ, const float *d_A, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if(col < k && row < m) {
-		double sum = 0.0;
+		float sum = 0.0;
 		for(int i = 0; i < n; ++i) {
 			sum += d_W[row + m * i] * d_dZ[i * k + col];
 		}
@@ -209,11 +209,11 @@ void d_backSigmoid(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A) 
 	d_catchErr();
 }
 
-__global__ void backTanh_Kernel(double *dst, double *d_W, double *d_dZ, const double *d_A, int m, int n, int k) {
+__global__ void backTanh_Kernel(float *dst, float *d_W, float *d_dZ, const float *d_A, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if(col < k && row < m) {
-		double sum = 0.0;
+		float sum = 0.0;
 		for(int i = 0; i < n; ++i) {
 			sum += d_W[row + m * i] * d_dZ[i * k + col];
 		}
@@ -228,11 +228,11 @@ void d_backTanh(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A) {
 	d_catchErr();
 }
 
-__global__ void backReLU_Kernel(double *dst, double *d_W, double *d_dZ, const double *d_A, int m, int n, int k) {
+__global__ void backReLU_Kernel(float *dst, float *d_W, float *d_dZ, const float *d_A, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if(col < k && row < m) {
-		double sum = 0.0;
+		float sum = 0.0;
 		for(int i = 0; i < n; ++i) {
 			sum += d_W[row + m * i] * d_dZ[i * k + col];
 		}
@@ -248,11 +248,11 @@ void d_backReLU(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A) {
 	d_catchErr();
 }
 
-__global__ void backLReLU_Kernel(double *dst, double *d_W, double *d_dZ, const double *d_A, int m, int n, int k) {
+__global__ void backLReLU_Kernel(float *dst, float *d_W, float *d_dZ, const float *d_A, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if(col < k && row < m) {
-		double sum = 0.0;
+		float sum = 0.0;
 		for(int i = 0; i < n; ++i) {
 			sum += d_W[row + m * i] * d_dZ[i * k + col];
 		}
@@ -268,10 +268,10 @@ void d_backLReLU(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A) {
 	d_catchErr();
 }
 
-__global__ void set_dW_Kernel(double *dst, const double *d_dZ, const double *d_A, double coefficient, int m, int n, int k) {
+__global__ void set_dW_Kernel(float *dst, const float *d_dZ, const float *d_A, float coefficient, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
-	double sum = 0.0;
+	float sum = 0.0;
 	if(col < k && row < m) {
 		for(int i = 0; i < n; i++) {
 			sum += d_dZ[row * n + i] * d_A[col * n + i];
@@ -279,7 +279,7 @@ __global__ void set_dW_Kernel(double *dst, const double *d_dZ, const double *d_A
 		dst[row * k + col] = sum * coefficient;
 	}
 } /* dst = coeff * (d_dZ * d_A.T) */
-void d_set_dW(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, double coefficient) {
+void d_set_dW(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, float coefficient) {
 	int m = d_dZ->rows();
 	int n = d_dZ->cols();
 	int k = d_A->rows();
@@ -288,10 +288,10 @@ void d_set_dW(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, double coefficient) 
 	d_catchErr();
 }
 
-__global__ void set_dW_Kernel(double *dst, const double *d_dZ, const double *d_A, const double *d_W, double coefficient, double regTerm, int m, int n, int k) {
+__global__ void set_dW_Kernel(float *dst, const float *d_dZ, const float *d_A, const float *d_W, float coefficient, float regTerm, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
-	double sum = 0.0;
+	float sum = 0.0;
 	if(col < k && row < m) {
 		for(int i = 0; i < n; i++) {
 			sum += d_dZ[row * n + i] * d_A[col * n + i];
@@ -299,7 +299,7 @@ __global__ void set_dW_Kernel(double *dst, const double *d_dZ, const double *d_A
 		dst[row * k + col] = coefficient * (sum + (0.5 * regTerm * d_W[row * k + col]));
 	}
 } /* dst = coeff * (d_dZ * d_A.T) (+) (0.5 * learn * d_W) */
-void d_set_dW(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, d_Matrix *d_W, double coefficient, double regTerm) {
+void d_set_dW(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, d_Matrix *d_W, float coefficient, float regTerm) {
 	int m = d_dZ->rows();
 	int n = d_dZ->cols();
 	int k = d_A->rows();
@@ -308,17 +308,17 @@ void d_set_dW(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, d_Matrix *d_W, doubl
 	d_catchErr();
 }
 
-__global__ void set_db_Kernel(double *dst, const double *d_dZ, double coefficient, int r, int c) {
+__global__ void set_db_Kernel(float *dst, const float *d_dZ, float coefficient, int r, int c) {
 	int tid = blockIdx.x;
 	if(tid < r) {
-		double tempSum = 0.0;
+		float tempSum = 0.0;
 		for(int ind = 0; ind < c; ++ind) {
 			tempSum += d_dZ[tid * c + ind];
 		}
 		dst[tid] = tempSum * coefficient;
 	}
 } /* dst = coeff * (srcA.SumOfRows) */
-void d_set_db(d_Matrix* dst, d_Matrix* d_dZ, double coefficient) {
+void d_set_db(d_Matrix* dst, d_Matrix* d_dZ, float coefficient) {
 	set_db_Kernel << <dst->rows(), 1 >> >
 		(dst->d_data(), d_dZ->d_data(), coefficient, d_dZ->rows(), d_dZ->cols());
 	d_catchErr();
@@ -327,7 +327,7 @@ void d_set_db(d_Matrix* dst, d_Matrix* d_dZ, double coefficient) {
 #define EPSILON 0.0000000000000001
 #define BETA1 0.9
 #define BETA2 (1.0 - EPSILON)
-__global__ void updateParameterADAM_Kernel(double *dst, int N, const double *d_derivative, double *d_momentum, double *d_momentumSqr, double learn) {
+__global__ void updateParameterADAM_Kernel(float *dst, int N, const float *d_derivative, float *d_momentum, float *d_momentumSqr, float learn) {
 	int tid = blockIdx.x;
 	if(tid < N) {
 		d_momentum[tid] = BETA1 * d_momentum[tid] + (1 - BETA1) * d_derivative[tid];
@@ -335,25 +335,25 @@ __global__ void updateParameterADAM_Kernel(double *dst, int N, const double *d_d
 		dst[tid] -= learn * (d_momentum[tid]/(1-(BETA1*BETA1)) / (sqrt(d_momentumSqr[tid]/(1-(BETA2*BETA2))) + EPSILON));
 	}
 }
-void d_updateParameterADAM(d_Matrix* dst, d_Matrix* d_derivative, d_Matrix* d_momentum, d_Matrix* d_momentumSqr, double learnRate) {
+void d_updateParameterADAM(d_Matrix* dst, d_Matrix* d_derivative, d_Matrix* d_momentum, d_Matrix* d_momentumSqr, float learnRate) {
 	updateParameterADAM_Kernel << <dst->size(), 1 >> >
 		(dst->d_data(), dst->size(), d_derivative->d_data(), d_momentum->d_data(), d_momentumSqr->d_data(), learnRate);
 	d_catchErr();
 }
 
-__global__ void updateParameter_Kernel(double *dst, int N, const double *d_derivative, double learn) {
+__global__ void updateParameter_Kernel(float *dst, int N, const float *d_derivative, float learn) {
 	int tid = blockIdx.x;
 	if(tid < N) {
 		dst[tid] -= learn * d_derivative[tid];
 	}
 }
-void d_updateParameter(d_Matrix* dst, d_Matrix* d_derivative, double learnRate) {
+void d_updateParameter(d_Matrix* dst, d_Matrix* d_derivative, float learnRate) {
 	updateParameter_Kernel << <dst->size(), 1 >> >
 		(dst->d_data(), dst->size(), d_derivative->d_data(), learnRate);
 	d_catchErr();
 }
 
-__global__ void sum_Kernel(double *dst, double *src, int len) {
+__global__ void sum_Kernel(float *dst, float *src, int len) {
 	int tid = threadIdx.x;
 	int step = 2;
 	int get = 1;
@@ -373,7 +373,7 @@ __global__ void sum_Kernel(double *dst, double *src, int len) {
 	}
 }
 
-__global__ void sumMatrix_Kernel(double *dst, double *src, int m, int k) {
+__global__ void sumMatrix_Kernel(float *dst, float *src, int m, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	int len = m * k;
@@ -397,7 +397,7 @@ __global__ void sumMatrix_Kernel(double *dst, double *src, int m, int k) {
 	}
 }
 
-void d_sum(double *dst, d_Matrix* src) {
+void d_sum(float *dst, d_Matrix* src) {
 	int m = src->size();
 	d_Matrix sums = *src;
 	sum_Kernel << < 1, m / 2 >> > (dst, src->d_data(), m);
@@ -405,7 +405,7 @@ void d_sum(double *dst, d_Matrix* src) {
 }
 
 
-__global__ void square_Kernel(double *dst, double *src, int m, int k) {
+__global__ void square_Kernel(float *dst, float *src, int m, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if(col < k && row < m) {
@@ -413,24 +413,24 @@ __global__ void square_Kernel(double *dst, double *src, int m, int k) {
 	}
 }
 
-__global__ void square_Kernel(double *dst, double *src) {
+__global__ void square_Kernel(float *dst, float *src) {
 	int tid = threadIdx.x;
 	dst[tid] = src[tid] * src[tid];
 }
-void d_square(double *dst, d_Matrix* src) {
+void d_square(float *dst, d_Matrix* src) {
 	square_Kernel << <1, src->size() >> > (dst, src->d_data());
 }
 
-__global__ void finalCost_Kernel(double *dst, double *sumTotal, double regMult, double trainCount) {
+__global__ void finalCost_Kernel(float *dst, float *sumTotal, float regMult, float trainCount) {
 	dst[0] = dst[0] + (0.5 * (regMult * (sumTotal[0] / (trainCount*2.0))));
 }
 
-__global__ void setZero_Kernel(double *dst) {
+__global__ void setZero_Kernel(float *dst) {
 	dst[0] = 0.0;
 }
 
-void d_calcCost(double *dst, d_Matrix* d_modelErr, vector<d_Matrix>* d_modelWeights, double regMult, double coeff, double trainLableCount) {
-	double* d_diff;	
+void d_calcCost(float *dst, d_Matrix* d_modelErr, vector<d_Matrix>* d_modelWeights, float regMult, float coeff, float trainLableCount) {
+	float* d_diff;	
 	cudaMalloc((void**)&d_diff, d_modelErr->memSize());
 	int m = d_modelErr->size();
 	square_Kernel << <1,m >> > (d_diff, d_modelErr->d_data()); d_catchErr();
@@ -438,15 +438,15 @@ void d_calcCost(double *dst, d_Matrix* d_modelErr, vector<d_Matrix>* d_modelWeig
 	mult_elem_Kernel << <1, 1 >> > (dst, dst, coeff); d_catchErr();
 	return;
 	// Add Regularization
-	double* d_sqrSumTotal;
-	cudaMalloc((void**)&d_sqrSumTotal, sizeof(double));
+	float* d_sqrSumTotal;
+	cudaMalloc((void**)&d_sqrSumTotal, sizeof(float));
 	setZero_Kernel << <1, 1 >> > (d_sqrSumTotal); d_catchErr();
 	for(int i = 0; i < (int)d_modelWeights->size()-1; ++i) {
 		int m = d_modelWeights->at(i).rows();
 		int k = d_modelWeights->at(i).cols();
-		double* d_squared;
-		double* d_sqrSum;
-		d_check(cudaMalloc((void**)&d_sqrSum, sizeof(double)));
+		float* d_squared;
+		float* d_sqrSum;
+		d_check(cudaMalloc((void**)&d_sqrSum, sizeof(float)));
 		d_check(cudaMalloc((void**)&d_squared, d_modelWeights->at(i).memSize()));		
 		square_Kernel << < dimGrid(m, k), dimBlock() >> > (d_squared, d_modelWeights->at(i).d_data(), m, k); d_catchErr();
 		sumMatrix_Kernel << <dimGrid(m, k), dimBlock() >> > (d_sqrSum, d_squared, m, k); d_catchErr();

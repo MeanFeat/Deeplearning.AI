@@ -14,12 +14,12 @@ global_variable bool isTraining = true;
 global_variable bool drawOutput = true;
 global_variable bool plotData = false;
 
-global_variable vector<double> predictions;
+global_variable vector<float> predictions;
 static time_t startTime;
 static time_t currentTime;
 
-double mouseX = WINHALFWIDTH;
-double mouseY = WINHALFHEIGHT + 100;
+float mouseX = WINHALFWIDTH;
+float mouseY = WINHALFHEIGHT + 100;
 
 Buffer backBuffer;
 Net neural;
@@ -65,8 +65,8 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 	case WM_MOUSEMOVE:
 	{
 		if(DWORD(WParam) & MK_LBUTTON) {
-			mouseX = double(GET_X_LPARAM(LParam));
-			mouseY = double(GET_Y_LPARAM(LParam)) + backBuffer.titleOffset;
+			mouseX = float(GET_X_LPARAM(LParam));
+			mouseY = float(GET_Y_LPARAM(LParam)) + backBuffer.titleOffset;
 		}
 	} break;
 
@@ -82,29 +82,29 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 	return Result;
 }
 
-MatrixXd NormalizeData(MatrixXd m) {
-	MatrixXd a = (m.row(0).array().pow(2) + m.row(1).array().pow(2)).array().sqrt();
-	MatrixXd b = MatrixXd(2, a.cols());
+MatrixXf NormalizeData(MatrixXf m) {
+	MatrixXf a = (m.row(0).array().pow(2) + m.row(1).array().pow(2)).array().sqrt();
+	MatrixXf b = MatrixXf(2, a.cols());
 	b << a, a;
-	return MatrixXd(m.array() / b.array());
+	return MatrixXf(m.array() / b.array());
 }
 
-Color GetColorBlend(double percent) {
+Color GetColorBlend(float percent) {
 	return percent < 0.f ? Color(255, 255, 255, 255).Blend(negativeColor, -percent)
 		: Color(255, 255, 255, 255).Blend(positiveColor, percent);;
 }
 
-void PlotData(MatrixXd X, MatrixXd Y) {
+void PlotData(MatrixXf X, MatrixXf Y) {
 	for(int i = 0; i < X.cols(); ++i) {
 		DrawFilledCircle(backBuffer, int(WINHALFWIDTH + X(0, i)), int(WINHALFHEIGHT + -X(1, i)), 10.f, GetColorBlend(Y(0, i)));
 	}
 }
 
-void DrawOutputToScreen(MatrixXd normScreen) {
+void DrawOutputToScreen(MatrixXf normScreen) {
 	trainer.Visualization((int*)backBuffer.memory, backBuffer.width, backBuffer.height, false);
 }
 
-void UpdateDisplay(MatrixXd screenCoords, MatrixXd X, MatrixXd Y, vector<double> &history, vector<double> &testHistory) {
+void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> &history, vector<float> &testHistory) {
 	if(globalRunning) {
 		if(drawOutput) {
 			DrawOutputToScreen(screenCoords);
@@ -116,11 +116,11 @@ void UpdateDisplay(MatrixXd screenCoords, MatrixXd X, MatrixXd Y, vector<double>
 			PlotData(X*PLOTDIST, Y);
 		}
 
-		DrawLine(backBuffer, WINHALFWIDTH, WINHALFHEIGHT, mouseX, double(WINHEIGHT - mouseY), Color(0, 0, 255, 255));
+		DrawLine(backBuffer, WINHALFWIDTH, WINHALFHEIGHT, mouseX, float(WINHEIGHT - mouseY), Color(0, 0, 255, 255));
 		for (int i = 0; i < (int)predictions.size();++i){
 			int predX = int(sin(predictions[i] * Pi32) * 100.f);
 			int predY = int(cos(predictions[i] * Pi32) * 100.f);
-			DrawLine(backBuffer, WINHALFWIDTH, WINHALFHEIGHT, double(WINHALFWIDTH) + predX, double(WINHALFHEIGHT) - predY, Color(100, 0, 0, 0));
+			DrawLine(backBuffer, WINHALFWIDTH, WINHALFHEIGHT, float(WINHALFWIDTH) + predX, float(WINHALFHEIGHT) - predY, Color(100, 0, 0, 0));
 		}
 		DrawHistory(backBuffer, history, Color(200, 90, 90, 255));
 		DrawHistory(backBuffer, testHistory, Color(100, 100, 100, 255));
@@ -138,9 +138,9 @@ void UpdateWinTitle(int &steps, HWND window) {
 	SetWindowText(window, LPCSTR(s));
 }
 
-MatrixXd BuildRadians(MatrixXd m) {
-	double coefficient = 1.f / Pi32;
-	MatrixXd out = MatrixXd(1, m.cols());
+MatrixXf BuildRadians(MatrixXf m) {
+	float coefficient = 1.f / Pi32;
+	MatrixXf out = MatrixXf(1, m.cols());
 	for(int i = 0; i < m.cols(); ++i) {
 		out(0, i) = atan2((m(0, i)), (m(1, i))) * coefficient;
 		//out(1, i) = atan2(-(m(1, i)), (m(0, i))) * coefficient;
@@ -151,29 +151,29 @@ MatrixXd BuildRadians(MatrixXd m) {
 
 void UpdatePrediction() {
 	trainer.UpdateHostNetwork();
-	MatrixXd mouse = MatrixXd(2,1);
+	MatrixXf mouse = MatrixXf(2,1);
 	mouse(0, 0) = mouseX-WINHALFWIDTH;
 	mouse(1, 0) = mouseY-WINHALFHEIGHT;
-	MatrixXd h = neural.ForwardPropagation(NormalizeData(mouse));
+	MatrixXf h = neural.ForwardPropagation(NormalizeData(mouse));
 	predictions.clear();
 	for (int i = 0; i < h.rows(); ++i){
 		predictions.push_back(h(i, 0));
 	}
 }
 
-MatrixXd CreateSparseData(int pointCount) {
-	double piAdjusted = Pi32 - 0.01f;
-	double delta = (2.f * Pi32) / double(pointCount);
-	MatrixXd out = MatrixXd(2, pointCount+1);
+MatrixXf CreateSparseData(int pointCount) {
+	float piAdjusted = Pi32 - 0.01f;
+	float delta = (2.f * Pi32) / float(pointCount);
+	MatrixXf out = MatrixXf(2, pointCount+1);
 	for(int i = 0; i <= pointCount; i++) {
-		double r = clamp(-Pi32 + (delta * i), -piAdjusted, piAdjusted);
+		float r = clamp(-Pi32 + (delta * i), -piAdjusted, piAdjusted);
 		out(0,i) = sin(r);
 		out(1,i) = cos(r);
 	}
 	return out;
 }
 
-void UpdateHistory(vector<double> &history, double cost) {
+void UpdateHistory(vector<float> &history, float cost) {
 	history.push_back(min((cost) * WINHEIGHT, WINHEIGHT));
 	if(history.size() >= WINWIDTH + WINWIDTH) {
 		for(int i = 1; i < (int)history.size(); i += 2) {
@@ -183,13 +183,13 @@ void UpdateHistory(vector<double> &history, double cost) {
 }
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode) {
-	MatrixXd X;
-	MatrixXd testX;
-	MatrixXd Y;
-	MatrixXd testY;
+	MatrixXf X;
+	MatrixXf testX;
+	MatrixXf Y;
+	MatrixXf testY;
 	WNDCLASSA winClass = {};
 	InitializeWindow(&winClass, Instance, Win32MainWindowCallback, &backBuffer, WINWIDTH, WINHEIGHT, "NN_PredictRadian");
-	MatrixXd screenCoords = NormalizeData(BuildDisplayCoords(backBuffer).transpose());
+	MatrixXf screenCoords = NormalizeData(BuildDisplayCoords(backBuffer).transpose());
 
 	testX = NormalizeData(CreateSparseData(99));
 	testY = BuildRadians(testX);
@@ -206,8 +206,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		trainer = d_NetTrainer(&neural, &X, &Y, 0.5, 0.25, 1.0);
 
 		HDC deviceContext = GetDC(window);
-		vector<double> history;
-		vector<double> testHistory;
+		vector<float> history;
+		vector<float> testHistory;
 		cudaStream_t stream;
 		cudaStreamCreate(&stream);
 		trainer.BuildVisualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height);
