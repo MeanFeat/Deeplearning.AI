@@ -39,6 +39,7 @@ struct d_NetProfiler {
 	float backpropTime;
 	float updateTime;
 	float calcCostTime;
+	float visualizationTime;
 };
 
 class d_NetTrainer {

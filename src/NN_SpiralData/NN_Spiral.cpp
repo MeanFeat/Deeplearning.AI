@@ -160,11 +160,11 @@ void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> 
 void UpdateWinTitle(int &steps, HWND window) {
 	time(&currentTime);
 	d_NetProfiler *profiler = &d_trainer.GetProfiler();
-	float totalTime = profiler->forwardTime + profiler->backpropTime + profiler->updateTime + profiler->calcCostTime;
+	float totalTime = profiler->forwardTime + profiler->backpropTime + profiler->updateTime + profiler->calcCostTime + profiler->visualizationTime;
 	char s[255];
 	if (profile) {
-		sprintf_s(s, "Total %0.5f | F %0.5f | B %0.5f | U %0.5f | C %0.5f |"
-				  , totalTime, profiler->forwardTime, profiler->backpropTime, profiler->updateTime, profiler->calcCostTime);
+		sprintf_s(s, "Total %0.5f | F %0.5f | B %0.5f | U %0.5f | C %0.5f | V %0.5f |"
+				  , totalTime, profiler->forwardTime, profiler->backpropTime, profiler->updateTime, profiler->calcCostTime, profiler->visualizationTime);
 	} else {
 		sprintf_s(s, "SpiralData || Epoch %d | Time: %0.1f | milliseconds %0.10f | d_Cost %0.10f  "
 				  , steps++, difftime(currentTime, startTime), totalTime, d_trainer.GetCache().cost);
@@ -203,14 +203,14 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 									  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH*4, WINHEIGHT*4, 0, 0, Instance, 0);
 
-		neural = Net((int)X.rows(), {8, 8}, (int)Y.rows(), {
-			Tanh,
-			Tanh,
+		neural = Net((int)X.rows(), {8,8}, (int)Y.rows(), {
+			LReLU,
+			LReLU,
 			Tanh});
 		d_neural = Net(neural);
 
 		//h_trainer = NetTrainer(&neural, &X, &Y, 0.25, 0.5, 20.0);
-		d_trainer = d_NetTrainer(&d_neural, &X, &Y, 0.15, 0.15, 20.0);
+		d_trainer = d_NetTrainer(&d_neural, &X, &Y, 0.15f, 0.15f, 0.f);
 
 		time(&startTime);
 		HDC deviceContext = GetDC(window);
@@ -222,7 +222,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		d_trainer.BuildVisualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height);
 		//Main Loop
 		while(globalRunning) {
-			for(int epoch = 0; epoch < 1; ++epoch) {
+			for(int epoch = 0; epoch < 100; ++epoch) {
 				Win32ProcessPendingMessages();
 				if(!globalRunning) {
 					break;

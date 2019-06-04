@@ -80,12 +80,14 @@ void d_NetTrainer::BuildVisualization(MatrixXf screen, int * buffer, int m, int 
 }
 
 void d_NetTrainer::Visualization(int * buffer, int m, int k, bool discrete) {
+	d_profile(start,stop, &profiler.visualizationTime,
 	for(int i = 0; i < network->Depth(); ++i) {
 		d_forwardLayer(&d_VisualA[i + 1], &trainParams.d_W[i], &d_VisualA[i], &trainParams.d_b[i]);
 		d_Activate(&d_VisualA[i + 1], network->GetParams().layerActivations[i]);
 	}
 	d_drawPixels(d_Buffer, m,k, d_VisualA.back().d_data(), discrete);
 	cudaMemcpyAsync(buffer, d_Buffer, m*k * sizeof(int), cudaMemcpyDeviceToHost, cuda_stream);
+	);
 }
 
 void d_NetTrainer::UpdateHostNetwork() {
@@ -102,7 +104,7 @@ void d_NetTrainer::ForwardTrain() {
 	}
 }
 
-float d_NetTrainer::CalcCost() { //TODO: calculate on device
+float d_NetTrainer::CalcCost() { 
 	float *d_cost;
 	cudaMalloc((void**)&d_cost, sizeof(float));
 	d_calcCost(d_cost, &cache.d_dZ.back(), &trainParams.d_W, RegMultipier(), Coeff(), (float)trainParams.trainExamplesCount);
