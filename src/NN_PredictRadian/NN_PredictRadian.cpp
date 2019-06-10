@@ -8,6 +8,7 @@
 #define WINHALFWIDTH int((WINWIDTH-1)*0.5f)
 #define WINHALFHEIGHT WINHALFWIDTH
 #define PLOTDIST 90.f
+#define WINDOWSTRETCHSCALE 2
 
 global_variable bool globalRunning = true;
 global_variable bool isTraining = true;
@@ -65,8 +66,11 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 	case WM_MOUSEMOVE:
 	{
 		if(DWORD(WParam) & MK_LBUTTON) {
-			mouseX = float(GET_X_LPARAM(LParam));
-			mouseY = float(GET_Y_LPARAM(LParam)) + backBuffer.titleOffset;
+			POINT mousePos;
+			GetCursorPos(&mousePos);
+			ScreenToClient(Window, &mousePos);
+			mouseX = float(mousePos.x / WINDOWSTRETCHSCALE);
+			mouseY = float(mousePos.y / WINDOWSTRETCHSCALE);
 		}
 	} break;
 
@@ -198,7 +202,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 	testX = NormalizeData(CreateSparseData(99));
 	testY = BuildRadians(testX);
-    X = NormalizeData(CreateSparseData(35));
+	X = NormalizeData(CreateSparseData(35));
 	//X = NormalizeData(CreateRandomData(15));
 	Y = BuildRadians(X);
 
@@ -206,7 +210,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	if(RegisterClassA(&winClass)) {
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
 									  WS_OVERLAPPED | WS_SYSMENU | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
-									  WINWIDTH*2, WINHEIGHT * 2, 0, 0, Instance, 0);
+									  WINWIDTH * WINDOWSTRETCHSCALE, WINHEIGHT * WINDOWSTRETCHSCALE, 0, 0, Instance, 0);
 
 		neural = Net((int)X.rows(), {32,16}, (int)Y.rows(), {Tanh,Tanh, Tanh});
 		trainer = d_NetTrainer(&neural, &X, &Y, 0.15f, 0.5f, 1.0f);

@@ -204,13 +204,13 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 									  WINWIDTH*4, WINHEIGHT*4, 0, 0, Instance, 0);
 
 		neural = Net((int)X.rows(), {8,8}, (int)Y.rows(), {
-			LReLU,
-			LReLU,
+			Tanh,
+			Tanh,
 			Tanh});
 		d_neural = Net(neural);
 
 		//h_trainer = NetTrainer(&neural, &X, &Y, 0.25, 0.5, 20.0);
-		d_trainer = d_NetTrainer(&d_neural, &X, &Y, 0.15f, 0.15f, 0.f);
+		d_trainer = d_NetTrainer(&d_neural, &X, &Y, 0.15f, 2.f, 20.f);
 
 		time(&startTime);
 		HDC deviceContext = GetDC(window);

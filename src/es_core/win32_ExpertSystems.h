@@ -48,7 +48,7 @@ void InitializeWindow(WNDCLASSA *winclass, HINSTANCE instance, WNDPROC windowCal
 	backBuffer->memory = malloc(width * height * 4);
 	backBuffer->width = width;
 	backBuffer->height = height;
-	backBuffer->titleOffset = 25;
+	backBuffer->titleOffset = 0;
 	winclass->style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 	winclass->lpfnWndProc = windowCallback;
 	winclass->hInstance = instance;
