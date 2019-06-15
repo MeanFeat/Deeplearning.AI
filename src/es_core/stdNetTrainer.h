@@ -61,11 +61,11 @@ public:
 		return (network->GetParams().W[index + 1].transpose() * dZ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - (A1Squared));
 	}
 	inline MatrixXf BackReLU(const MatrixXf dZ, int index) {
-		return (network->GetParams().W[index + 1].transpose() * dZ).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.0 : 0.0; }));
+		return (network->GetParams().W[index + 1].transpose() * dZ).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.f; }));
 	}
 
 	inline MatrixXf BackLReLU(const MatrixXf dZ, int index) {
-		return (network->GetParams().W[index + 1].transpose() * dZ).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.0 : 0.01; }));
+		return (network->GetParams().W[index + 1].transpose() * dZ).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.01f; }));
 	}
 
 protected:
