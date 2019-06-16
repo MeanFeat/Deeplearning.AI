@@ -1,83 +1,67 @@
 ﻿#include "stdNet.h"
 #include "windows.h"
 #include <iostream>
-
-Net::Net(){
-}
-
-Net::Net(int inputSize, std::vector<int> hiddenSizes, int outputSize, vector<Activation> activations) {
-	if (hiddenSizes.size() != activations.size()-1) { //do not include the output layer
+Net::Net(){}
+Net::Net(int inputSize, std::vector<int> hiddenSizes, int outputSize, vector<Activation> activations){
+	if(hiddenSizes.size() != activations.size() - 1){ //do not include the output layer
 		char txt[256] = {0};
-		_snprintf_s(txt, 256, "ERROR:: Layer count(%i) and Activation count(%i)  do not match\n", 
-					(int)hiddenSizes.size(), (int)activations.size()-1);
+		_snprintf_s(txt, 256, "ERROR:: Layer count(%i) and Activation count(%i)  do not match\n",
+			(int)hiddenSizes.size(), (int)activations.size() - 1);
 		OutputDebugStringA(txt);
 		exit(-1);
 	}
 	params.layerActivations = activations;
 	params.layerSizes.push_back(inputSize);
-	for(int l = 0; l < (int)hiddenSizes.size(); ++l) {
+	for(int l = 0; l < (int)hiddenSizes.size(); ++l){
 		params.layerSizes.push_back(hiddenSizes[l]);
 	}
 	params.layerSizes.push_back(outputSize);
 	AddLayer(hiddenSizes[0], inputSize);
-	for(int h = 1; h < (int)hiddenSizes.size(); ++h) {
+	for(int h = 1; h < (int)hiddenSizes.size(); ++h){
 		AddLayer(hiddenSizes[h], hiddenSizes[h - 1]);
 	}
 	AddLayer(outputSize, hiddenSizes.back());
 }
-
-Net::~Net() {
-}
-
-NetParameters &Net::GetParams() {
+Net::~Net(){}
+NetParameters &Net::GetParams(){
 	return params;
 }
-
-void Net::SetParams(vector<MatrixXf> W, vector<MatrixXf> b) {
+void Net::SetParams(vector<MatrixXf> W, vector<MatrixXf> b){
 	params.W = W;
 	params.b = b;
 }
-
-void Net::AddLayer(int A, int B) {
+void Net::AddLayer(int A, int B){
 	params.W.push_back(MatrixXf::Random(A, B));
 	params.b.push_back(MatrixXf::Zero(A, 1));
 }
-
-MatrixXf Net::Activate(Activation act, const MatrixXf &In) {
-	switch(act) {
-	case Linear:
+MatrixXf Net::Activate(Activation act, const MatrixXf &In){
+	switch(act){
+		case Linear:
 		return In;
 		break;
-	case Sigmoid:
+		case Sigmoid:
 		return CalcSigmoid(In);
 		break;
-	case Tanh:
+		case Tanh:
 		return CalcTanh(In);
 		break;
-	case ReLU:
+		case ReLU:
 		return CalcReLU(In);
 		break;
-	case LReLU:
+		case LReLU:
 		return CalcLReLU(In);
 		break;
-	default:
+		default:
 		return In;
 		break;
 	}
 }
-
-MatrixXf Net::ForwardPropagation(const MatrixXf X) {
+MatrixXf Net::ForwardPropagation(const MatrixXf X){
 	MatrixXf lastOutput = X;
-	for(int i = 0; i < (int)params.layerSizes.size() - 1; ++i) {
+	for(int i = 0; i < (int)params.layerSizes.size() - 1; ++i){
 		lastOutput = Activate(params.layerActivations[i], (params.W[i] * lastOutput).colwise() + (VectorXf)params.b[i]);
 	}
 	return lastOutput;
 }
-
-void Net::SaveNetwork() {
-
-}
-
-void Net::LoadNetwork() {
-}
-
+void Net::SaveNetwork(){}
+void Net::LoadNetwork(){}
