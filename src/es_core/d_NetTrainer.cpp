@@ -117,7 +117,7 @@ void d_NetTrainer::BackwardPropagation(){
 			default:
 				break;
 		}
-		d_set_dW(&derivative.d_dW[l], &cache.d_dZ[l], &cache.d_A[l], &trainParams.d_W[l], Coeff(), trainParams.regMod);
+		d_set_dW_Reg(&derivative.d_dW[l], &cache.d_dZ[l], &cache.d_A[l], &trainParams.d_W[l], Coeff(), trainParams.regMod);
 		d_set_db(&derivative.d_db[l], &cache.d_dZ[l], Coeff());
 	}
 }
@@ -140,11 +140,10 @@ void d_NetTrainer::UpdateSingleStep(){
 	cudaMalloc((void**)&d_C, sizeof(float));
 	float expected = A.sum();
 	d_sum(d_C, &d_A);
-	float out = 0.0;
+	float out = 0.0f;
 	cudaMemcpy(&out, d_C, sizeof(float), cudaMemcpyDeviceToHost);
 	MatrixXf test = to_host(d_A);
 	float diffSum = out - expected;*/
-
 	d_profile(start, stop, &profiler.forwardTime, ForwardTrain());
 	d_catchErr();
 	d_profile(start, stop, &profiler.backpropTime, BackwardPropagation());
@@ -153,5 +152,4 @@ void d_NetTrainer::UpdateSingleStep(){
 	d_catchErr();
 	d_profile(start, stop, &profiler.calcCostTime, CalcCost());
 	d_catchErr();
-
 }

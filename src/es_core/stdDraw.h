@@ -92,7 +92,7 @@ void DrawHistory(Buffer buffer, vector<float> hist, Color c) {
 }
 
 void DrawFilledCircle(Buffer buffer, int x, int y, float d, Color c) {
-	int r = int(d*0.5);
+	int r = int(d*0.5f);
 	for(int h = -r; h < r; h++) {
 		int height = (int)sqrt(r * r - h * h);
 
@@ -109,7 +109,7 @@ MatrixXf BuildDisplayCoords(Buffer buffer, float scale = 1.f) {
 	MatrixXf out(buffer.width * buffer.height, 2);
 	VectorXf row(buffer.width);
 	VectorXf cols(buffer.width * buffer.height);
-	int halfWidth = int(buffer.width * 0.5);
+	int halfWidth = int(buffer.width * 0.5f);
 	for(int x = 0; x < buffer.width; ++x) {
 		row(x) = float((x - halfWidth) / scale);
 	}

@@ -21,7 +21,7 @@ void d_backTanh(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A);
 void d_backReLU(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A);
 void d_backLReLU(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A);
 void d_set_dW(d_Matrix *dst, d_Matrix *d_dZ, d_Matrix *d_A, float coefficient);
-void d_set_dW(d_Matrix *dst, d_Matrix *d_dZ, d_Matrix *d_A, d_Matrix *d_W, float coefficient, float learn);
+void d_set_dW_Reg(d_Matrix *dst, d_Matrix *d_dZ, d_Matrix *d_A, d_Matrix *d_W, float coefficient, float regTerm);
 void d_set_db(d_Matrix *dst, d_Matrix *d_dZ, float coefficient);
 void d_updateParameterADAM(d_Matrix * dst, d_Matrix * d_derivative, d_Matrix * d_momentum, d_Matrix * d_momentumSqr, float learnRate);
 void d_updateParameter(d_Matrix * dst, d_Matrix * d_derivative, float learnRate);

@@ -85,14 +85,7 @@ void NetTrainer::UpdateParameters(){
 		network->GetParams().b[i] -= ((trainParams.learningRate*trainParams.learningMod) * trainParams.db[i]);
 	}
 }
-void NetTrainer::UpdateParametersWithMomentum(){
-	for(int i = 0; i < (int)trainParams.dW.size(); ++i){
-		momentum.dW[i] = trainParams.dW[i] + momentum.dW[i].normalized() * cache.cost * 0.025f;
-		momentum.db[i] = trainParams.db[i] + momentum.db[i].normalized() * cache.cost * 0.025f;
-		network->GetParams().W[i] -= (trainParams.learningRate*trainParams.learningMod) * momentum.dW[i];
-		network->GetParams().b[i] -= (trainParams.learningRate*trainParams.learningMod) * momentum.db[i];
-	}
-}
+
 #define BETA1 0.9f
 #define BETA2 (1.f - FLT_EPSILON)
 void NetTrainer::UpdateSingleParamADAM(MatrixXf *w, MatrixXf *d, MatrixXf *m, MatrixXf *mS){
@@ -114,7 +107,7 @@ void NetTrainer::BuildDropoutMask(){
 	for(int i = 1; i < (int)dropParams.W.size() - 1; ++i){
 		for(int row = 0; row < dropParams.W[i].rows(); ++row){
 			float val = ((float)rand() / (RAND_MAX));
-			if(val < 0.95){
+			if(val < 0.95f){
 				dropParams.W[i].row(row) = MatrixXf::Ones(1, dropParams.W[i].cols());
 				dropParams.b[i].row(row) = MatrixXf::Ones(1, dropParams.b[i].cols());
 			} else{

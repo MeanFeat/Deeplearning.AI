@@ -29,7 +29,7 @@ __global__ void mult_elem_Kernel(float *c, float *a, float b){
 __global__ void mult_Kernel(float *dst, float *srcA, float *srcB, int m, int n, int k){
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
-	float sum = 0.0;
+	float sum = 0.0f;
 	if(col < k && row < m){
 		for(int i = 0; i < n; i++){
 			sum += srcA[row * n + i] * srcB[i * k + col];
@@ -67,7 +67,7 @@ void d_mult_lhsT(d_Matrix* dst, d_Matrix* srcA, d_Matrix* srcB){
 __global__ void mult_rhsT_Kernel(float *dst, const float *srcA, const float *srcB, int m, int n, int k){
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
-	float sum = 0.0;
+	float sum = 0.0f;
 	if(col < k && row < m){
 		for(int i = 0; i < n; i++){
 			sum += srcA[row * n + i] * srcB[col * n + i];
@@ -266,7 +266,7 @@ void d_set_dW(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, float coefficient){
 		(dst->d_data(), d_dZ->d_data(), d_A->d_data(), coefficient, m, n, k);
 	d_catchErr();
 }
-__global__ void set_dW_Kernel(float *dst, const float *d_dZ, const float *d_A, const float *d_W, float coefficient, float regTerm, int m, int n, int k){
+__global__ void set_dW_Reg_Kernel(float *dst, const float *d_dZ, const float *d_A, const float *d_W, float coefficient, float regTerm, int m, int n, int k){
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	float sum = 0.f;
@@ -274,14 +274,14 @@ __global__ void set_dW_Kernel(float *dst, const float *d_dZ, const float *d_A, c
 		for(int i = 0; i < n; i++){
 			sum += d_dZ[row * n + i] * d_A[col * n + i];
 		}
-		dst[row * k + col] = coefficient * (sum + (0.5 * regTerm * d_W[row * k + col]));
+		dst[row * k + col] = coefficient * (sum + (0.5f * regTerm * d_W[row * k + col]));
 	}
-} /* dst = coeff * (d_dZ * d_A.T) (+) (0.5 * learn * d_W) */
-void d_set_dW(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, d_Matrix *d_W, float coefficient, float regTerm){
+} /* dst = coeff * (d_dZ * d_A.T) (+) (0.5f * learn * d_W) */
+void d_set_dW_Reg(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, d_Matrix *d_W, float coefficient, float regTerm){
 	int m = d_dZ->rows();
 	int n = d_dZ->cols();
 	int k = d_A->rows();
-	set_dW_Kernel << <dimGrid(m, k), dimBlock() >> >
+	set_dW_Reg_Kernel << <dimGrid(m, k), dimBlock() >> >
 		(dst->d_data(), d_dZ->d_data(), d_A->d_data(), d_W->d_data(), coefficient, regTerm, m, n, k);
 	d_catchErr();
 }
