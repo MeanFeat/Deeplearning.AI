@@ -3,6 +3,7 @@
 class d_Matrix{
 public:
 	d_Matrix();
+	d_Matrix(int rows, int cols);
 	d_Matrix(float *host_data, int rows, int cols_);
 	~d_Matrix();
 	float* d_data(){

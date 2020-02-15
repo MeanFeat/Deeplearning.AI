@@ -133,17 +133,7 @@ void d_NetTrainer::UpdateParametersADAM(){
 		d_updateParameterADAM(&trainParams.d_b[i], &derivative.d_db[i], &momentum.d_db[i], &momentumSqr.d_db[i], trainParams.learnMult);
 	}
 }
-void d_NetTrainer::UpdateSingleStep(){
-	/*MatrixXf A = MatrixXf::Random(800, 1);
-	d_Matrix d_A = to_device(A);
-	float *d_C = 0;
-	cudaMalloc((void**)&d_C, sizeof(float));
-	float expected = A.sum();
-	d_sum(d_C, &d_A);
-	float out = 0.0f;
-	cudaMemcpy(&out, d_C, sizeof(float), cudaMemcpyDeviceToHost);
-	MatrixXf test = to_host(d_A);
-	float diffSum = out - expected;*/
+void d_NetTrainer::UpdateSingleStep() {
 	d_profile(start, stop, &profiler.forwardTime, ForwardTrain());
 	d_catchErr();
 	d_profile(start, stop, &profiler.backpropTime, BackwardPropagation());
