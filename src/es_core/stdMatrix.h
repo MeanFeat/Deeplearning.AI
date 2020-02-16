@@ -29,7 +29,20 @@ namespace Eigen {
 		in.read((char *)matrix.data(), rows*cols * sizeof(typename Matrix::Scalar));
 		in.close();
 	}
-
+	template<class Matrix>
+	void write_csv(const char* filename, Matrix& matrix){
+		std::ofstream file;
+		file.open(filename);
+		for(int i = 0; i < matrix.rows() * matrix.cols(); ++i){
+			file << (*(matrix.data() + i));
+			if( (i % matrix.rows()) == matrix.rows() - 1){
+				file << std::endl;
+			} else{
+				file << ',';
+			}
+		}
+		file.close();
+	}
 	MatrixXf BuildMatFromFile(string fName) {
 		vector<vector<float>> tempMat;
 		ifstream file(fName);
@@ -40,10 +53,10 @@ namespace Eigen {
 		while (file.good()) {
 			vector<float> row;
 			std::getline(file, line);
-			std::stringstream iss(line); 
+			std::stringstream iss(line);
 			std::string val;
 			while (iss.good()) {
-				std::getline(iss, val, ','); 
+				std::getline(iss, val, ',');
 				std::stringstream convertor(val);
 				convertor >> temp;
 				row.push_back(temp);
