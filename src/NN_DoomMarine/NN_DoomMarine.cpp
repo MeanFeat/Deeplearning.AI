@@ -10,7 +10,7 @@
 
 global_variable bool globalRunning = true;
 global_variable bool isTraining = true;
-global_variable bool drawOutput = false;
+global_variable bool drawOutput = true;
 global_variable bool plotData = false;
 
 static time_t startTime;
@@ -196,7 +196,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 									  WS_OVERLAPPED | WS_SYSMENU | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH * 12, WINHEIGHT * 12, 0, 0, Instance, 0);
 		
-		neural = Net(int(X.rows()), { 256 }, int(Y.rows()), { ReLU, Sigmoid });
+		neural = Net(int(X.rows()), {512}, int(Y.rows()), {Sine, Sigmoid });
 		trainer = NetTrainer(&neural, &X, &Y, 0.15f, 1.f, 0.f);
 
 		HDC deviceContext = GetDC(window);

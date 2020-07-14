@@ -35,23 +35,26 @@ void Net::AddLayer(int A, int B) {
 }
 
 MatrixXf Net::Activate(Activation act, const MatrixXf &In) {
-	switch(act) {
-	case Linear:
+	switch( act ) {
+		case Linear:
 		return In;
 		break;
-	case Sigmoid:
+		case Sigmoid:
 		return CalcSigmoid(In);
 		break;
-	case Tanh:
+		case Tanh:
 		return CalcTanh(In);
 		break;
-	case ReLU:
+		case ReLU:
 		return CalcReLU(In);
 		break;
-	case LReLU:
+		case LReLU:
 		return CalcLReLU(In);
 		break;
-	default:
+		case Sine:
+		return CalcSine(In);
+		break;
+		default:
 		return In;
 		break;
 	}
