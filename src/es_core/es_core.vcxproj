@@ -144,6 +144,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="color.h" />
+    <ClInclude Include="json.h" />
     <ClInclude Include="stdDraw.h" />
     <ClInclude Include="stdMat.h" />
     <ClInclude Include="stdNet.h" />
@@ -153,6 +154,9 @@
   <ItemGroup>
     <ClCompile Include="stdNet.cpp" />
     <ClCompile Include="stdNetTrainer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="Eigen.natvis" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

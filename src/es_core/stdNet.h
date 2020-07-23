@@ -51,6 +51,7 @@ class Net {
 public:
 	Net();
 	Net(int inputSize, std::vector<int> hiddenSizes, int outputSize, vector<Activation> activations);
+	Net(const string fName);
 	~Net();
 	NetParameters &GetParams();
 	void SetParams(vector<MatrixXf> W, vector<MatrixXf> b);
