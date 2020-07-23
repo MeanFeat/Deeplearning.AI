@@ -55,40 +55,43 @@ MatrixXf NetTrainer::ForwardTrain() {
 }
 
 float NetTrainer::CalcCost(const MatrixXf h, MatrixXf Y) {
-	float coeff = 1.f / Y.cols();
+	float coeff = 1.f / Y.rows();
 	float sumSqrW = 0.f;
 	for(int w = 0; w < (int)network->GetParams().W.size() - 1; ++w) {
 		sumSqrW += network->GetParams().W[w].array().pow(2).sum();
 	}
-	float regCost = 0.5f * float((trainParams.regTerm*trainParams.learningMod) * (sumSqrW / (2.f * (float)trainLabels->cols())));
+	float regCost = 0.5f * float((trainParams.regTerm*trainParams.learningMod) * (sumSqrW / (2.f * (float)trainLabels->rows())));
 	return ((Y - h).array().pow(2).sum() * coeff) + regCost;
 }
 
 void NetTrainer::BackwardPropagation() {
 	float m = (float)trainLabels->cols();
 	float coeff = float(1.f / m);
-	MatrixXf dZ = MatrixXf(cache.A.back() - * trainLabels);
-	trainParams.dW.back() = coeff * (dZ * cache.A[cache.A.size() - 2].transpose());
+	MatrixXf dZ = MatrixXf(cache.A.back() - *trainLabels);
+	trainParams.dW.back() = coeff * ( dZ * cache.A[cache.A.size() - 2].transpose() );
 	trainParams.db.back() = coeff * dZ.rowwise().sum();
-	for(int l = (int)network->GetParams().layerActivations.size() - 2; l >= 0; --l) {
+	for( int l = (int)network->GetParams().layerActivations.size() - 2; l >= 0; --l ) {
 		MatrixXf lowerA = l > 0 ? cache.A[l - 1] : *trainData;
-		switch(network->GetParams().layerActivations[l]) {
-		case Sigmoid:
+		switch( network->GetParams().layerActivations[l] ) {
+			case Sigmoid:
 			dZ = BackSigmoid(dZ, l);
 			break;
-		case Tanh:
+			case Tanh:
 			dZ = BackTanh(dZ, l);
 			break;
-		case ReLU:
+			case ReLU:
 			dZ = BackReLU(dZ, l);
 			break;
-		case LReLU:
+			case LReLU:
 			dZ = BackLReLU(dZ, l);
 			break;
-		default:
+			case Sine:
+			dZ = BackSine(dZ, l);
+			break;
+			default:
 			break;
 		}
-		trainParams.dW[l] = coeff * MatrixXf((dZ * lowerA.transpose()).array() + (0.5f * (trainParams.regTerm*trainParams.learningMod) * network->GetParams().W[l]).array());
+		trainParams.dW[l] = coeff * MatrixXf(( dZ * lowerA.transpose() ).array() + ( 0.5f * ( trainParams.regTerm*trainParams.learningMod ) * network->GetParams().W[l] ).array());
 		trainParams.db[l] = coeff * dZ.rowwise().sum();
 	}
 

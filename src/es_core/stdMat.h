@@ -9,7 +9,6 @@ using namespace std;
 
 typedef Matrix<float, Dynamic, Dynamic> MatrixDynamic;
 namespace Eigen {
-
 	template<class Matrix>
 	void write_binary(const char* filename, const Matrix& matrix) {
 		std::ofstream out(filename, ios::out | ios::binary | ios::trunc);
@@ -50,6 +49,7 @@ namespace Eigen {
 			}
 			tempMat.push_back(row);
 		}
+		file.close();
 		MatrixXf outMat(tempMat.size(), tempMat[0].size()); 
 		for (int i =0; i < (int)tempMat.size(); i++){
 			for(int j = 0; j < (int)tempMat[i].size(); j++) {
@@ -57,6 +57,14 @@ namespace Eigen {
 			}
 		}
 		return outMat;
+	}
+
+	template<class Matrix>
+	void CopyMatrixData(Matrix *dest, const Matrix *source) {
+		int size = dest->rows() * dest->cols();
+		for( int i = 0; i < size; i++ ) {
+			*( dest->data() + i ) = *( source->data() + i );
+		}
 	}
 
 	const static IOFormat CSVFormat(StreamPrecision, DontAlignCols, ", ", "\n");

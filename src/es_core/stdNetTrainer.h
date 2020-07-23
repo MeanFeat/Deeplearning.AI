@@ -66,6 +66,9 @@ public:
 	inline MatrixXf BackLReLU(const MatrixXf dZ, int index) {
 		return (network->GetParams().W[index + 1].transpose() * dZ).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.01f; }));
 	}
+	inline MatrixXf BackSine(const MatrixXf dZ, int index) {
+		return ( network->GetParams().W[index + 1].transpose() * dZ ).cwiseProduct(MatrixXf(cache.A[index].array().cos()));
+	}
 
 protected:
 	NetCache cache;
