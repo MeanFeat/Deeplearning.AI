@@ -97,8 +97,11 @@ Net::Net(const string fName) {
 					} 
 					if (element >= tempMat.size()){							
 						element = 0;
-						vector<MatrixXf> *appendPtr = state == ParseState::weightValues ? &params.W : &params.b;
-						appendPtr->push_back(tempMat);
+						if(state == weightValues){
+							params.W.push_back(tempMat.transpose());
+						} else {
+							params.b.push_back(tempMat);
+						}
 						state = ParseState::none;
 					}
 				}
@@ -125,7 +128,7 @@ void Net::SetParams(vector<MatrixXf> W, vector<MatrixXf> b) {
 }
 
 void Net::AddLayer(int A, int B) {
-	params.W.push_back(MatrixXf::Random(A, B));
+	params.W.push_back(MatrixXf::Zero(A, B));
 	params.b.push_back(VectorXf::Zero(A, 1));
 }
 
@@ -158,7 +161,7 @@ MatrixXf Net::Activate(Activation act, const MatrixXf &In) {
 MatrixXf Net::ForwardPropagation(const MatrixXf X) {
 	MatrixXf lastOutput = X;
 	for(int i = 0; i < (int)params.layerSizes.size() - 1; ++i) {
-		lastOutput = Activate(params.layerActivations[i], (params.W[i].transpose() * lastOutput ).colwise() + (VectorXf)params.b[i]);
+		lastOutput = Activate(params.layerActivations[i], (params.W[i] * lastOutput ).colwise() + (VectorXf)params.b[i]);
 	}
 	return lastOutput;
 }

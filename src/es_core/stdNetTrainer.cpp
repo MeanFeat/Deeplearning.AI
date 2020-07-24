@@ -9,9 +9,12 @@ NetTrainer::NetTrainer(Net *net, MatrixXf *data, MatrixXf *labels, float weightS
 	trainData = data;
 	trainLabels = labels;
 	int nodeCount = 0;
-	for(int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i) {
-		nodeCount += network->GetParams().layerSizes[i];
-		network->GetParams().W[i] *= weightScale;
+	if ( network->GetParams().W[0].sum() == 0.f ) {	 //Don't initialize if we already have weights
+		for( int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i ) {
+			nodeCount += network->GetParams().layerSizes[i];
+			MatrixXf *w = &network->GetParams().W[i];
+			*w = MatrixXf::Random(w->rows(), w->cols()) * weightScale;
+		}
 	}
 	trainParams.learningMod = 1.f / nodeCount;
 	trainParams.learningRate = learnRate;
