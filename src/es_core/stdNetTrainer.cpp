@@ -9,9 +9,9 @@ NetTrainer::NetTrainer(Net *net, MatrixXf *data, MatrixXf *labels, float weightS
 	trainData = data;
 	trainLabels = labels;
 	int nodeCount = 0;
-	if ( network->GetParams().W[0].sum() == 0.f ) {	 //Don't initialize if we already have weights
-		for( int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i ) {
-			nodeCount += network->GetParams().layerSizes[i];
+	for( int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i ) {
+		nodeCount += network->GetParams().layerSizes[i];
+		if( network->GetParams().W[0].sum() == 0.f ) {	 //Don't initialize if we already have weights
 			MatrixXf *w = &network->GetParams().W[i];
 			*w = MatrixXf::Random(w->rows(), w->cols()) * weightScale;
 		}
@@ -58,12 +58,12 @@ MatrixXf NetTrainer::ForwardTrain() {
 }
 
 float NetTrainer::CalcCost(const MatrixXf h, MatrixXf Y) {
-	float coeff = 1.f / Y.rows();
+	float coeff = 1.f / Y.cols();
 	float sumSqrW = 0.f;
 	for(int w = 0; w < (int)network->GetParams().W.size() - 1; ++w) {
 		sumSqrW += network->GetParams().W[w].array().pow(2).sum();
 	}
-	float regCost = 0.5f * float((trainParams.regTerm*trainParams.learningMod) * (sumSqrW / (2.f * (float)trainLabels->rows())));
+	float regCost = 0.5f * float((trainParams.regTerm*trainParams.learningMod) * (sumSqrW / (2.f * (float)trainLabels->cols())));
 	return ((Y - h).array().pow(2).sum() * coeff) + regCost;
 }
 
