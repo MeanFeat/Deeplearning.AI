@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.1082
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LogReg_CataData", "src\LogReg_CataData\LogReg_CataData.vcxproj", "{63263450-A658-48C5-A621-BBAA28F7E15E}"
 EndProject
@@ -11,9 +11,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NN_PredictRadian", "src\NN_
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "es_core", "src\es_core\es_core.vcxproj", "{389D51B1-0826-48BA-93CC-BDB12EEA1357}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NN_DiffGrey", "src\NN_DiffGrey\NN_DiffGrey.vcxproj", "{1CBB684C-0D2A-4DF7-816C-924A63A80F04}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NN_DoomMarine", "src\NN_DoomMarine\NN_DoomMarine.vcxproj", "{5472BC89-2ABB-46D9-9517-55769491C3ED}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NN_Gesture", "src\NN_Gesture\NN_Gesture.vcxproj", "{1AC93082-C8ED-4591-AF22-595355E4CA58}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -54,24 +52,19 @@ Global
 		{389D51B1-0826-48BA-93CC-BDB12EEA1357}.Release|x64.Build.0 = Release|x64
 		{389D51B1-0826-48BA-93CC-BDB12EEA1357}.Release|x86.ActiveCfg = Release|Win32
 		{389D51B1-0826-48BA-93CC-BDB12EEA1357}.Release|x86.Build.0 = Release|Win32
-		{1CBB684C-0D2A-4DF7-816C-924A63A80F04}.Debug|x64.ActiveCfg = Debug|x64
-		{1CBB684C-0D2A-4DF7-816C-924A63A80F04}.Debug|x64.Build.0 = Debug|x64
-		{1CBB684C-0D2A-4DF7-816C-924A63A80F04}.Debug|x86.ActiveCfg = Debug|Win32
-		{1CBB684C-0D2A-4DF7-816C-924A63A80F04}.Debug|x86.Build.0 = Debug|Win32
-		{1CBB684C-0D2A-4DF7-816C-924A63A80F04}.Release|x64.ActiveCfg = Release|x64
-		{1CBB684C-0D2A-4DF7-816C-924A63A80F04}.Release|x64.Build.0 = Release|x64
-		{1CBB684C-0D2A-4DF7-816C-924A63A80F04}.Release|x86.ActiveCfg = Release|Win32
-		{1CBB684C-0D2A-4DF7-816C-924A63A80F04}.Release|x86.Build.0 = Release|Win32
-		{5472BC89-2ABB-46D9-9517-55769491C3ED}.Debug|x64.ActiveCfg = Debug|x64
-		{5472BC89-2ABB-46D9-9517-55769491C3ED}.Debug|x64.Build.0 = Debug|x64
-		{5472BC89-2ABB-46D9-9517-55769491C3ED}.Debug|x86.ActiveCfg = Debug|Win32
-		{5472BC89-2ABB-46D9-9517-55769491C3ED}.Debug|x86.Build.0 = Debug|Win32
-		{5472BC89-2ABB-46D9-9517-55769491C3ED}.Release|x64.ActiveCfg = Release|x64
-		{5472BC89-2ABB-46D9-9517-55769491C3ED}.Release|x64.Build.0 = Release|x64
-		{5472BC89-2ABB-46D9-9517-55769491C3ED}.Release|x86.ActiveCfg = Release|Win32
-		{5472BC89-2ABB-46D9-9517-55769491C3ED}.Release|x86.Build.0 = Release|Win32
+		{1AC93082-C8ED-4591-AF22-595355E4CA58}.Debug|x64.ActiveCfg = Debug|x64
+		{1AC93082-C8ED-4591-AF22-595355E4CA58}.Debug|x64.Build.0 = Debug|x64
+		{1AC93082-C8ED-4591-AF22-595355E4CA58}.Debug|x86.ActiveCfg = Debug|Win32
+		{1AC93082-C8ED-4591-AF22-595355E4CA58}.Debug|x86.Build.0 = Debug|Win32
+		{1AC93082-C8ED-4591-AF22-595355E4CA58}.Release|x64.ActiveCfg = Release|x64
+		{1AC93082-C8ED-4591-AF22-595355E4CA58}.Release|x64.Build.0 = Release|x64
+		{1AC93082-C8ED-4591-AF22-595355E4CA58}.Release|x86.ActiveCfg = Release|Win32
+		{1AC93082-C8ED-4591-AF22-595355E4CA58}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A5F3C97F-61FE-48D9-A179-03DC4692F4E1}
 	EndGlobalSection
 EndGlobal
