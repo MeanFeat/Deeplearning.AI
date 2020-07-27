@@ -8,7 +8,7 @@
 #define WINHALFWIDTH int((WINWIDTH-1)*0.5f)
 #define WINHALFHEIGHT WINHALFWIDTH
 #define MAXCAPTURECOUNT 25
-#define MOUSETRAILLENGTH 500
+#define MOUSETRAILLENGTH 300
 #define CAPTURETHRESHOLD 40.f
 
 global_variable bool globalRunning = true;
@@ -17,6 +17,8 @@ global_variable bool isVerifying = false;
 global_variable bool isRecordingData = false;
 global_variable bool shouldSaveChanges = false;
 global_variable bool skipStep = false;
+
+global_variable bool isMouseMoving = false;
 
 global_variable vector<Vector2f> mouseCapture;
 global_variable vector<Vector2f> lastSuccesful8;
@@ -37,7 +39,7 @@ Net neural;
 NetTrainer trainer;
 Buffer backBuffer;
 
-void RecordSample(vector<Vector2f> vec, float label){
+void RecordSample(vector<Vector2f> vec, float label) {
 	vector<Vector2f> mods;
 	mods.push_back(Vector2f(1.f, 1.f));
 	mods.push_back(Vector2f(-1.f, 1.f));
@@ -59,62 +61,84 @@ void RecordSample(vector<Vector2f> vec, float label){
 	}
 }
 
-internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam) {
-	LRESULT Result = 0;
-	switch(Message) {
-	case WM_DESTROY:
-	case WM_CLOSE:
-	{
-		globalRunning = false;
-	} break;
-	case WM_MOUSEMOVE:
-	{
-		mouseX = float(GET_X_LPARAM(LParam));
-		mouseY = float(GET_Y_LPARAM(LParam)) + backBuffer.titleOffset - 25;
-	} //fall through
-	case WM_KEYUP:
-	{
-		switch( WParam ) {
-			case '8':
-			isCapturingEight = false;
-			RecordSample(deltaCapture, 1.f);
-			break; 
-			case 'V': //fall through
-			*verifyLabel = 1.f;
-			skipStep = true;
-			break;
-			case 'C':
-			*verifyLabel = 0.f;
-			skipStep = true;
-			case 'T':
-			isTraining = !isTraining;
-			break;
-			case '0':
-			RecordSample(deltaCapture, 0.f);
-			shouldSaveChanges = true;
-			break;
-		}
-	
-	} break;
-	case WM_KEYDOWN:
-	{
-		switch(WParam) {
-			case '8':
-			isCapturingEight = true;
-			break;
-		default:
-			break;
+
+void CopyNestedVec(MatrixXf &saveData, vector<vector<Vector2f>> * s, int maxCount) {
+	int k = 0;
+	for( int i = 0; i < saveData.cols(); i++ ) {
+		for( int j = 0; j < maxCount; j++ ) {
+			*( saveData.data() + k++ ) = float(( *s )[i][j][0]);
+			*( saveData.data() + k++ ) = float(( *s )[i][j][1]);
 		}
 	}
-	case WM_ACTIVATEAPP:
-	{
-		ShowCursor(false);
-		OutputDebugStringA("WM_ACTIVATEAPP\n");
-	} break;
-	default:
-	{
-		Result = DefWindowProcA(Window, Message, WParam, LParam);
-	} break;
+}
+
+internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam) {
+	LRESULT Result = 0;
+	isMouseMoving = false;
+	switch( Message ) {
+		case WM_DESTROY:
+		case WM_CLOSE:
+		{
+			globalRunning = false;
+		} break;
+		case WM_MOUSEMOVE:
+		{
+			isMouseMoving = true;
+			mouseX = float(GET_X_LPARAM(LParam));
+			mouseY = float(GET_Y_LPARAM(LParam)) + backBuffer.titleOffset - 25;
+		} //fall through
+		case WM_KEYUP:
+		{
+			switch( WParam ) {
+				case '8':
+				isCapturingEight = false;
+				RecordSample(deltaCapture, 1.f);
+				break;
+				case 'V': //fall through
+				*verifyLabel = 1.f;
+				skipStep = true;
+				break;
+				case 'C':
+				*verifyLabel = 0.f;
+				skipStep = true;
+				case 'T':
+				isTraining = !isTraining;
+				break;
+				case '0':
+				RecordSample(deltaCapture, 0.f);
+				shouldSaveChanges = true;
+				break;
+				case 'S': 
+				{
+					MatrixXf saveSamples = MatrixXf(MAXCAPTURECOUNT * 2, samples.size() - 1);
+					CopyNestedVec(saveSamples, &samples, MAXCAPTURECOUNT);
+					if( saveSamples.size() > MAXCAPTURECOUNT ) {
+						writeToCSVfile("Ideal8.csv", saveSamples.transpose());
+					}
+				}
+				break;
+			}
+
+		} break;
+		case WM_KEYDOWN:
+		{
+			switch( WParam ) {
+				case '8':
+				isCapturingEight = true;
+				break;
+				default:
+				break;
+			}
+		}
+		case WM_ACTIVATEAPP:
+		{
+			ShowCursor(false);
+			OutputDebugStringA("WM_ACTIVATEAPP\n");
+		} break;
+		default:
+		{
+			Result = DefWindowProcA(Window, Message, WParam, LParam);
+		} break;
 	}
 	return Result;
 }
@@ -122,54 +146,70 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 #define ICONTOP	100
 
 global_variable float successFade = 0.f;
- void UpdateDisplay( vector<Vector2f> &mTrail, vector<Vector2f> &mCap, vector<float> &hist, float h) {
-	 if( globalRunning ) {
+void UpdateDisplay(vector<Vector2f> &i8, vector<Vector2f> &mTrail, vector<Vector2f> &mCap, vector<float> &hist, float h) {
+	if( globalRunning ) {
 		ClearScreen(backBuffer);
-		if (isTraining) {
+
+		if( isTraining ) {
+			for( float i = 0.f; i <= 4.f; i += 0.1f ) {
+				float scale = ( 1.f - exp(-i) );
+				float invScale = 1.f - scale;
+				int height = min(int(( WINHEIGHT * scale ) + backBuffer.titleOffset + 15), WINHEIGHT);
+				DrawLine(backBuffer, 0.f, float(height), float(WINWIDTH), float(height), 
+						 Color(int(50 * invScale), int(50 * invScale), int(50 * invScale), 0));
+			}
 			DrawHistory(backBuffer, hist, Color(200, 100, 100, 255));
 		} else {
-			for (int i = -3; i < 3; i++) {
-				 if (successFade > 0.f){
-					 DrawLine(backBuffer, ICONLEFT, ICONTOP + i, ICONLEFT - 25, ICONTOP + i + 25, Color(0, 255 * successFade, 0, 0));
-					 DrawLine(backBuffer, ICONLEFT, ICONTOP + i, ICONLEFT + 75, ICONTOP + i + 75, Color(0, 255 * successFade, 0, 0));
-				 } else {
-					 DrawLine(backBuffer, ICONLEFT + 50, ICONTOP + i - 50, ICONLEFT - 50, ICONTOP + i + 50, Color(200, 0, 0, 0));
-					 DrawLine(backBuffer, ICONLEFT - 50, ICONTOP + i - 50, ICONLEFT + 50, ICONTOP + i + 50, Color(200, 0, 0, 0));
-				 }
-			}
+			for( int i = -3; i < 3; i++ ) {
+				if( successFade > 0.f ) {
+					DrawLine(backBuffer, float(ICONLEFT), float(ICONTOP + i), float(ICONLEFT - 25), float(ICONTOP + i + 25), Color(0, int(255 * successFade), 0, 0));
+					DrawLine(backBuffer, float(ICONLEFT), float(ICONTOP + i), float(ICONLEFT + 75), float(ICONTOP + i + 75), Color(0, int(255 * successFade), 0, 0));
+					
+				} else {
+					DrawLine(backBuffer, float(ICONLEFT + 50), float(ICONTOP + i - 50), float(ICONLEFT - 50), float(ICONTOP + i + 50), Color(200, 0, 0, 0));
+					DrawLine(backBuffer, float(ICONLEFT - 50), float(ICONTOP + i - 50), float(ICONLEFT + 50), float(ICONTOP + i + 50), Color(200, 0, 0, 0));
+				}
+				for( int mT = 1; mT < mTrail.size() - 1; mT++ ) {
+					DrawLine(backBuffer, mTrail[mT - 1][0], float(WINHEIGHT) - mTrail[mT - 1][1],
+							 mTrail[mT][0], float(WINHEIGHT) - mTrail[mT][1], Color(200, 200, 200, 0) * ( float(mT) / float(MOUSETRAILLENGTH) ));
+				}
+				if( isRecordingData && mCap.size() ) {
+					for( int mC = 0; mC < mCap.size(); mC++ ) {
+						DrawFilledCircle(backBuffer, int(mCap[mC][0]), WINHEIGHT - int(mCap[mC][1]), 10.f, isCapturingEight ? Color(0, 200, 0, 0) : Color(200, 200, 200, 0));
+					}
+				}
+				if( h > 0.95f ) {
+					lastSuccesful8.clear();
+					lastSuccesful8Deltas.clear();
+					lastSuccesful8 = mouseCapture;
+					lastSuccesful8Deltas = deltaCapture;
+					successFade = 1.f;
+				}
+				if( successFade > 0.f && lastSuccesful8.size() > 0 ) {
+					for( int ls = 0; ls < lastSuccesful8.size(); ls++ ) {
+						DrawFilledCircle(backBuffer, int(lastSuccesful8[ls][0]), WINHEIGHT - int(lastSuccesful8[ls][1]), 10.f, Color(0, int(float(ls) * 10.f * successFade), 0, 0));
+					}
+				}
 
-			for( int mT = 1; mT < mTrail.size() - 1; mT++ ) {
-				DrawLine(backBuffer, mTrail[mT - 1][0], float(WINHEIGHT) - mTrail[mT - 1][1],
-						 mTrail[mT][0], float(WINHEIGHT) - mTrail[mT][1], Color(200, 200, 200, 0) * ( float(mT) / float(MOUSETRAILLENGTH) ));
-			}
-			if( isRecordingData && mCap.size() ) {
-				for( int mC = 0; mC < mCap.size(); mC++ ) {
-					DrawFilledCircle(backBuffer, mCap[mC][0], float(WINHEIGHT) - mCap[mC][1], 10.f, isCapturingEight ? Color(0, 200, 0, 0) : Color(200, 200, 200, 0));
+				if( i8.size() > 0 ) {
+					Color base = Color(50, 50, 50, 0);
+					Color blend = base.Blend(Color(150, 150, 150, 0), successFade);
+					for( int e = 0; e < i8.size(); e++ ) {
+						DrawFilledCircle(backBuffer, int(i8[e][0]), WINHEIGHT - int(i8[e][1]), 10.f, blend);
+					}
 				}
 			}
-			if (h > 0.9f){
-				lastSuccesful8.clear();
-				lastSuccesful8Deltas.clear();
-				lastSuccesful8 = mouseCapture;
-				lastSuccesful8Deltas = deltaCapture;
-				successFade = 1.f;
-			}
-			if( lastSuccesful8.size() > 0 ) {
-				for( int ls = 0; ls < lastSuccesful8.size(); ls++ ) {
-					DrawFilledCircle(backBuffer, lastSuccesful8[ls][0], float(WINHEIGHT) - lastSuccesful8[ls][1], 10.f, Color(0, ls * 10 * successFade, 0, 0));
-				}
-			}
+			successFade = max(0.f, successFade - 0.001f);
+			DrawFilledCircle(backBuffer, int(mouseX), WINHEIGHT - int(mouseY), 5.f, Color(200, 200, 200, 0));
 		}
-		successFade = max(0.f,successFade - 0.001f);
-		DrawFilledCircle(backBuffer,mouseX, float(WINHEIGHT) - mouseY, 5.f, Color(200, 200, 200, 0));
-	}	
+	}
 }
 
-void UpdateWinTitle(int &steps,float &prediciton, HWND window) {
+void UpdateWinTitle(int &steps, float &prediciton, HWND window) {
 	char s[255];
-	sprintf_s(s, "%d ||Cost: %0.10f || Is it an 8: %0.10f ", steps,trainer.GetCache().cost, prediciton);
+	sprintf_s(s, "Prediction: %0.10f || ", prediciton);
 	char prompt[255];
-	if (successFade > 0.f){
+	if( successFade > 0.f ) {
 		sprintf_s(prompt, "Great!");
 	} else {
 		sprintf_s(prompt, "hmmm... Draw a figure eight.");
@@ -194,121 +234,124 @@ void ContainVector(vector<Vector2f> &vec, int maxSize) {
 	}
 }
 
-void CopyNestedVec(MatrixXf &saveData, vector<vector<Vector2f>> * s, int maxCount) {
-	int k = 0;
-	for( int i = 0; i < saveData.cols(); i++ ) {
-		for( int j = 0; j < maxCount; j++ ) {
-			*( saveData.data() + k++ ) = float(( *s )[i][j][0]);
-			*( saveData.data() + k++ ) = float(( *s )[i][j][1]);
-		}
-	}
-}
 
-void UpdateHistory(vector<float> &history) {
-	history.push_back(min(( trainer.GetCache().cost ) * ( WINHEIGHT - backBuffer.titleOffset ), WINHEIGHT));
-	if( history.size() >= WINWIDTH + WINWIDTH ) {
-		for( int i = 1; i < (int)history.size(); i += 2 ) {
-			history.erase(history.begin() + i);
+void UpdateHistory(vector<float> &hist) {
+	float scale = ( 1.f - exp(-trainer.GetCache().cost) );
+	hist.push_back(min(( WINHEIGHT *  scale - trainer.GetCache().cost ) + backBuffer.titleOffset + 15, WINHEIGHT));
+	if( hist.size() >= WINWIDTH + WINWIDTH ) {
+		for( int i = 1; i < (int)hist.size(); i += 2 ) {
+			hist.erase(hist.begin() + i);
 		}
 	}
 }
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode) {
-	MatrixXf readSamples = BuildMatFromFile("GestureSamplesTrain.csv").transpose();
-	MatrixXf readDeltas = BuildMatFromFile("GestureDeltasTrain.csv").transpose();
-	MatrixXf readLabels = BuildMatFromFile("GestureLabelsTrain.csv").transpose();
+	MatrixXf readSamples;// = BuildMatFromFile("GestureSamplesTrain.csv").transpose();
+	MatrixXf readDeltas;// = BuildMatFromFile("GroupedDeltas.csv").transpose();
+	MatrixXf readLabels;// = BuildMatFromFile("GroupedLabels.csv").transpose();
+	MatrixXf readIdeal8 = MatrixXf(50, 1);
+	readIdeal8 << 355, 263, 397, 247, 437, 252, 471, 274, 490, 310, 492, 350, 470, 386, 440, 415, 407, 439, 374, 463, 347, 495, 342, 535, 349, 575, 374, 607, 414, 613, 454, 602, 479, 570, 486, 529, 480, 489, 451, 461, 414, 443, 382, 419, 353, 390, 340, 350, 332, 310;
+	vector<Vector2f> ideal8;
+	int i = 0;
+	while( i < readIdeal8.rows() ) {
+		float xVal = (*( readIdeal8.data() + i++ ) - WINWIDTH) * 1.1f + WINWIDTH;
+		float yVal = (*( readIdeal8.data() + i++ ) - WINWIDTH) * 1.1f + WINWIDTH;
+		ideal8.push_back(Vector2f(xVal, yVal));
+	}
 
 	WNDCLASSA winClass = {};
 	InitializeWindow(&winClass, Instance, Win32MainWindowCallback, &backBuffer, WINWIDTH, WINHEIGHT, "NN_PredictRadian");
 
-	if(RegisterClassA(&winClass)) {
+	if( RegisterClassA(&winClass) ) {
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
-									  WS_OVERLAPPED | WS_SYSMENU |WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
+									  WS_OVERLAPPED | WS_SYSMENU | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH, WINHEIGHT, 0, 0, Instance, 0);
-		
+
 		HDC deviceContext = GetDC(window);
 		vector<Vector2f> mouseTrail;
 		int sampleIndex = 0;
 		neural = Net("Gesture-Weights.json");
-		/*neural = Net((int)readDeltas.rows(), {80,80}, (int)readLabels.rows(), {
+		/*neural = Net((int)readDeltas.rows(), {50,50}, (int)readLabels.rows(), {
 			Tanh,
 			Tanh,
 			Sigmoid});*/
-		
-		trainer = NetTrainer(&neural, &readDeltas, &readLabels, 0.15f, 1.25f, 20.f);
+		trainer = NetTrainer(&neural, &readDeltas, &readLabels, 0.15f, 1.25f, 0.1f);
 		vector<float> history;
 		float h = 0.f;
 		int steps = 0;
 		//Main Loop
-		while(globalRunning) {
-			if( isTraining) {
-				for (int e = 0; e < 50; e++) {
+		while( globalRunning ) {
+			Win32ProcessPendingMessages();
+			if( isTraining ) {
+				for( int e = 0; e < 1; e++ ) {
 					trainer.UpdateSingleStep();
 				}
 				UpdateHistory(history);
-			}
-
-			Win32ProcessPendingMessages();
-		 
-			if( isVerifying){
+			} else if( isVerifying ) {
 				if( steps < readLabels.cols() && readLabels.cols() > 0 ) {
 					verifyLabel = &readLabels(0, steps);
-					//verify = &readLabels(1, steps);
-					if( !skipStep){// && readLabels(0, steps) == 0.f){// && readLabels(1, steps) == 0.f ) {
+					if( !skipStep ) {// && readLabels(0, steps) == 0.f){// && readLabels(1, steps) == 0.f ) {
 						for( int i = 0; i < readSamples.rows(); ) {
 							float valX = *( readSamples.data() + ( steps * readSamples.rows() + i++ ) );
 							float valY = *( readSamples.data() + ( steps * readSamples.rows() + i++ ) );
-							DrawFilledCircle(backBuffer, valX, WINHEIGHT - valY, 10.f, Color(i * 10, 200, 0, 0));
+							DrawFilledCircle(backBuffer, int(valX), WINHEIGHT - int(valY), 10.f, Color(i * 10, 200, 0, 0));
 						}
 					} else {
 						skipStep = false;
 						ClearScreen(backBuffer);
-						steps+=4;
+						steps += 4;
 					}
 					Win32DisplayBufferInWindow(deviceContext, window, backBuffer);
 					continue;
 				}
 				globalRunning = false;
-			}
-			if( mouseCapture.size() == 0 ) {
-				mouseCapture.push_back(Vector2f(float(mouseX), float(mouseY)));
-			}
-			ContainVector(mouseTrail, MOUSETRAILLENGTH);
-			mouseTrail.push_back(Vector2f(float(mouseX), float(mouseY)));
-			Vector2f end = mouseTrail.back();
-			Vector2f delta = mouseCapture.back() - end;
-			float dist = sqrtf(delta[0] * delta[0] + delta[1] * delta[1]);
-			if( dist >= CAPTURETHRESHOLD ){
-				deltaCapture.push_back(delta/CAPTURETHRESHOLD);
-				mouseCapture.push_back(end);
-				ContainVector(mouseCapture, MAXCAPTURECOUNT);
-				ContainVector(deltaCapture, MAXCAPTURECOUNT);
-				if( !isCapturingEight && deltaCapture.size() == MAXCAPTURECOUNT) {
-					assert(deltaCapture.size() == mouseCapture.size());
-					if (sampleIndex++ > MAXCAPTURECOUNT) {
-						RecordSample(deltaCapture, 0.f);
-						sampleIndex = 0;
+			} else {
+				Vector2f mousePos = Vector2f(float(mouseX), float(mouseY));
+				if( mouseCapture.size() == 0 ) {
+					mouseCapture.push_back(mousePos);
+					mouseTrail.push_back(mousePos);
+				}
+				if (isMouseMoving) {
+					ContainVector(mouseTrail, MOUSETRAILLENGTH);
+					Vector2f mouseDelta = mouseTrail.back() - mousePos;
+					if ( sqrtf(mouseDelta[0] * mouseDelta[0] + mouseDelta[1] * mouseDelta[1]) >= 2.f) {
+						mouseTrail.push_back(mousePos);
 					}
-					if( !isRecordingData ) {
-						MatrixXf X = MatrixXf(MAXCAPTURECOUNT * 2, 1);
-						int l = 0;
-						for( int i = 0; i < deltaCapture.size(); i++ ) {
-							float xVal = float(deltaCapture[i][0]);
-							float yVal = float(deltaCapture[i][1]);
-							*( X.data() + l++ ) = xVal;
-							*( X.data() + l++ ) = yVal;
+					Vector2f delta = mouseCapture.back() - mousePos;
+					if( sqrtf(delta[0] * delta[0] + delta[1] * delta[1]) >= CAPTURETHRESHOLD ) {
+						deltaCapture.push_back(delta / CAPTURETHRESHOLD);
+						mouseCapture.push_back(mousePos);
+						ContainVector(mouseCapture, MAXCAPTURECOUNT);
+						ContainVector(deltaCapture, MAXCAPTURECOUNT);
+						if( !isCapturingEight && deltaCapture.size() == MAXCAPTURECOUNT ) {
+							assert(deltaCapture.size() == mouseCapture.size());
+							//Capture negative samples every MAXCAPTURECOUNT samples
+							if( sampleIndex++ > MAXCAPTURECOUNT ) {
+								RecordSample(deltaCapture, 0.f);
+								sampleIndex = 0;
+							}
+							if( !isRecordingData ) {
+								MatrixXf X = MatrixXf(MAXCAPTURECOUNT * 2, 1);
+								int l = 0;
+								for( int i = 0; i < deltaCapture.size(); i++ ) {
+									float xVal = float(deltaCapture[i][0]);
+									float yVal = float(deltaCapture[i][1]);
+									*( X.data() + l++ ) = xVal;
+									*( X.data() + l++ ) = yVal;
+								}
+								MatrixXf output = neural.ForwardPropagation(X);
+								h = output(0, 0);
+							}
 						}
-						MatrixXf output = neural.ForwardPropagation(X);
-						h = output(0, 0);
 					}
 				}
 			}
-			UpdateDisplay(mouseTrail, mouseCapture, history, h);
+			UpdateDisplay(ideal8, mouseTrail, mouseCapture, history, h);
 			Win32DisplayBufferInWindow(deviceContext, window, backBuffer);
 			UpdateWinTitle(steps, h, window);
 		}
 
-		if ((!isTraining && isRecordingData) || shouldSaveChanges ) {
+		if( ( !isTraining && isRecordingData ) || shouldSaveChanges ) {
 			if( !isVerifying && samples.size() > MAXCAPTURECOUNT ) {
 				MatrixXf saveSamples = MatrixXf(MAXCAPTURECOUNT * 2, samples.size() - 1);
 				MatrixXf saveDeltas = MatrixXf(MAXCAPTURECOUNT * 2, deltas.size() - 1);
