@@ -36,6 +36,9 @@ namespace Eigen {
 		int count = 0;
 		float temp;
 		int row = 0;
+		if (!file.good()){
+			return MatrixXf(0, 0);
+		}						  
 		while (file.good()) {
 			vector<float> row;
 			std::getline(file, line);
