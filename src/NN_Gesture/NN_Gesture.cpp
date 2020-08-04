@@ -244,7 +244,6 @@ void ContainVector(vector<Vector2f> &vec, int maxSize) {
 	}
 }
 
-
 void UpdateHistory(vector<float> &hist) {
 	float scale = ( 1.f - exp(-trainer.GetCache().cost) );
 	hist.push_back(min(( WINHEIGHT *  scale - trainer.GetCache().cost ) + backBuffer.titleOffset + 15, WINHEIGHT));
