@@ -214,7 +214,7 @@ void UpdateWinTitle(int &steps, float &prediciton, HWND window) {
 	if(isTraining){
 		time(&currentTime);
 		trainingTime = float(difftime(currentTime, startTime));
-		sprintf_s(s, "Epoch %d || Time: %0.1f || Cost: %0.10f || ", steps, difftime(currentTime, startTime), trainer.GetCache().cost );
+		sprintf_s(s, "Epoch %d || Time: %0.1f || Eps %0.2f || Cost: %0.10f || ", steps, trainingTime,float(steps)/trainingTime, trainer.GetCache().cost );
 	} else {
 		sprintf_s(s, "TrainingTime: %0.1f || Cost: %0.10f || Prediction: %0.10f || ",trainingTime, trainer.GetCache().cost, prediciton);
 		char prompt[255];
@@ -294,7 +294,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		while( globalRunning ) {
 			Win32ProcessPendingMessages();
 			if( isTraining ) {
-				for( int e = 0; e < 100; e++ ) {
+				for( int e = 0; e < 1; e++ ) {
 					trainer.UpdateSingleStep();
 				}
 				UpdateHistory(history);

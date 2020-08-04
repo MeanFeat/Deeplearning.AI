@@ -221,7 +221,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			if (isTraining) {
 				trainer.UpdateSingleStep();
 				UpdateHistory(history, trainer.GetCache().cost);
-				UpdateHistory(testHistory, trainer.CalcCost(neural.ForwardPropagation(testX), testY));
+				UpdateHistory(testHistory, trainer.CalcCost(&neural.ForwardPropagation(testX), &testY));
 				steps++;
 			} else {
 			}
