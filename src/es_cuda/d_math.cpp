@@ -203,6 +203,12 @@ __global__ void LReLU_Kernal(float *dst, int N){
 	if(tid < N)
 		dst[tid] = max(dst[tid] * LRELU_LEAK, dst[tid]);
 }
+__global__ void Sine_Kernal(float *dst, int N){
+	int tid = blockIdx.x;
+	if (tid<N){
+		dst[tid] = sin(dst[tid]);
+	}
+}
 void d_activate(d_Matrix *dst, Activation act){
 	switch(act){
 		case Sigmoid:
@@ -215,6 +221,9 @@ void d_activate(d_Matrix *dst, Activation act){
 		break;
 		case LReLU:
 		LReLU_Kernal << < dst->size(), 1 >> > (dst->d_data(), dst->size());
+		break;
+		case Sine:
+		Sine_Kernal << < dst->size(), 1 >> > (dst->d_data(), dst->size());
 		break;
 		case Linear: //fall through
 		default:
@@ -292,6 +301,25 @@ void d_backLReLU(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A){
 	int n = d_W->rows(); //reverse for transpose
 	int k = d_dZ->cols();
 	backLReLU_Kernel << <dimGrid(m, k), dimBlock() >> >
+		(dst->d_data(), d_W->d_data(), d_dZ->d_data(), d_A->d_data(), m, n, k);
+	d_catchErr();
+}
+__global__ void backSine_Kernel(float *dst, float *d_W, float *d_dZ, const float *d_A, int m, int n, int k){
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	if(col < k && row < m){
+		float sum = 0.f;
+		for(int i = 0; i < n; ++i){
+			sum += d_W[row + m * i] * d_dZ[i * k + col];
+		}
+		dst[row * k + col] = cos(sum);
+	}
+} /* dst = cos(d_W.T * d_dZ) */
+void d_backSine(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A){
+	int m = d_W->cols(); //reverse for transpose
+	int n = d_W->rows(); //reverse for transpose
+	int k = d_dZ->cols();
+	backSine_Kernel << <dimGrid(m, k), dimBlock() >> >
 		(dst->d_data(), d_W->d_data(), d_dZ->d_data(), d_A->d_data(), m, n, k);
 	d_catchErr();
 }

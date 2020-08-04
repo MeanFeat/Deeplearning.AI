@@ -114,6 +114,9 @@ void d_NetTrainer::BackwardPropagation(){
 			case LReLU:
 				d_backLReLU(&cache.d_dZ[l], &trainParams.d_W[l + 1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
 				break;
+			case Sine:
+				d_backSine(&cache.d_dZ[l], &trainParams.d_W[l + 1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
+				break;
 			default:
 				break;
 		}

@@ -6,7 +6,8 @@ enum Activation {
 	Sigmoid,
 	Tanh,
 	ReLU,
-	LReLU
+	LReLU,
+	Sine
 };
 
 #define TYPES_H
