@@ -177,15 +177,15 @@ MatrixXf CreateSparseData(int pointCount) {
 	return out;
 }
 
-void UpdateHistory(vector<float> &history, float cost) {
-	history.push_back(min((cost) * WINHEIGHT, WINHEIGHT));
-	if(history.size() >= WINWIDTH + WINWIDTH) {
-		for(int i = 1; i < (int)history.size(); i += 2) {
-			history.erase(history.begin() + i);
+void UpdateHistory(vector<float> &hist, float cost) {
+	float scale = ( 1.f - exp(-cost) );
+	hist.push_back(min(( WINHEIGHT *  scale - cost ) + backBuffer.titleOffset + 15, WINHEIGHT));
+	if( hist.size() >= WINWIDTH + WINWIDTH ) {
+		for( int i = 1; i < (int)hist.size(); i += 2 ) {
+			hist.erase(hist.begin() + i);
 		}
 	}
 }
-
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode) {
 	MatrixXf X;
 	MatrixXf testX;
@@ -212,7 +212,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		HDC deviceContext = GetDC(window);
 		vector<float> history;
 		vector<float> testHistory;
-
+		initParallel();
+		setNbThreads(4);
 		int steps = 0;
 		//Main Loop
 		while(globalRunning) {

@@ -28,19 +28,19 @@ public:
 	NetTrainer(Net *net, MatrixXf *data, MatrixXf *labels, float weightScale, float learnRate, float regTerm);
 	~NetTrainer();
 	
-	NetTrainParameters GetTrainParams();
-	NetCache GetCache();
+	NetTrainParameters &GetTrainParams();
+	NetCache &GetCache();
 	Net *network;
 	MatrixXf *trainData;
 	MatrixXf *trainLabels;
-
+	float coeff;
 	void AddLayer(int A, int B, float weightScale);
 	
 	MatrixXf ForwardTrain();
 	float CalcCost(const MatrixXf h, const MatrixXf Y);
 	MatrixXf BackActivation(int l, const MatrixXf &dZ);
 	void BackwardPropagation();
-	void BackLayer(MatrixXf &dZ, int l, float coeff, const MatrixXf *LowerA);
+	void BackLayer(MatrixXf &dZ, int l, const MatrixXf *LowerA);
 	void UpdateParameters();
 	void UpdateParametersWithMomentum();
 	void UpdateParametersADAM();
@@ -58,12 +58,7 @@ public:
 		return (network->GetParams().W[index + 1].transpose() * dZ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - cache.A[index]);
 	}
 	inline MatrixXf BackTanh(const MatrixXf dZ, int index) {
-		MatrixXf A1Squared = MatrixXf(cache.A[index].rows(), cache.A[index].cols());
-		int i = 0;
-		while( i < A1Squared.size() ) {
-			*( A1Squared.data() + i ) = *( cache.A[index].data() + i ) * *( cache.A[index].data() + i );
-			i++;
-		}
+		MatrixXf A1Squared = cache.A[index].array() * cache.A[index].array();
 		return ( network->GetParams().W[index + 1].transpose() * dZ ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - ( A1Squared ));
 	}
 	inline MatrixXf BackReLU(const MatrixXf dZ, int index) {

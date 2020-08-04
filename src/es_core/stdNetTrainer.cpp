@@ -8,6 +8,7 @@ NetTrainer::NetTrainer(Net *net, MatrixXf *data, MatrixXf *labels, float weightS
 	network = net;
 	trainData = data;
 	trainLabels = labels;
+	coeff = float(1.f/labels->cols());
 	int nodeCount = 0;
 	for( int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i ) {
 		nodeCount += network->GetParams().layerSizes[i];
@@ -28,11 +29,11 @@ NetTrainer::~NetTrainer() {
 }
 
 
-NetTrainParameters NetTrainer::GetTrainParams() {
+NetTrainParameters &NetTrainer::GetTrainParams() {
 	return trainParams;
 }
 
-NetCache NetTrainer::GetCache() {
+NetCache &NetTrainer::GetCache() {
 	return cache;
 }
 
@@ -58,7 +59,6 @@ MatrixXf NetTrainer::ForwardTrain() {
 }
 
 float NetTrainer::CalcCost(const MatrixXf h, MatrixXf Y) {
-	float coeff = 1.f / Y.cols();
 	float sumSqrW = 0.f;
 	for(int w = 0; w < (int)network->GetParams().W.size() - 1; ++w) {
 		sumSqrW += network->GetParams().W[w].array().pow(2).sum();
@@ -89,9 +89,9 @@ MatrixXf NetTrainer::BackActivation(int layerIndex, const MatrixXf &dZ) {
 		break;
 	}		
 }
-void NetTrainer::BackLayer(MatrixXf &dZ, int layerIndex, float coeff, const MatrixXf *LowerA) {
+void NetTrainer::BackLayer(MatrixXf &dZ, int layerIndex, const MatrixXf *LowerA) {
 	dZ = BackActivation(layerIndex, dZ); 
-	float lambda = 0.5f * ( trainParams.regTerm*trainParams.learningMod );
+	float lambda = 0.5f * ( trainParams.regTerm * trainParams.learningMod );
 	MatrixXf *h = &trainParams.dW[layerIndex];
 	*h = dZ * LowerA->transpose();
 	int i = 0;
@@ -112,14 +112,13 @@ void NetTrainer::BackLayer(MatrixXf &dZ, int layerIndex, float coeff, const Matr
 	}
 }
 void NetTrainer::BackwardPropagation() {
-	float coeff = float(1.f / (float)trainLabels->cols());
 	MatrixXf dZ = MatrixXf(cache.A.back() - *trainLabels);
 	trainParams.dW.back() = coeff * ( dZ * cache.A[cache.A.size() - 2].transpose() );
 	trainParams.db.back() = coeff * dZ.rowwise().sum();
 	for( int l = (int)network->GetParams().layerActivations.size() - 2; l >= 1; --l ) {
-		BackLayer(dZ, l, coeff, &cache.A[l - 1]);
+		BackLayer(dZ, l, &cache.A[l - 1]);
 	}
-	BackLayer(dZ, 0, coeff, trainData);
+	BackLayer(dZ, 0, trainData);
 }
 void NetTrainer::UpdateParameters() {
 	for(int i = 0; i < (int)trainParams.dW.size(); ++i) {

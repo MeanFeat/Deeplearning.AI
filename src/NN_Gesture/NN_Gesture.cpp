@@ -277,7 +277,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 									  WS_OVERLAPPED | WS_SYSMENU | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH, WINHEIGHT, 0, 0, Instance, 0);
 		initParallel();
-		setNbThreads(12);
+		setNbThreads(4);
 		HDC deviceContext = GetDC(window);
 		vector<Vector2f> mouseTrail;
 		int sampleIndex = 0;
@@ -294,7 +294,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		while( globalRunning ) {
 			Win32ProcessPendingMessages();
 			if( isTraining ) {
-				for( int e = 0; e < 1; e++ ) {
+				for( int e = 0; e < 100; e++ ) {
 					trainer.UpdateSingleStep();
 				}
 				UpdateHistory(history);
@@ -360,6 +360,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			UpdateDisplay(ideal8, mouseTrail, mouseCapture, history, h);
 			Win32DisplayBufferInWindow(deviceContext, window, backBuffer);
 			UpdateWinTitle(steps, h, window);
+			steps++;
 		}
 
 		if( ( !isTraining && isRecordingData ) || shouldSaveChanges ) {
