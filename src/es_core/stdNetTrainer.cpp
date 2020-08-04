@@ -67,39 +67,60 @@ float NetTrainer::CalcCost(const MatrixXf h, MatrixXf Y) {
 	return ((Y - h).array().pow(2).sum() * coeff) + regCost;
 }
 
+MatrixXf NetTrainer::BackActivation(int layerIndex, const MatrixXf &dZ) {
+	switch( network->GetParams().layerActivations[layerIndex] ) {
+		case Sigmoid:
+		return BackSigmoid(dZ, layerIndex);
+		break;
+		case Tanh:
+		return BackTanh(dZ, layerIndex);
+		break;
+		case ReLU:
+		return BackReLU(dZ, layerIndex);
+		break;
+		case LReLU:
+		return BackLReLU(dZ, layerIndex);
+		break;
+		case Sine:
+		return BackSine(dZ, layerIndex);
+		break;
+		default:
+		return dZ;
+		break;
+	}		
+}
+void NetTrainer::BackLayer(MatrixXf &dZ, int layerIndex, float coeff, const MatrixXf *LowerA) {
+	dZ = BackActivation(layerIndex, dZ); 
+	float lambda = 0.5f * ( trainParams.regTerm*trainParams.learningMod );
+	MatrixXf *h = &trainParams.dW[layerIndex];
+	*h = dZ * LowerA->transpose();
+	int i = 0;
+	while( i < h->size() ) {
+		*( h->data() + i ) = coeff * ( *( h->data() + i ) + ( lambda * *( network->GetParams().W[layerIndex].data() + i ) ) );
+		i++;
+	}
+	MatrixXf *db = &trainParams.db[layerIndex];
+	*db = MatrixXf(dZ.rows(), 1);
+	int b = 0;
+	while( b < dZ.rows() ) {
+		float rowSum = 0.f;
+		for( int r = 0; r < dZ.cols(); r++ ) {
+			rowSum += *( dZ.data() + ( b + dZ.rows() * r) );
+		}
+		*( db->data() + b ) = coeff * rowSum;
+		b++;
+	}
+}
 void NetTrainer::BackwardPropagation() {
-	float m = (float)trainLabels->cols();
-	float coeff = float(1.f / m);
+	float coeff = float(1.f / (float)trainLabels->cols());
 	MatrixXf dZ = MatrixXf(cache.A.back() - *trainLabels);
 	trainParams.dW.back() = coeff * ( dZ * cache.A[cache.A.size() - 2].transpose() );
 	trainParams.db.back() = coeff * dZ.rowwise().sum();
-	for( int l = (int)network->GetParams().layerActivations.size() - 2; l >= 0; --l ) {
-		MatrixXf lowerA = l > 0 ? cache.A[l - 1] : *trainData;
-		switch( network->GetParams().layerActivations[l] ) {
-			case Sigmoid:
-			dZ = BackSigmoid(dZ, l);
-			break;
-			case Tanh:
-			dZ = BackTanh(dZ, l);
-			break;
-			case ReLU:
-			dZ = BackReLU(dZ, l);
-			break;
-			case LReLU:
-			dZ = BackLReLU(dZ, l);
-			break;
-			case Sine:
-			dZ = BackSine(dZ, l);
-			break;
-			default:
-			break;
-		}
-		trainParams.dW[l] = coeff * MatrixXf(( dZ * lowerA.transpose() ).array() + ( 0.5f * ( trainParams.regTerm*trainParams.learningMod ) * network->GetParams().W[l] ).array());
-		trainParams.db[l] = coeff * dZ.rowwise().sum();
+	for( int l = (int)network->GetParams().layerActivations.size() - 2; l >= 1; --l ) {
+		BackLayer(dZ, l, coeff, &cache.A[l - 1]);
 	}
-
+	BackLayer(dZ, 0, coeff, trainData);
 }
-
 void NetTrainer::UpdateParameters() {
 	for(int i = 0; i < (int)trainParams.dW.size(); ++i) {
 		network->GetParams().W[i] -= ((trainParams.learningRate*trainParams.learningMod) * trainParams.dW[i]);
@@ -134,8 +155,6 @@ void NetTrainer::UpdateParametersADAM() {
 		network->GetParams().b[i] -= (trainParams.learningRate*trainParams.learningMod) * MatrixXf(vCorrected.db[i].array() / (sCorrected.db[i].array().sqrt() + FLT_EPSILON));
 	}
 }
-
-
 void NetTrainer::BuildDropoutMask() {
 	dropParams = dropParams;
 	dropParams.W[0] = MatrixXf::Ones(dropParams.W[0].rows(), dropParams.W[0].cols());
@@ -155,7 +174,6 @@ void NetTrainer::BuildDropoutMask() {
 	dropParams.W[dropParams.W.size() - 1].row(0) = MatrixXf::Ones(1, dropParams.W[dropParams.W.size() - 1].cols());
 	dropParams.b[dropParams.b.size() - 1].row(0) = MatrixXf::Ones(1, dropParams.b[dropParams.b.size() - 1].cols());
 }
-
 void NetTrainer::UpdateSingleStep() {
 	//BuildDropoutMask();
 	cache.cost = CalcCost(ForwardTrain(), *trainLabels);
