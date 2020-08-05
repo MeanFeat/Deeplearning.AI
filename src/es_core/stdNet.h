@@ -57,7 +57,7 @@ public:
 	void SetParams(vector<MatrixXf> W, vector<MatrixXf> b);
 	void AddLayer(int A, int B);
 	static MatrixXf Activate(Activation act, const MatrixXf &In);	
-	MatrixXf ForwardPropagation(const MatrixXf X);
+	MatrixXf ForwardPropagation(const MatrixXf &X);
 
 	void SaveNetwork();
 	void LoadNetwork();
