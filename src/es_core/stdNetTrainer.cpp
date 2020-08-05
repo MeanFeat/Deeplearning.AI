@@ -1,5 +1,16 @@
 #include "stdNetTrainer.h"
 
+//ADAM
+static const float b1 = 0.9f;
+static const float b2 = 1.f - FLT_EPSILON;
+static const float b1Sqr = b1 * b1;
+static const float b2Sqr = b2 * b2;
+static const float invB1 = 1.f - b1;
+static const float invB2 = 1.f - b2;
+static const float invBSq1 = 1.f - b1Sqr;
+static const float invBSq2 = 1.f - b2Sqr;
+
+
 NetTrainer::NetTrainer() {
 }
 
@@ -49,7 +60,8 @@ void NetTrainer::AddLayer(int A, int B, float weightScale) {
 }
 
 MatrixXf NetTrainer::ForwardTrain() {
-	MatrixXf lastOutput = *trainData;
+	MatrixXf lastOutput = MatrixXf(trainData->rows(), trainData->cols());
+	lastOutput.noalias() = *trainData;
 	for(int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i) {
 		MatrixXf weighed = network->GetParams().W[i] * lastOutput;
 		cache.Z[i].noalias() = ( weighed ).colwise() + (VectorXf)network->GetParams().b[i];
@@ -83,9 +95,10 @@ MatrixXf NetTrainer::BackSigmoid(const MatrixXf &dZ, int index) {
 }
 
 MatrixXf NetTrainer::BackTanh(const MatrixXf &dZ, int index) {
-	MatrixXf A1Squared = cache.A[index].array() * cache.A[index].array();
-	MatrixXf wT = network->GetParams().W[index + 1].transpose() * dZ;
-	return ( wT ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - ( A1Squared ));
+	MatrixXf invASqr = 1.f-cache.A[index].array().square();
+	MatrixXf wT = network->GetParams().W[index + 1].transpose();
+	MatrixXf product = network->GetParams().W[index + 1].transpose() * dZ;
+	return ( product ).cwiseProduct(invASqr);
 }
 
 MatrixXf NetTrainer::BackReLU(const MatrixXf &dZ, int index) {
@@ -128,24 +141,9 @@ MatrixXf NetTrainer::BackActivation(int layerIndex, const MatrixXf &dZ) {
 void NetTrainer::BackLayer(MatrixXf &dZ, int layerIndex, const MatrixXf *LowerA) {
 	dZ = BackActivation(layerIndex, dZ); 
 	float lambda = 0.5f * ( trainParams.regTerm * trainParams.learningMod );
-	MatrixXf *h = &trainParams.dW[layerIndex];
-	*h = dZ * LowerA->transpose();
-	int i = 0;
-	while( i < h->size() ) {
-		*( h->data() + i ) = coeff * ( *( h->data() + i ) + ( lambda * *( network->GetParams().W[layerIndex].data() + i ) ) );
-		i++;
-	}
-	MatrixXf *db = &trainParams.db[layerIndex];
-	*db = MatrixXf(dZ.rows(), 1);
-	int b = 0;
-	while( b < dZ.rows() ) {
-		float rowSum = 0.f;
-		for( int r = 0; r < dZ.cols(); r++ ) {
-			rowSum += *( dZ.data() + ( b + dZ.rows() * r) );
-		}
-		*( db->data() + b ) = coeff * rowSum;
-		b++;
-	}
+	trainParams.dW[layerIndex] = coeff * MatrixXf(( dZ * LowerA->transpose() ).array() + ( lambda * network->GetParams().W[layerIndex] ).array());
+	trainParams.db[layerIndex] = dZ.rowwise().sum();
+	trainParams.db[layerIndex] *= coeff;
 }
 void NetTrainer::BackwardPropagation() {
 	MatrixXf dZ = MatrixXf(cache.A.back() - *trainLabels);
@@ -174,27 +172,24 @@ void NetTrainer::UpdateParametersWithMomentum() {
 	}
 }
 
-#define BETA1 0.9f
-#define BETA2 (1.f - FLT_EPSILON)
 void NetTrainer::UpdateParametersADAM() {
 	float learnRate = ( trainParams.learningRate*trainParams.learningMod );
-	float b1Sqr = BETA1 * BETA1;
-	float b2Sqr = BETA2 * BETA2;
-	for(int i = 0; i < (int)trainParams.dW.size(); ++i) {
+	for( int i = 0; i < (int)trainParams.dW.size(); ++i ) {
 		NetTrainParameters vCorrected = momentum;
 		NetTrainParameters sCorrected = momentumSqr;
-		momentum.dW[i] = BETA1 * momentum.dW[i] + (1 - BETA1) * trainParams.dW[i];
-		momentum.db[i] = BETA1 * momentum.db[i] + (1 - BETA1) * trainParams.db[i];
-		vCorrected.dW[i] = momentum.dW[i] / ( 1 - b1Sqr );
-		vCorrected.db[i] = momentum.db[i] / ( 1 - b1Sqr );
-		momentumSqr.dW[i] = ( BETA2 * momentumSqr.dW[i] ) + ( ( 1 - BETA2 ) * MatrixXf(trainParams.dW[i].array() * trainParams.dW[i].array()));
-		momentumSqr.db[i] = ( BETA2 * momentumSqr.db[i] ) + ( ( 1 - BETA2 ) * MatrixXf(trainParams.db[i].array() * trainParams.db[i].array()));
-		sCorrected.dW[i] = momentumSqr.dW[i] / ( 1 - b2Sqr );
-		sCorrected.db[i] = momentumSqr.db[i] / ( 1 - b2Sqr );
-		network->GetParams().W[i] -= learnRate * MatrixXf(vCorrected.dW[i].array() / (sCorrected.dW[i].array().sqrt() + FLT_EPSILON));
-		network->GetParams().b[i] -= learnRate * MatrixXf(vCorrected.db[i].array() / (sCorrected.db[i].array().sqrt() + FLT_EPSILON));
+		momentum.dW[i] = b1 * momentum.dW[i] + (invB1) * trainParams.dW[i];
+		momentum.db[i] = b1 * momentum.db[i] + (invB1) * trainParams.db[i];
+		vCorrected.dW[i] = momentum.dW[i] / ( invBSq1 );
+		vCorrected.db[i] = momentum.db[i] / ( invBSq1 );
+		momentumSqr.dW[i] = ( b2 * momentumSqr.dW[i] ) + ( (invB2) * MatrixXf(trainParams.dW[i].array() * trainParams.dW[i].array()) );
+		momentumSqr.db[i] = ( b2 * momentumSqr.db[i] ) + ( (invB2) * MatrixXf(trainParams.db[i].array() * trainParams.db[i].array()) );
+		sCorrected.dW[i] = momentumSqr.dW[i] / ( invBSq2 );
+		sCorrected.db[i] = momentumSqr.db[i] / ( invBSq2 );
+		network->GetParams().W[i] -= learnRate * MatrixXf(vCorrected.dW[i].array() / ( sCorrected.dW[i].array().sqrt() + FLT_EPSILON ));
+		network->GetParams().b[i] -= learnRate * MatrixXf(vCorrected.db[i].array() / ( sCorrected.db[i].array().sqrt() + FLT_EPSILON ));
 	}
 }
+
 void NetTrainer::BuildDropoutMask() {
 	dropParams = dropParams;
 	dropParams.W[0] = MatrixXf::Ones(dropParams.W[0].rows(), dropParams.W[0].cols());
