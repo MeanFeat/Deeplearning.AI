@@ -48,8 +48,8 @@ public:
 	NetParameters &GetParams();
 	void SetParams(vector<MatrixXf> W, vector<MatrixXf> b);
 	void AddLayer(int A, int B);
-	static MatrixXf Activate(Activation act, const MatrixXf &In);
-	MatrixXf ForwardPropagation(const MatrixXf X);
+	static MatrixXf Activate(Activation act, const MatrixXf &In);	
+	MatrixXf ForwardPropagation(const MatrixXf &X);
 
 	int Depth() {
 		return (int)GetParams().layerSizes.size() - 1;

@@ -12,7 +12,7 @@
 #define CAPTURETHRESHOLD 40.f
 
 global_variable bool globalRunning = true;
-global_variable bool isTraining = false;
+global_variable bool isTraining = true;
 global_variable bool isVerifying = false;
 global_variable bool isRecordingData = false;
 global_variable bool shouldSaveChanges = false;
@@ -31,6 +31,10 @@ global_variable bool isCapturingEight = false;
 
 global_variable float *verify;
 global_variable float *verifyLabel;
+
+static time_t startTime;
+static time_t currentTime;
+static float trainingTime;
 
 float mouseX = WINHALFWIDTH;
 float mouseY = WINHALFHEIGHT;
@@ -207,14 +211,20 @@ void UpdateDisplay(vector<Vector2f> &i8, vector<Vector2f> &mTrail, vector<Vector
 
 void UpdateWinTitle(int &steps, float &prediciton, HWND window) {
 	char s[255];
-	sprintf_s(s, "Prediction: %0.10f || ", prediciton);
-	char prompt[255];
-	if( successFade > 0.f ) {
-		sprintf_s(prompt, "Great!");
+	if(isTraining){
+		time(&currentTime);
+		trainingTime = float(difftime(currentTime, startTime));
+		sprintf_s(s, "Epoch %d || Time: %0.1f || Eps %0.2f || Cost: %0.10f || ", steps, trainingTime,float(steps)/trainingTime, trainer.GetCache().cost );
 	} else {
-		sprintf_s(prompt, "hmmm... Draw a figure eight.");
+		sprintf_s(s, "TrainingTime: %0.1f || Cost: %0.10f || Prediction: %0.10f || ",trainingTime, trainer.GetCache().cost, prediciton);
+		char prompt[255];
+		if( successFade > 0.f ) {
+			sprintf_s(prompt, "Great!");
+		} else {
+			sprintf_s(prompt, "hmmm... Draw a figure eight.");
+		}
+		strcat_s(s, prompt);
 	}
-	strcat_s(s, prompt);
 	SetWindowText(window, LPCSTR(s));
 }
 
@@ -234,7 +244,6 @@ void ContainVector(vector<Vector2f> &vec, int maxSize) {
 	}
 }
 
-
 void UpdateHistory(vector<float> &hist) {
 	float scale = ( 1.f - exp(-trainer.GetCache().cost) );
 	hist.push_back(min(( WINHEIGHT *  scale - trainer.GetCache().cost ) + backBuffer.titleOffset + 15, WINHEIGHT));
@@ -246,9 +255,9 @@ void UpdateHistory(vector<float> &hist) {
 }
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode) {
-	MatrixXf readSamples;// = BuildMatFromFile("GestureSamplesTrain.csv").transpose();
-	MatrixXf readDeltas;// = BuildMatFromFile("GroupedDeltas.csv").transpose();
-	MatrixXf readLabels;// = BuildMatFromFile("GroupedLabels.csv").transpose();
+	MatrixXf readSamples = BuildMatFromFile("GestureSamplesTrain.csv").transpose();
+	MatrixXf readDeltas = BuildMatFromFile("GroupedDeltas.csv").transpose();
+	MatrixXf readLabels = BuildMatFromFile("GroupedLabels.csv").transpose();
 	MatrixXf readIdeal8 = MatrixXf(50, 1);
 	readIdeal8 << 355, 263, 397, 247, 437, 252, 471, 274, 490, 310, 492, 350, 470, 386, 440, 415, 407, 439, 374, 463, 347, 495, 342, 535, 349, 575, 374, 607, 414, 613, 454, 602, 479, 570, 486, 529, 480, 489, 451, 461, 414, 443, 382, 419, 353, 390, 340, 350, 332, 310;
 	vector<Vector2f> ideal8;
@@ -261,21 +270,22 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 	WNDCLASSA winClass = {};
 	InitializeWindow(&winClass, Instance, Win32MainWindowCallback, &backBuffer, WINWIDTH, WINHEIGHT, "NN_PredictRadian");
-
+	time(&startTime);
 	if( RegisterClassA(&winClass) ) {
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
 									  WS_OVERLAPPED | WS_SYSMENU | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH, WINHEIGHT, 0, 0, Instance, 0);
-
+		initParallel();
+		setNbThreads(4);
 		HDC deviceContext = GetDC(window);
 		vector<Vector2f> mouseTrail;
 		int sampleIndex = 0;
-		neural = Net("Gesture-Weights.json");
-		/*neural = Net((int)readDeltas.rows(), {50,50}, (int)readLabels.rows(), {
+		//neural = Net("Gesture-Weights.json");
+		neural = Net((int)readDeltas.rows(), {100,50}, (int)readLabels.rows(), {
 			Tanh,
 			Tanh,
-			Sigmoid});*/
-		trainer = NetTrainer(&neural, &readDeltas, &readLabels, 0.15f, 1.25f, 0.1f);
+			Sigmoid});
+		trainer = NetTrainer(&neural, &readDeltas, &readLabels, 0.5f, 1.25f, 0.001f);
 		vector<float> history;
 		float h = 0.f;
 		int steps = 0;
@@ -283,7 +293,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		while( globalRunning ) {
 			Win32ProcessPendingMessages();
 			if( isTraining ) {
-				for( int e = 0; e < 1; e++ ) {
+				for( int e = 0; e < 100; e++ ) {
 					trainer.UpdateSingleStep();
 				}
 				UpdateHistory(history);
@@ -349,6 +359,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			UpdateDisplay(ideal8, mouseTrail, mouseCapture, history, h);
 			Win32DisplayBufferInWindow(deviceContext, window, backBuffer);
 			UpdateWinTitle(steps, h, window);
+			steps++;
 		}
 
 		if( ( !isTraining && isRecordingData ) || shouldSaveChanges ) {
