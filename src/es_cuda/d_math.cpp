@@ -183,47 +183,59 @@ void d_drawPixels(int * buffer, int m, int k, const float* vals, bool discrete){
 		(buffer, k, vals, discrete, neg, pos);
 	d_catchErr();
 }
-__global__ void Sigmoid_Kernal(float *dst, int N){
-	int tid = blockIdx.x;
-	if(tid < N)
+__global__ void Sigmoid_Kernal(float *dst, int m, int k) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int tid = row * k + col;
+	if (col < k && row < m)
 		dst[tid] = 1 / (1 + exp(-dst[tid]));
 }
-__global__ void Tanh_Kernal(float *dst, int N){
-	int tid = blockIdx.x;
-	if(tid < N)
+__global__ void Tanh_Kernal(float *dst, int m, int k) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int tid = row * k + col;
+	if(col < k && row < m)
 		dst[tid] = tanh(dst[tid]);
 }
-__global__ void ReLU_Kernal(float *dst, int N){
-	int tid = blockIdx.x;
-	if(tid < N)
+__global__ void ReLU_Kernal(float *dst, int m, int k) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int tid = row * k + col;
+	if (col < k && row < m)
 		dst[tid] = max(0.f, dst[tid]);
 }
-__global__ void LReLU_Kernal(float *dst, int N){
-	int tid = blockIdx.x;
-	if(tid < N)
+__global__ void LReLU_Kernal(float *dst, int m,int k) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int tid = row * k + col;
+	if (col < k && row < m)
 		dst[tid] = max(dst[tid] * LRELU_LEAK, dst[tid]);
 }
-__global__ void Sine_Kernal(float *dst, int N){
-	int tid = blockIdx.x;
-	if (tid<N){
+__global__ void Sine_Kernal(float *dst, int m, int k) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int tid = row * k + col;
+	if (col < k && row < m) {
 		dst[tid] = sin(dst[tid]);
 	}
 }
 void d_activate(d_Matrix *dst, Activation act){
+	int m = dst->rows();
+	int k = dst->cols();
 	switch(act){
 		case Sigmoid:
-		Sigmoid_Kernal << < dst->size(), 1 >> > (dst->d_data(), dst->size());
+		Sigmoid_Kernal << < dimGrid(m, k), dimBlock() >> > (dst->d_data(),m,k);
 		case Tanh:
-		Tanh_Kernal << < dst->size(), 1 >> > (dst->d_data(), dst->size());
+		Tanh_Kernal << < dimGrid(m, k), dimBlock() >> > (dst->d_data(),m, k);
 		break;
 		case ReLU:
-		ReLU_Kernal << <dst->size(), 1 >> > (dst->d_data(), dst->size());
+		ReLU_Kernal <<< dimGrid(m, k), dimBlock() >> > (dst->d_data(), m, k);
 		break;
 		case LReLU:
-		LReLU_Kernal << < dst->size(), 1 >> > (dst->d_data(), dst->size());
+		LReLU_Kernal << < dimGrid(m, k), dimBlock() >> > (dst->d_data(), m, k);
 		break;
 		case Sine:
-		Sine_Kernal << < dst->size(), 1 >> > (dst->d_data(), dst->size());
+		Sine_Kernal << < dimGrid(m, k), dimBlock() >> > (dst->d_data(), m, k);
 		break;
 		case Linear: //fall through
 		default:
