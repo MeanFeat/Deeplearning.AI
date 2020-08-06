@@ -34,13 +34,14 @@ public:
 	MatrixXf *trainData;
 	MatrixXf *trainLabels;
 
-	void AddLayer(int A, int B, float weightScale);
+	void AddLayer(int A, int B);
 	
 	MatrixXf ForwardTrain();
 	float CalcCost(const MatrixXf h, const MatrixXf Y);
 	void BackwardPropagation();
 	void UpdateParameters();
 	void UpdateParametersWithMomentum();
+	void UpdateSingleParamADAM(MatrixXf * w, MatrixXf * d, MatrixXf * m, MatrixXf * mS);
 	void UpdateParametersADAM();
 	void BuildDropoutMask();
 	void UpdateSingleStep();

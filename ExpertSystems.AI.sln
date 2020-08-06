@@ -11,7 +11,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NN_PredictRadian", "src\NN_
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "es_core", "src\es_core\es_core.vcxproj", "{389D51B1-0826-48BA-93CC-BDB12EEA1357}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NN_Gesture", "src\NN_Gesture\NN_Gesture.vcxproj", "{1AC93082-C8ED-4591-AF22-595355E4CA58}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "es_cuda", "src\es_cuda\es_cuda.vcxproj", "{E3CF0CC2-0D7C-4052-B909-FD0A3D2D6D56}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -52,14 +52,12 @@ Global
 		{389D51B1-0826-48BA-93CC-BDB12EEA1357}.Release|x64.Build.0 = Release|x64
 		{389D51B1-0826-48BA-93CC-BDB12EEA1357}.Release|x86.ActiveCfg = Release|Win32
 		{389D51B1-0826-48BA-93CC-BDB12EEA1357}.Release|x86.Build.0 = Release|Win32
-		{1AC93082-C8ED-4591-AF22-595355E4CA58}.Debug|x64.ActiveCfg = Debug|x64
-		{1AC93082-C8ED-4591-AF22-595355E4CA58}.Debug|x64.Build.0 = Debug|x64
-		{1AC93082-C8ED-4591-AF22-595355E4CA58}.Debug|x86.ActiveCfg = Debug|Win32
-		{1AC93082-C8ED-4591-AF22-595355E4CA58}.Debug|x86.Build.0 = Debug|Win32
-		{1AC93082-C8ED-4591-AF22-595355E4CA58}.Release|x64.ActiveCfg = Release|x64
-		{1AC93082-C8ED-4591-AF22-595355E4CA58}.Release|x64.Build.0 = Release|x64
-		{1AC93082-C8ED-4591-AF22-595355E4CA58}.Release|x86.ActiveCfg = Release|Win32
-		{1AC93082-C8ED-4591-AF22-595355E4CA58}.Release|x86.Build.0 = Release|Win32
+		{E3CF0CC2-0D7C-4052-B909-FD0A3D2D6D56}.Debug|x64.ActiveCfg = Debug|x64
+		{E3CF0CC2-0D7C-4052-B909-FD0A3D2D6D56}.Debug|x64.Build.0 = Debug|x64
+		{E3CF0CC2-0D7C-4052-B909-FD0A3D2D6D56}.Debug|x86.ActiveCfg = Debug|x64
+		{E3CF0CC2-0D7C-4052-B909-FD0A3D2D6D56}.Release|x64.ActiveCfg = Release|x64
+		{E3CF0CC2-0D7C-4052-B909-FD0A3D2D6D56}.Release|x64.Build.0 = Release|x64
+		{E3CF0CC2-0D7C-4052-B909-FD0A3D2D6D56}.Release|x86.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

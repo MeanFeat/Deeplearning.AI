@@ -1,5 +1,5 @@
 #pragma once
-#include "stdMat.h"
+#include "stdMatrix.h"
 #include "windows.h"
 #include "color.h"
 
@@ -46,10 +46,10 @@ void drawLine(HDC *hdc, int x, int y, int x1, int y1, Color c) {
 }
 
 void DrawCircle(HDC *hdc, int x, int y, float d, Color c) {
-	double rad = d / 2.0;
+	float rad = d / 2.f;
 	for(int n = 0; n < 32; n++) {
-		double a = n*Pi32*4.0 / 32.0;
-		double b = (n + 1)*Pi32*4.0 / 32.0;
+		float a = n*Pi32*4.f / 32.f;
+		float b = (n + 1)*Pi32*4.f / 32.f;
 		drawLine(hdc, int(x + sin(a)*rad), int(y + cos(a)*rad), int(x + sin(b)*rad), int(y + cos(b)*rad), c);
 	}
 }
@@ -92,7 +92,7 @@ void DrawHistory(Buffer buffer, vector<float> hist, Color c) {
 }
 
 void DrawFilledCircle(Buffer buffer, int x, int y, float d, Color c) {
-	int r = int(d*0.5);
+	int r = int(d*0.5f);
 	for(int h = -r; h < r; h++) {
 		int height = (int)sqrt(r * r - h * h);
 
