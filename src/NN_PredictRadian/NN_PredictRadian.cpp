@@ -194,6 +194,9 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		vector<float> testHistory;
 		initParallel();
 		setNbThreads(4);
+		cudaStream_t stream;
+		cudaStreamCreate(&stream);
+		trainer.BuildVisualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height);
 		int steps = 0;
 		//Main Loop
 		while(globalRunning) {
