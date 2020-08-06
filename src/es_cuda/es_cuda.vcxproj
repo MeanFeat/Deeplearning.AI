@@ -90,6 +90,7 @@
       <FastMath>
       </FastMath>
     </CudaCompile>
+    <Lib />
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="d_math.cpp" />

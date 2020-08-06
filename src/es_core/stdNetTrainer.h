@@ -34,7 +34,7 @@ public:
 	MatrixXf *trainData;
 	MatrixXf *trainLabels;
 	float coeff;
-	void AddLayer(int A, int B, float weightScale);
+	void AddLayer(int A, int B);
 	
 	MatrixXf ForwardTrain();
 	float CalcCost(const MatrixXf *h, const MatrixXf *Y);
@@ -42,7 +42,7 @@ public:
 	void BackLayer(MatrixXf &dZ, int l, const MatrixXf *LowerA);
 	void UpdateParameters();
 	void UpdateParametersWithMomentum();
-	void UpdateSingleParamADAM(MatrixXf * w, MatrixXf * d, MatrixXf * m, MatrixXf * mS);
+	void UpdateSingleParamADAM(MatrixXf *w, MatrixXf *d, MatrixXf *m, MatrixXf *mS);
 	void UpdateParametersADAM();
 	void BuildDropoutMask();
 	void UpdateSingleStep();
