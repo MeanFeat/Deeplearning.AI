@@ -96,7 +96,6 @@ MatrixXf NetTrainer::BackSigmoid(const MatrixXf &dZ, int index) {
 
 MatrixXf NetTrainer::BackTanh(const MatrixXf &dZ, int index) {
 	MatrixXf invASqr = 1.f-cache.A[index].array().square();
-	MatrixXf wT = network->GetParams().W[index + 1].transpose();
 	MatrixXf product = network->GetParams().W[index + 1].transpose() * dZ;
 	return ( product ).cwiseProduct(invASqr);
 }
@@ -191,24 +190,18 @@ void NetTrainer::UpdateParametersADAM() {
 }
 
 void NetTrainer::BuildDropoutMask() {
-	dropParams = dropParams;
-	dropParams.W[0] = MatrixXf::Ones(dropParams.W[0].rows(), dropParams.W[0].cols());
-	dropParams.b[0] = MatrixXf::Ones(dropParams.b[0].rows(), dropParams.b[0].cols());
-	for(int i = 1; i < (int)dropParams.W.size() - 1; ++i) {
-		for(int row = 0; row < dropParams.W[i].rows(); ++row) {
+	dropParams = network->GetParams();
+	for(int i = 0; i < (int)network->GetParams().W.size() - 1; ++i) {
+		for(int row = 0; row < network->GetParams().W[i].rows(); ++row) {
 			float val = ((float)rand() / (RAND_MAX));
-			if(val < 0.95) {
-				dropParams.W[i].row(row) = MatrixXf::Ones(1, dropParams.W[i].cols());
-				dropParams.b[i].row(row) = MatrixXf::Ones(1, dropParams.b[i].cols());
-			} else {
-				dropParams.W[i].row(row) = MatrixXf::Zero(1, dropParams.W[i].cols());
-				dropParams.b[i].row(row) = MatrixXf::Zero(1, dropParams.b[i].cols());
+			if(val > 1.f) {
+				dropParams.W[i].row(row) = MatrixXf::Zero(1, network->GetParams().W[i].cols());
+				dropParams.b[i].row(row) = MatrixXf::Zero(1, network->GetParams().b[i].cols());
 			}
 		}
 	}
-	dropParams.W[dropParams.W.size() - 1].row(0) = MatrixXf::Ones(1, dropParams.W[dropParams.W.size() - 1].cols());
-	dropParams.b[dropParams.b.size() - 1].row(0) = MatrixXf::Ones(1, dropParams.b[dropParams.b.size() - 1].cols());
 }
+
 void NetTrainer::UpdateSingleStep() {
 	//BuildDropoutMask();
 	cache.cost = CalcCost(&ForwardTrain(), trainLabels);
