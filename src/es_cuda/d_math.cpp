@@ -6,6 +6,7 @@ dim3 dimGrid(int m, int k){
 dim3 dimBlock(){
 	return dim3(BLOCK_SIZE, BLOCK_SIZE);
 }
+#define KERNEL3D << <dimGrid(m, k), dimBlock() >> >
 __global__ void add_Kernel(float *c, const float *a, const float *b){
 	int i = threadIdx.x;
 	c[i] = a[i] + b[i];
@@ -22,9 +23,13 @@ void d_subtract(d_Matrix *dst, d_Matrix *srcA, d_Matrix *srcB){
 	subtract_Kernel << <1, dst->size() >> > (dst->d_data(), srcA->d_data(), srcB->d_data());
 	d_catchErr();
 }
-__global__ void mult_elem_Kernel(float *c, float *a, float b){
-	int i = threadIdx.x;
-	c[i] = a[i] * b;
+__global__ void mult_elem_Kernel(float *a, float b, int m, int k){
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int tid = row * k + col;;
+	if (col < k && row < m) {
+		a[tid] = a[tid] * b;
+	}
 }
 __global__ void mult_Kernel(float *dst, float *srcA, float *srcB, int m, int n, int k){
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -354,38 +359,37 @@ void d_set_dW(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, float coefficient){
 		(dst->d_data(), d_dZ->d_data(), d_A->d_data(), coefficient, m, n, k);
 	d_catchErr();
 }
-__global__ void set_dW_Reg_Kernel(float *dst, const float *d_dZ, const float *d_A, const float *d_W, float coefficient, float regTerm, int m, int n, int k) {
+__global__ void set_dW_Reg_Kernel(float *dst, const float *d_W, float coefficient, float regTerm, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
-	float sum = 0.f;
 	if(col < k && row < m) {
-		for(int i = 0; i < n; i++) {
-			sum += d_dZ[row * n + i] * d_A[col * n + i];
-		}
-		dst[row * k + col] = coefficient * (sum + (0.5f * regTerm * d_W[row * k + col]));
+		dst[row * k + col] += ( regTerm * d_W[row * k + col]);
 	}
 } /* dst = coeff * (d_dZ * d_A.T) (+) (0.5f * learn * d_W) */
 void d_set_dW_Reg(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, d_Matrix *d_W, float coefficient, float regTerm){
 	int m = d_dZ->rows();
 	int n = d_dZ->cols();
 	int k = d_A->rows();
-	set_dW_Reg_Kernel << <dimGrid(m, k), dimBlock() >> >
-		(dst->d_data(), d_dZ->d_data(), d_A->d_data(), d_W->d_data(), coefficient, regTerm, m, n, k);
+	d_mult_rhsT(dst, d_dZ, d_A);
+	set_dW_Reg_Kernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), d_W->d_data(), coefficient, regTerm, m, n, k);
+	mult_elem_Kernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), coefficient, m,k);
 	d_catchErr();
 }
-__global__ void set_db_Kernel(float *dst, const float *d_dZ, float coefficient, int r, int c){
+__global__ void set_db_Kernel(float *dst, const float *d_dZ, int r, int c){
 	int tid = blockIdx.x;
 	if(tid < r){
 		float sum = 0.f;
 		for(int ind = 0; ind < c; ++ind){
 			sum += d_dZ[tid * c + ind];
 		}
-		dst[tid] = sum * coefficient;
+		dst[tid] = sum;
 	}
 } /* dst = coeff * (srcA.SumOfRows) */
 void d_set_db(d_Matrix* dst, d_Matrix* d_dZ, float coefficient){
-	set_db_Kernel << <dst->rows(), 1 >> >
-		(dst->d_data(), d_dZ->d_data(), coefficient, d_dZ->rows(), d_dZ->cols());
+	int m = d_dZ->rows();
+	int k = d_dZ->cols();
+	set_db_Kernel << <dst->rows(), 1 >> > (dst->d_data(), d_dZ->d_data(), m, k);
+	mult_elem_Kernel << <dimGrid(m, k), dimBlock() >> >(dst->d_data(), coefficient, m, 1);
 	d_catchErr();
 }
 #define BETA1 0.9f
@@ -441,7 +445,7 @@ void d_calcCost(float *dst, d_Matrix* d_modelErr, vector<d_Matrix>* d_modelWeigh
 	int m = d_modelErr->size();
 	square_Kernel << <1, m >> > (d_diff, d_modelErr->d_data()); d_catchErr();
 	sum_Kernel << <1, m / 2 >> > (dst, d_diff, m); d_catchErr();
-	mult_elem_Kernel << <1, 1 >> > (dst, dst, coeff); d_catchErr();
+	mult_elem_Kernel << <1, 1 >> > (dst, coeff,1,1); d_catchErr();
 	return;
 	// Add Regularization
 	float* d_sqrSumTotal;
