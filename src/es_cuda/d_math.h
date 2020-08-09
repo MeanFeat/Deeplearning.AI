@@ -9,6 +9,7 @@ using namespace std;
 #define LRELU_LEAK 0.01f
 void d_add(d_Matrix *dst, d_Matrix *srcA, d_Matrix *srcB);
 void d_subtract(d_Matrix *dst, d_Matrix *srcA, d_Matrix *srcB);
+void d_transpose(d_Matrix *dst, d_Matrix *src);
 void d_mult(d_Matrix * dst, d_Matrix * srcA, d_Matrix * srcB);
 void d_mult_lhsT(d_Matrix * dst, d_Matrix * srcA, d_Matrix * srcB);
 void d_mult_rhsT(d_Matrix * dst, d_Matrix * srcA, d_Matrix * srcB);

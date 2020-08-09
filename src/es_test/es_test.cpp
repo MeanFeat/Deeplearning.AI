@@ -145,7 +145,29 @@ void TestSums() {
 	TestSum(1111, 1131);
 	TestSum(5000, 1);
 }
-
+bool TestTranspose(int m, int k) {
+	cout << "Testing Transpose " << m << "," << k << endl;
+	MatrixXf A = MatrixXf::Random(m, k);
+	d_Matrix d_A = to_device(A);
+	d_Matrix d_testTranspose = to_device(MatrixXf::Ones(k, m));
+	MatrixXf controlTranspose = A.transpose();
+	d_transpose(&d_testTranspose, &d_A);
+	MatrixXf testTranspose = to_host(d_testTranspose);
+	float diff = abs(controlTranspose.sum() - testTranspose.sum());
+	float threshold = (m * k) * thresholdMultiplier;
+	bool passed = controlTranspose == testTranspose;
+	PrintOutcome(controlTranspose.sum(), testTranspose.sum(), diff, threshold, passed);
+	return passed;
+}
+void TestTransposes() {
+	cout << "======================" << endl;
+	cout << "||Testing Transposes||" << endl;
+	cout << "======================" << endl;
+	TestTranspose(1000, 1000000);
+	TestTranspose(10000, 10000);
+	TestTranspose(1111, 1131);
+	TestTranspose(5, 1);
+}
 int main() {
 	initParallel();
 	setNbThreads(4);
@@ -153,6 +175,6 @@ int main() {
 	//TestMultiplies();
 	//TestMultsTransposeRight();
 	//TestMultsTransposeLeft();
-
-	TestSums();
+	//TestSums();
+	TestTransposes();
 }

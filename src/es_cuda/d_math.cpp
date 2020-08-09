@@ -29,6 +29,23 @@ void d_subtract(d_Matrix *dst, d_Matrix *srcA, d_Matrix *srcB) {
 	subtract_Kernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), srcA->d_data(), srcB->d_data(), m, k);
 	d_catchErr();
 }
+__global__ void transpose_Kernel(float *dst, const float *src, int m, int k) {
+	int tid = threadIdx.x;
+	if (tid == 0) {
+		for (int i = 0; i < m; i++) {
+			for (int j = 0; j < k; ++j) {
+				dst[j * m + i] = src[j * m + i];
+			}
+		}
+		__syncthreads();
+	}
+}
+void d_transpose(d_Matrix *dst, d_Matrix *src) {
+	int m = src->rows();
+	int k = src->cols();
+	transpose_Kernel << <1,1 >> > (dst->d_data(), src->d_data(), m, k);
+	d_catchErr();
+}
 __global__ void mult_elem_Kernel(float *a, const float b, int m, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -401,7 +418,13 @@ void d_set_dW_Reg(d_Matrix* dst, d_Matrix* d_dZ, d_Matrix* d_A, d_Matrix *d_W, f
 	int m = d_dZ->rows();
 	int n = d_dZ->cols();
 	int k = d_A->rows();
+#if 0
+	d_Matrix d_AT = d_Matrix(d_A->cols(), d_A->rows());
+	d_transpose(&d_AT, d_A);
+	d_mult(dst, d_dZ, &d_AT);
+#else
 	d_mult_rhsT(dst, d_dZ, d_A);
+#endif
 	set_dW_Reg_Kernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), d_W->d_data(), coefficient, regTerm, m, n, k);
 	mult_elem_Kernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), coefficient, m, k);
 	d_catchErr();
