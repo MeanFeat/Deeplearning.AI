@@ -12,7 +12,7 @@
 #define CAPTURETHRESHOLD 40.f
 
 global_variable bool globalRunning = true;
-global_variable bool isTraining = false;
+global_variable bool isTraining = true;
 global_variable bool isVerifying = false;
 global_variable bool isRecordingData = false;
 global_variable bool shouldSaveChanges = false;
@@ -249,6 +249,10 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	MatrixXf readSamples;// = BuildMatFromFile("GestureSamplesTrain.csv").transpose();
 	MatrixXf readDeltas;// = BuildMatFromFile("GroupedDeltas.csv").transpose();
 	MatrixXf readLabels;// = BuildMatFromFile("GroupedLabels.csv").transpose();
+
+	read_binary("GroupedDeltas_64.dat", readDeltas);
+	read_binary("GroupedLabels_64.dat", readLabels);
+
 	MatrixXf readIdeal8 = MatrixXf(50, 1);
 	readIdeal8 << 355, 263, 397, 247, 437, 252, 471, 274, 490, 310, 492, 350, 470, 386, 440, 415, 407, 439, 374, 463, 347, 495, 342, 535, 349, 575, 374, 607, 414, 613, 454, 602, 479, 570, 486, 529, 480, 489, 451, 461, 414, 443, 382, 419, 353, 390, 340, 350, 332, 310;
 	vector<Vector2f> ideal8;
@@ -270,11 +274,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		HDC deviceContext = GetDC(window);
 		vector<Vector2f> mouseTrail;
 		int sampleIndex = 0;
-		neural = Net("Gesture-Weights.json");
-		/*neural = Net((int)readDeltas.rows(), {50,50}, (int)readLabels.rows(), {
+		//neural = Net("Gesture-Weights.json");
+		neural = Net((int)readDeltas.rows(), {100,50}, (int)readLabels.rows(), {
 			Tanh,
 			Tanh,
-			Sigmoid});*/
+			Sigmoid});
 		trainer = NetTrainer(&neural, &readDeltas, &readLabels, 0.15f, 1.25f, 0.1f);
 		vector<float> history;
 		float h = 0.f;
