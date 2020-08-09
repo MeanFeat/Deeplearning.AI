@@ -255,9 +255,11 @@ void UpdateHistory(vector<float> &hist) {
 }
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLine, int ShowCode) {
-	MatrixXf readSamples = BuildMatFromFile("GestureSamplesTrain.csv").transpose();
-	MatrixXf readDeltas = BuildMatFromFile("GroupedDeltas.csv").transpose();
-	MatrixXf readLabels = BuildMatFromFile("GroupedLabels.csv").transpose();
+	MatrixXf readSamples;
+	MatrixXf readDeltas;
+	MatrixXf readLabels;
+	read_binary("GroupedDeltas_64.dat", readDeltas);
+	read_binary("GroupedLabels_64.dat", readLabels);
 	MatrixXf readIdeal8 = MatrixXf(50, 1);
 	readIdeal8 << 355, 263, 397, 247, 437, 252, 471, 274, 490, 310, 492, 350, 470, 386, 440, 415, 407, 439, 374, 463, 347, 495, 342, 535, 349, 575, 374, 607, 414, 613, 454, 602, 479, 570, 486, 529, 480, 489, 451, 461, 414, 443, 382, 419, 353, 390, 340, 350, 332, 310;
 	vector<Vector2f> ideal8;
