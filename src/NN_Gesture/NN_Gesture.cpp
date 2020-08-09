@@ -261,8 +261,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	read_binary("GroupedDeltas_64.dat", readDeltas);
 	read_binary("GroupedLabels_64.dat", readLabels);
 
-	readDeltas.conservativeResize(readDeltas.rows(), 30000);
-	readLabels.conservativeResize(readLabels.rows(), 30000);
+	readDeltas.conservativeResize(readDeltas.rows(), 1000);
+	readLabels.conservativeResize(readLabels.rows(), 1000);
 
 
 	readIdeal8 << 355, 263, 397, 247, 437, 252, 471, 274, 490, 310, 492, 350, 470, 386, 440, 415, 407, 439, 374, 463, 347, 495, 342, 535, 349, 575, 374, 607, 414, 613, 454, 602, 479, 570, 486, 529, 480, 489, 451, 461, 414, 443, 382, 419, 353, 390, 340, 350, 332, 310;

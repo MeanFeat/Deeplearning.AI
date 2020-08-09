@@ -1,5 +1,7 @@
 #pragma once
 #include "d_cudahelpers.h"
+#include <Eigen/dense>
+
 class d_Matrix{
 public:
 	d_Matrix();
@@ -29,3 +31,6 @@ protected:
 	int colCount;
 	float* device_data;
 };
+
+d_Matrix to_device(Eigen::MatrixXf matrix);
+Eigen::MatrixXf to_host(d_Matrix d_matrix);

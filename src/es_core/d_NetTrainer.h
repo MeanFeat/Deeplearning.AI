@@ -2,7 +2,6 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
-#include <Eigen/dense>
 #include "stdNet.h"
 #include "d_Matrix.h"
 #include "d_Math.h"
