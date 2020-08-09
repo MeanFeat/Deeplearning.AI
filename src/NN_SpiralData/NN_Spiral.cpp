@@ -92,11 +92,12 @@ void PlotData(MatrixXf X, MatrixXf Y){
 			(Y(0, i) > 0.f ? positiveColor : negativeColor) - Color(50, 50, 50, 50));
 	}
 }
-void UpdateHistory(vector<float> &history, float cost){
-	history.push_back(min((cost) * (WINHEIGHT - backBuffer.titleOffset), WINHEIGHT));
-	if(history.size() >= WINWIDTH + WINWIDTH){
-		for(int i = 1; i < (int)history.size(); i += 2){
-			history.erase(history.begin() + i);
+void UpdateHistory(vector<float> &hist, float cost) {
+	float scale = (1.f - exp(-cost));
+	hist.push_back(min((WINHEIGHT *  scale - cost) + backBuffer.titleOffset + 15, WINHEIGHT));
+	if (hist.size() >= WINWIDTH + WINWIDTH) {
+		for (int i = 1; i < (int)hist.size(); i += 2) {
+			hist.erase(hist.begin() + i);
 		}
 	}
 }
@@ -184,13 +185,13 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
 									  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH * 4, WINHEIGHT * 4, 0, 0, Instance, 0);
-		neural = Net((int)X.rows(), { 8,8 }, (int)Y.rows(), {
+		neural = Net((int)X.rows(), { 8,8}, (int)Y.rows(), {
 			Tanh,
 			Tanh,
 			Tanh});
 		d_neural = Net(neural);
-		//h_trainer = NetTrainer(&neural, &X, &Y, 0.15f, 2.f, 20.f);
-		d_trainer = d_NetTrainer(&d_neural, &X, &Y, 0.5f, 2.f, 20.f);
+		h_trainer = NetTrainer(&neural, &X, &Y, 0.15f, 2.f, 20.f);
+		d_trainer = d_NetTrainer(&d_neural, &X, &Y, 0.15f, 2.f, 20.f);
 		time(&startTime);
 		HDC deviceContext = GetDC(window);
 		vector<float> h_history;
@@ -200,15 +201,15 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		cudaStreamCreate(&stream);
 		d_trainer.BuildVisualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height);
 		//Main Loop
-		while(steps<5000){
-			for(int epoch = 0; epoch < 10; ++epoch){
+		while(steps<5000 && globalRunning){
+			for(int epoch = 0; epoch < 1; ++epoch){
 				Win32ProcessPendingMessages();
 				if(!globalRunning){
 					break;
 				}
-				//h_trainer.UpdateSingleStep();
+				h_trainer.UpdateSingleStep();
 				d_trainer.UpdateSingleStep();
-				//UpdateHistory(h_history, h_trainer.GetCache().cost);
+				UpdateHistory(h_history, h_trainer.GetCache().cost);
 				UpdateHistory(d_history, d_trainer.GetCache().cost);
 				UpdateWinTitle(steps, window);
 			}

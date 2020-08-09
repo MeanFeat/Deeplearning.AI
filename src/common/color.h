@@ -10,6 +10,9 @@ public:
 	Color operator-(const Color &other) {
 		return Color(r - other.r, g - other.g, b - other.b, a - other.a);
 	}
+	Color operator*(const float scalar) {
+		return Color(int(r * scalar), int(g * scalar), int(b * scalar), int(a * scalar));
+	}
 };
 
 #define COLOR_H
