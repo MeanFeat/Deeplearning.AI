@@ -1,7 +1,17 @@
 #include "d_NetTrainer.h"
 static cudaStream_t cuda_stream;
 cudaEvent_t start, stop;
-
+d_Matrix to_device(MatrixXf matrix) {
+	//transpose data only to Column Major
+	MatrixXf temp = matrix.transpose();
+	return d_Matrix(temp.data(), (int)matrix.rows(), (int)matrix.cols());
+}
+MatrixXf to_host(d_Matrix d_matrix) {
+	// return to Row Major order
+	MatrixXf out = MatrixXf(d_matrix.cols(), d_matrix.rows());
+	d_check(cudaMemcpy(out.data(), d_matrix.d_data(), d_matrix.memSize(), cudaMemcpyDeviceToHost));
+	return out.transpose();
+}
 d_NetTrainer::d_NetTrainer(){}
 d_NetTrainer::~d_NetTrainer(){}
 d_NetTrainParameters d_NetTrainer::GetTrainParams(){
