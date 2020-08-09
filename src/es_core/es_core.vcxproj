@@ -179,6 +179,9 @@
       <Project>{e3cf0cc2-0d7c-4052-b909-fd0a3d2d6d56}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\..\eigen\debug\msvc\eigen.natvis" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
