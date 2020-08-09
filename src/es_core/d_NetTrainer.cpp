@@ -91,9 +91,10 @@ void d_NetTrainer::ForwardTrain(){
 float d_NetTrainer::CalcCost(){
 	float *d_cost;
 	cudaMalloc((void**)&d_cost, sizeof(float));
-	d_calcCost(d_cost, &cache.d_dZ.back(), &trainParams.d_W, RegMultipier(), Coeff(), (float)trainParams.trainExamplesCount);
-	cudaMemcpyAsync(&cache.cost, d_cost, sizeof(float), cudaMemcpyDeviceToHost, cuda_stream);
-	cudaFree(d_cost);
+	d_calcCost(d_cost, &cache.d_dZ.back(),
+		&trainParams.d_W, RegMultipier(), Coeff(), (float)trainParams.trainExamplesCount); d_catchErr();
+	cudaMemcpyAsync(&cache.cost, d_cost, sizeof(float), cudaMemcpyDeviceToHost, cuda_stream); d_catchErr();
+	cudaFree(d_cost); d_catchErr();
 	return cache.cost;
 }
 void d_NetTrainer::BackwardPropagation(){
@@ -138,12 +139,8 @@ void d_NetTrainer::UpdateParametersADAM(){
 	}
 }
 void d_NetTrainer::UpdateSingleStep() {
-	d_profile(start, stop, &profiler.forwardTime, ForwardTrain());
-	d_catchErr();
-	d_profile(start, stop, &profiler.backpropTime, BackwardPropagation());
-	d_catchErr();
-	d_profile(start, stop, &profiler.updateTime, UpdateParametersADAM());
-	d_catchErr();
-	d_profile(start, stop, &profiler.calcCostTime, CalcCost());
-	d_catchErr();
+	d_profile(start, stop, &profiler.forwardTime, ForwardTrain()); d_catchErr();
+	d_profile(start, stop, &profiler.backpropTime, BackwardPropagation()); d_catchErr();
+	d_profile(start, stop, &profiler.updateTime, UpdateParametersADAM()); d_catchErr();
+	d_profile(start, stop, &profiler.calcCostTime, CalcCost()); d_catchErr();
 }

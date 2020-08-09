@@ -160,16 +160,6 @@ void NetTrainer::UpdateParameters() {
 	}
 }
 
-void NetTrainer::UpdateParametersWithMomentum() {
-	float learnRate = ( trainParams.learningRate*trainParams.learningMod );
-	for(int i = 0; i < (int)trainParams.dW.size(); ++i) {
-		momentum.dW[i] = trainParams.dW[i] + momentum.dW[i].normalized() * cache.cost * 0.025f;
-		momentum.db[i] = trainParams.db[i] + momentum.db[i].normalized() * cache.cost * 0.025f;
-		network->GetParams().W[i] -= learnRate * momentum.dW[i];
-		network->GetParams().b[i] -= learnRate * momentum.db[i];
-	}
-}
-
 void NetTrainer::UpdateParametersADAM() {
 	float learnRate = ( trainParams.learningRate*trainParams.learningMod );
 	for( int i = 0; i < (int)trainParams.dW.size(); ++i ) {
