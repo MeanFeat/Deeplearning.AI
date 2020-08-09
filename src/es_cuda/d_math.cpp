@@ -94,6 +94,17 @@ void d_mult_rhsT(d_Matrix* dst, d_Matrix* srcA, d_Matrix* srcB) {
 		(dst->d_data(), srcA->d_data(), srcB->d_data(), m, n, k);
 	d_catchErr();
 }
+__global__ void sum_Naive_Kernel(float *dst, const float *src, int len) {
+	int tid = threadIdx.x;
+	if (tid == 0) {
+		float sum = 0.f;
+		for (int i = 0; i < len; i++) {
+			sum += src[i];
+		}
+		__syncthreads();
+		dst[0] = sum;
+	}
+}
 __global__ void sum_Kernel(float *dst, float *src, int len) {
 	int tid = threadIdx.x;
 	int step = 2;
@@ -113,36 +124,45 @@ __global__ void sum_Kernel(float *dst, float *src, int len) {
 		dst[0] = src[0];
 	}
 }
+void d_sum(float *dst, d_Matrix* src) {
+	int m = src->size();
+	sum_Kernel << < 1, m / 2 >> > (dst, src->d_data(), m);
+	d_catchErr();
+}
 __global__ void sumMatrix_Kernel(float *dst, float *src, int m, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
-	int len = m * k;
-	int step = 2;
-	int get = 1;
-	int tid = col + row * k;
+	unsigned int len = m * k;
+	unsigned int step = 2;
+	unsigned int get = 1;
+	unsigned int tid = col + row * k;
 	if (col < k && row < m) {
 		while (get < len) {
 			if (tid * step + get < len) {
-				src[tid*step] += src[tid*step + get];
+				src[tid*step] += src[tid * step + get];
+				src[tid * step + get] = 0.f;
 				__syncthreads();
 			}
 			step *= 2;
 			get *= 2;
 			__syncthreads();
 		}
-		if (tid == 0) {
-			if (len % 2 > 0) {
-				src[0] += src[len];
-			}
-			dst[0] = src[0];
+	}
+	if (tid == 0) {
+		if (len % 2 > 0) {
+			src[0] += src[len];
 		}
+		dst[0] = src[0];
 	}
 }
-void d_sum(float *dst, d_Matrix* src) {
-	int m = src->size();
-	d_Matrix sums = *src;
-	sum_Kernel << < 1, m / 2 >> > (dst, src->d_data(), m);
-	sums.free();
+void d_sumMatrix(float* dst, d_Matrix *src){
+	d_sumMatrix(dst, src->d_data(), src->rows(), src->cols());
+}
+void d_sumMatrix(float* dst, float* src, int m, int k) {
+	int len = m * k;
+	//sumMatrix_Kernel << <dimGrid(m, k), dimBlock() >> > (dst, src->d_data(), m, k);
+	sum_Naive_Kernel << <1, 1 >> > (dst, src, len);
+	d_catchErr();
 }
 __global__ void forwardLayer_Kernel(float *dst, const float *d_W, const float *d_last, const float * d_bias, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -457,7 +477,7 @@ void d_calcCost(float *dst, d_Matrix* d_modelErr, vector<d_Matrix>* d_modelWeigh
 	int s = d_modelErr->size();
 	cudaMalloc((void**)&d_diff, d_modelErr->memSize());
 	square_Kernel << <dimGrid(m, k), dimBlock() >> > (d_diff, d_modelErr->d_data(), m, k); d_catchErr();
-	sumMatrix_Kernel << <dimGrid(m, k), dimBlock() >> > (dst, d_diff, m, k); d_catchErr();
+	d_sumMatrix(dst, d_diff, m,k); d_catchErr();
 	mult_elem_Kernel << < 1, 1 >> > (dst, coeff, m, k); d_catchErr();
 	//return;
 	// Add Regularization
@@ -472,7 +492,7 @@ void d_calcCost(float *dst, d_Matrix* d_modelErr, vector<d_Matrix>* d_modelWeigh
 		d_check(cudaMalloc((void**)&d_sqrSum, sizeof(float)));
 		d_check(cudaMalloc((void**)&d_squared, d_modelWeights->at(i).memSize()));
 		square_Kernel << < dimGrid(m, k), dimBlock() >> > (d_squared, d_modelWeights->at(i).d_data(), m, k); d_catchErr();
-		sumMatrix_Kernel << <dimGrid(m, k), dimBlock() >> > (d_sqrSum, d_squared, m, k); d_catchErr();
+		d_sumMatrix(d_sqrSum, d_squared, m, k);
 		add_Kernel << <1, 1 >> > (d_sqrSumTotal, d_sqrSumTotal, d_sqrSum); d_catchErr();
 		d_check(cudaFree(d_sqrSum));
 		d_check(cudaFree(d_squared));

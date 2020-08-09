@@ -11,5 +11,9 @@ d_Matrix::d_Matrix(float *host_data, int rows, int cols){
 	d_check(cudaMemcpy(device_data, host_data, memSize(), cudaMemcpyHostToDevice));
 }
 d_Matrix::~d_Matrix(){
-	//cudaFree(device_data);
+	/*cudaPointerAttributes attr = {};
+	cudaPointerGetAttributes(&attr, device_data);
+	if (attr.devicePointer != NULL) {
+		d_check(cudaFree(device_data));
+	}*/
 }

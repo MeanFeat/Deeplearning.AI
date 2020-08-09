@@ -13,6 +13,8 @@ void d_mult(d_Matrix * dst, d_Matrix * srcA, d_Matrix * srcB);
 void d_mult_lhsT(d_Matrix * dst, d_Matrix * srcA, d_Matrix * srcB);
 void d_mult_rhsT(d_Matrix * dst, d_Matrix * srcA, d_Matrix * srcB);
 void d_sum(float *dst, d_Matrix* src);
+void d_sumMatrix(float* dst, d_Matrix* src);
+void d_sumMatrix(float* dst, float* src, int m, int k);
 void d_square(float *dst, d_Matrix* src);
 void d_forwardLayer(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_last, d_Matrix *d_bias);
 void d_activate(d_Matrix *dst, Activation act);

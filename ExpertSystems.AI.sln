@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.1209
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LogReg_CataData", "src\LogReg_CataData\LogReg_CataData.vcxproj", "{63263450-A658-48C5-A621-BBAA28F7E15E}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NN_SpiralData", "src\NN_SpiralData\NN_SpiralData.vcxproj", "{E2361299-1B61-4877-B5AB-5468DAFBA3B5}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NN_PredictRadian", "src\NN_PredictRadian\NN_PredictRadian.vcxproj", "{C5D9FC81-43C2-4BDD-9330-A7FAB8F740A3}"
@@ -15,6 +13,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "es_cuda", "src\es_cuda\es_c
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NN_Gesture", "src\NN_Gesture\NN_Gesture.vcxproj", "{1AC93082-C8ED-4591-AF22-595355E4CA58}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "es_test", "src\es_test\es_test.vcxproj", "{857A9700-9367-4255-91E6-96923D770BD3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -23,13 +23,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{63263450-A658-48C5-A621-BBAA28F7E15E}.Debug|x64.ActiveCfg = Debug|Win32
-		{63263450-A658-48C5-A621-BBAA28F7E15E}.Debug|x86.ActiveCfg = Debug|Win32
-		{63263450-A658-48C5-A621-BBAA28F7E15E}.Debug|x86.Build.0 = Debug|Win32
-		{63263450-A658-48C5-A621-BBAA28F7E15E}.Release|x64.ActiveCfg = Release|Win32
-		{63263450-A658-48C5-A621-BBAA28F7E15E}.Release|x64.Build.0 = Release|Win32
-		{63263450-A658-48C5-A621-BBAA28F7E15E}.Release|x86.ActiveCfg = Release|Win32
-		{63263450-A658-48C5-A621-BBAA28F7E15E}.Release|x86.Build.0 = Release|Win32
 		{E2361299-1B61-4877-B5AB-5468DAFBA3B5}.Debug|x64.ActiveCfg = Debug|x64
 		{E2361299-1B61-4877-B5AB-5468DAFBA3B5}.Debug|x64.Build.0 = Debug|x64
 		{E2361299-1B61-4877-B5AB-5468DAFBA3B5}.Debug|x86.ActiveCfg = Debug|Win32
@@ -68,6 +61,14 @@ Global
 		{1AC93082-C8ED-4591-AF22-595355E4CA58}.Release|x64.Build.0 = Release|x64
 		{1AC93082-C8ED-4591-AF22-595355E4CA58}.Release|x86.ActiveCfg = Release|Win32
 		{1AC93082-C8ED-4591-AF22-595355E4CA58}.Release|x86.Build.0 = Release|Win32
+		{857A9700-9367-4255-91E6-96923D770BD3}.Debug|x64.ActiveCfg = Debug|x64
+		{857A9700-9367-4255-91E6-96923D770BD3}.Debug|x64.Build.0 = Debug|x64
+		{857A9700-9367-4255-91E6-96923D770BD3}.Debug|x86.ActiveCfg = Debug|Win32
+		{857A9700-9367-4255-91E6-96923D770BD3}.Debug|x86.Build.0 = Debug|Win32
+		{857A9700-9367-4255-91E6-96923D770BD3}.Release|x64.ActiveCfg = Release|x64
+		{857A9700-9367-4255-91E6-96923D770BD3}.Release|x64.Build.0 = Release|x64
+		{857A9700-9367-4255-91E6-96923D770BD3}.Release|x86.ActiveCfg = Release|Win32
+		{857A9700-9367-4255-91E6-96923D770BD3}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
