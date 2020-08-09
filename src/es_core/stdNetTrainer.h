@@ -28,47 +28,31 @@ public:
 	NetTrainer(Net *net, MatrixXf *data, MatrixXf *labels, float weightScale, float learnRate, float regTerm);
 	~NetTrainer();
 	
-	NetTrainParameters GetTrainParams();
-	NetCache GetCache();
+	NetTrainParameters &GetTrainParams();
+	NetCache &GetCache();
 	Net *network;
 	MatrixXf *trainData;
 	MatrixXf *trainLabels;
-
+	float coeff;
 	void AddLayer(int A, int B, float weightScale);
 	
 	MatrixXf ForwardTrain();
-	float CalcCost(const MatrixXf h, const MatrixXf Y);
+	float CalcCost(const MatrixXf *h, const MatrixXf *Y);
 	void BackwardPropagation();
+	void BackLayer(MatrixXf &dZ, int l, const MatrixXf *LowerA);
 	void UpdateParameters();
 	void UpdateParametersWithMomentum();
 	void UpdateParametersADAM();
 	void BuildDropoutMask();
 	void UpdateSingleStep();
-
-	inline void ModifyLearningRate(float m) {
-		trainParams.learningRate = max(0.001f, trainParams.learningRate + m);
-	}
-	inline void ModifyRegTerm(float m) {
-		trainParams.regTerm = max(FLT_EPSILON, trainParams.regTerm + m);
-	}
-
-	inline MatrixXf BackSigmoid(const MatrixXf dZ, int index) {
-		return (network->GetParams().W[index + 1].transpose() * dZ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - cache.A[index]);
-	}
-	inline MatrixXf BackTanh(const MatrixXf dZ, int index) {
-		MatrixXf A1Squared = cache.A[index].array().pow(2);
-		return (network->GetParams().W[index + 1].transpose() * dZ).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - (A1Squared));
-	}
-	inline MatrixXf BackReLU(const MatrixXf dZ, int index) {
-		return (network->GetParams().W[index + 1].transpose() * dZ).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.f; }));
-	}
-
-	inline MatrixXf BackLReLU(const MatrixXf dZ, int index) {
-		return (network->GetParams().W[index + 1].transpose() * dZ).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.01f; }));
-	}
-	inline MatrixXf BackSine(const MatrixXf dZ, int index) {
-		return ( network->GetParams().W[index + 1].transpose() * dZ ).cwiseProduct(MatrixXf(cache.A[index].array().cos()));
-	}
+	void ModifyLearningRate(float m);
+	void ModifyRegTerm(float m);
+	MatrixXf BackActivation(int l, const MatrixXf &dZ);
+	MatrixXf BackSigmoid(const MatrixXf &dZ, int index);
+	MatrixXf BackTanh(const MatrixXf &dZ, int index);
+	MatrixXf BackReLU(const MatrixXf &dZ, int index);
+	MatrixXf BackLReLU(const MatrixXf &dZ, int index);
+	MatrixXf BackSine(const MatrixXf &dZ, int index);
 
 protected:
 	NetCache cache;
