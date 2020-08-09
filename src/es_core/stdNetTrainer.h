@@ -41,8 +41,7 @@ public:
 	void BackwardPropagation();
 	void BackLayer(MatrixXf &dZ, int l, const MatrixXf *LowerA);
 	void UpdateParameters();
-	void UpdateParametersWithMomentum();
-	void UpdateSingleParamADAM(MatrixXf *w, MatrixXf *d, MatrixXf *m, MatrixXf *mS);
+	void UpdateSingleParamADAM(MatrixXf * w, MatrixXf * d, MatrixXf * m, MatrixXf * mS);
 	void UpdateParametersADAM();
 	void BuildDropoutMask();
 	void UpdateSingleStep();

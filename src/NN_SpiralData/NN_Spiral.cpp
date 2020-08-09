@@ -115,10 +115,11 @@ void DrawOutputToScreen(MatrixXf screenCoords){
 			case Sigmoid:
 				percent = (percent - 0.5f) * 2.f;
 				break;
+			case Linear:
 			case Tanh:
-				break;
 			case ReLU:
-				break;
+			case LReLU:
+			case Sine:
 			default:
 				break;
 		}
@@ -183,13 +184,13 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
 									  WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 									  WINWIDTH * 4, WINHEIGHT * 4, 0, 0, Instance, 0);
-		neural = Net((int)X.rows(), {8,8}, (int)Y.rows(), {
+		neural = Net((int)X.rows(), { 8,8 }, (int)Y.rows(), {
 			Tanh,
 			Tanh,
 			Tanh});
 		d_neural = Net(neural);
 		//h_trainer = NetTrainer(&neural, &X, &Y, 0.15f, 2.f, 20.f);
-		d_trainer = d_NetTrainer(&d_neural, &X, &Y, 0.15f, 2.f, 20.f);
+		d_trainer = d_NetTrainer(&d_neural, &X, &Y, 0.5f, 2.f, 20.f);
 		time(&startTime);
 		HDC deviceContext = GetDC(window);
 		vector<float> h_history;
@@ -199,8 +200,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		cudaStreamCreate(&stream);
 		d_trainer.BuildVisualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height);
 		//Main Loop
-		while(globalRunning){
-			for(int epoch = 0; epoch < 1; ++epoch){
+		while(steps<5000){
+			for(int epoch = 0; epoch < 10; ++epoch){
 				Win32ProcessPendingMessages();
 				if(!globalRunning){
 					break;
