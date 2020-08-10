@@ -7,12 +7,26 @@
 using namespace std;
 #define BLOCK_SIZE 16
 #define LRELU_LEAK 0.01f
+inline dim3 dimGrid(int m, int k) {
+	return dim3((k + BLOCK_SIZE - 1) / BLOCK_SIZE, (m + BLOCK_SIZE - 1) / BLOCK_SIZE);
+}
+inline dim3 dimBlock() {
+	return dim3(BLOCK_SIZE, BLOCK_SIZE);
+}
+
+/* dst = srcA (+) srcB */
 void d_add(d_Matrix *dst, d_Matrix *srcA, d_Matrix *srcB);
+/* dst = srcA (-) srcB */
 void d_subtract(d_Matrix *dst, d_Matrix *srcA, d_Matrix *srcB);
+/* dst = src.T */
 void d_transpose(d_Matrix *dst, d_Matrix *src);
+/* dst = srcA * srcB */
 void d_mult(d_Matrix * dst, d_Matrix * srcA, d_Matrix * srcB);
+/* dst = srcA.T * srcB */
 void d_mult_lhsT(d_Matrix * dst, d_Matrix * srcA, d_Matrix * srcB);
+/* dst = srcA * srcB.T */
 void d_mult_rhsT(d_Matrix * dst, d_Matrix * srcA, d_Matrix * srcB);
+/* dst = src.sum() */
 void d_sum(float *dst, d_Matrix* src);
 void d_sumMatrix(float* dst, d_Matrix* src);
 void d_sumMatrix(float* dst, float* src, int m, int k);

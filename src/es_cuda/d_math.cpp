@@ -1,12 +1,6 @@
 #include "d_math.h"
 #include <stdio.h>
-dim3 dimGrid(int m, int k) {
-	return dim3((k + BLOCK_SIZE - 1) / BLOCK_SIZE, (m + BLOCK_SIZE - 1) / BLOCK_SIZE);
-}
-dim3 dimBlock() {
-	return dim3(BLOCK_SIZE, BLOCK_SIZE);
-}
-#define KERNEL3D << <dimGrid(m, k), dimBlock() >> >
+
 __global__ void add_Kernel(float *c, const float *a, const float *b) {
 	int i = threadIdx.x;
 	c[i] = a[i] + b[i];
@@ -39,7 +33,7 @@ __global__ void transpose_Kernel(float *dst, const float *src, int m, int k) {
 		}
 		__syncthreads();
 	}
-}
+} /* dst = src.T */
 void d_transpose(d_Matrix *dst, d_Matrix *src) {
 	int m = src->rows();
 	int k = src->cols();
@@ -64,7 +58,7 @@ __global__ void mult_Kernel(float *dst, const float *srcA, const float *srcB, co
 		}
 		dst[row * k + col] = sum;
 	}
-}
+} /* dst = srcA * srcB */
 void d_mult(d_Matrix* dst, d_Matrix* srcA, d_Matrix* srcB) {
 	int m = srcA->rows();
 	int n = srcA->cols();

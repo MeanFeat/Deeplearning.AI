@@ -286,7 +286,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Tanh,
 			Tanh,
 			Sigmoid});
-		trainer = d_NetTrainer(&neural, &readDeltas, &readLabels, 0.5f, 0.125f, 0.0001f);
+		trainer = d_NetTrainer(&neural, &readDeltas, &readLabels, 0.5f, 1.25f, 0.0001f);
 		vector<float> history;
 		float h = 0.f;
 		int steps = 0;
@@ -303,8 +303,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 					verifyLabel = &readLabels(0, steps);
 					if( !skipStep ) {// && readLabels(0, steps) == 0.f){// && readLabels(1, steps) == 0.f ) {
 						for( int i = 0; i < readSamples.rows(); ) {
-							float valX = *( readSamples.data() + ( steps * readSamples.rows() + i++ ) );
-							float valY = *( readSamples.data() + ( steps * readSamples.rows() + i++ ) );
+							float valX = *(readSamples.data() + (steps * readSamples.rows() + i++));
+							float valY = *(readSamples.data() + (steps * readSamples.rows() + i++));
 							DrawFilledCircle(backBuffer, int(valX), WINHEIGHT - int(valY), 10.f, Color(i * 10, 200, 0, 0));
 						}
 					} else {
