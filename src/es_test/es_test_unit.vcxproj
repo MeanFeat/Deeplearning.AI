@@ -78,6 +78,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\es_test\;D:\Gamedev\CUDA\common\inc;..\..\..\eigen;..\es_core;..\es_cuda;..\common\;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\include;</IncludePath>
+    <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -88,6 +89,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);..\es_test\;D:\Gamedev\CUDA\common\inc;..\..\..\eigen;..\es_core;..\es_cuda;..\common\;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\include;</IncludePath>
+    <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -184,14 +186,8 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\es_core\es_core.vcxproj">
-      <Project>{389d51b1-0826-48ba-93cc-bdb12eea1357}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\es_cuda\es_cuda.vcxproj">
-      <Project>{e3cf0cc2-0d7c-4052-b909-fd0a3d2d6d56}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\es_test\es_test.vcxproj">
-      <Project>{857a9700-9367-4255-91e6-96923d770bd3}</Project>
+    <ProjectReference Include="es_test_lib.vcxproj">
+      <Project>{b6b8e69a-a601-40ab-9773-21a03bd93f62}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

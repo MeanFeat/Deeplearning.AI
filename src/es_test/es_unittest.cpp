@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "CppUnitTest.h"
-#include "es_test.cpp"
+#include "es_test.h"
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 #define NAME_RUN(n,arg) TEST_METHOD(n) { Assert::AreEqual(arg,true);}
 

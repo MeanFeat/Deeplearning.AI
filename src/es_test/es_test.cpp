@@ -1,129 +1,16 @@
 #include "es_test.h"
-#include <conio.h>
 #include <iostream>
-#include <fstream>
 
-static vector<string> headers;
-static vector<string> prefixes;
-static vector<string> functionNames;
-static vector<vector<vector<int>>> arguments;
-
-void ReadTestList(const string fName) {
-	std::string line;
-	ifstream file(fName);
-	ParseState state = ParseState::none;
-	vector<int> parseArgs;
-	vector<vector<int>> currentFuncArgs;
-	while (file.good()) {
-		std::getline(file, line);
-		std::stringstream iss(line);
-		std::string val, lastVal;
-		while (iss.good()) {
-			std::getline(iss, val, ':');
-			if (state == ParseState::none) {
-				if (strFind(lastVal, "header")) {
-					state = ParseState::header;
-					headers.push_back(val);
-				} else if (strFind(lastVal, "prefix")) {
-					state = ParseState::prefix;
-					prefixes.push_back(val);
-				} else if (strFind(lastVal, "functionName")) {
-					state = ParseState::functionName;
-					functionNames.push_back(val);
-				} 
-				if (strFind(lastVal, "arguments")) {
-					state = ParseState::args;
-				}
-				lastVal = val;
-			}
-			switch (state) {
-			case ParseState::none:
-			case ParseState::header:
-			case ParseState::prefix:
-			case ParseState::functionName: //fall through
-				state = ParseState::none;
-				break;
-			case ParseState::args: {
-				if (strFind(val, "}")) {
-					state = ParseState::none;
-					arguments.push_back(currentFuncArgs);
-					currentFuncArgs.clear();
-				} else{
-					if (!strFind(val, "{")) {
-						size_t pos = 0;
-						std::string token;
-						do {
-							token = val.substr(0, pos);
-							val.erase(0, pos + 1);
-							int temp;
-							strCast(&temp, val);
-							parseArgs.push_back(temp);
-						} while ((pos = val.find(',')) != std::string::npos);
-						currentFuncArgs.push_back(parseArgs);
-						parseArgs.clear();
-					}
-				}
-			} break;
-			default:
-				state = ParseState::none;
-				break;
-			}
-		}
-	}
-	file.close();
+d_Matrix to_device(MatrixXf matrix) {
+	//transpose data only to Column Major
+	MatrixXf temp = matrix.transpose();
+	return d_Matrix(temp.data(), (int)matrix.rows(), (int)matrix.cols());
 }
-void CreateGeneratedUnit( const string fileName ){
-	ofstream file(fileName.c_str());
-	file.clear();
-	file << "//GENERATED FILE" << endl;
-	for( int fn = 0; fn < functionNames.size(); fn++){
-		string className = headers[fn];
-		className.erase(remove_if(className.begin(), className.end(), 
-			[](unsigned char x) {return x == '\"'; }), className.end());
-		file << "TEST_CLASS(" << className << ") { public:" << endl;
-		for (int arg = 0; arg < arguments[fn].size(); arg++){
-			string args;
-			file << "NAME_RUN(" << prefixes[fn] << "_";
-			for (int a = 0; a < arguments[fn][arg].size(); a++) {
-				file << arguments[fn][arg][a];
-				if (a < arguments[fn][arg].size()-1) {
-					file<<"x";
-				} else {
-					file << ",";
-				}
-			}
-			file << functionNames[fn] << "(";
-			for (int a = 0; a < arguments[fn][arg].size(); a++) {
-				file << arguments[fn][arg][a];
-				if (a < arguments[fn][arg].size() - 1) {
-					file << ",";
-				}
-			}
-			file << "));" << endl;
-		}
-		file << "};" << endl;
-	}
-	file.close();
-}
-void CreateGeneratedCpp( const string fileName ){
-	ofstream file(fileName.c_str());
-	file.clear();
-	file << "//GENERATED FILE" << endl;
-	for( int fn = 0; fn < functionNames.size(); fn++){
-		file << "PrintHeader(" << headers[fn] << ");" << endl;
-		for (int arg = 0; arg < arguments[fn].size(); arg++){
-			file << functionNames[fn] << "(";
-			for (int a = 0; a < arguments[fn][arg].size(); a++) {
-				file << arguments[fn][arg][a];
-				if (a < arguments[fn][arg].size()-1) {
-					file << ", ";
-				} else {
-					file << ");" << endl;
-				}
-			}
-		}
-	}
-	file.close();
+MatrixXf to_host(d_Matrix d_matrix) {
+	// return to Row Major order
+	MatrixXf out = MatrixXf(d_matrix.cols(), d_matrix.rows());
+	d_check(cudaMemcpy(out.data(), d_matrix.d_data(), d_matrix.memSize(), cudaMemcpyDeviceToHost));
+	return out.transpose();
 }
 void PrintHeader(string testType) {
 	if (verbosity > 0) {
@@ -216,42 +103,4 @@ bool testTranspose(int m, int k) {
 	MatrixXf testTranspose = to_host(d_testTranspose);
 	float threshold = float(m + k) * thresholdMultiplier;
 	return GetOutcome(controlTranspose.sum(), testTranspose.sum(), threshold);
-}
-
-void RunAllTests(){
-	initParallel();
-	setNbThreads(4);
-	verbosity = 2;
-#ifndef TEST_LISTS
-#define TEST_LISTS
-#include "test_cpp.generated"
-#endif
-}
-int main() {
-	cout << "(T)est, (B)uild, or e(X)it: ";
-	HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
-	DWORD events;
-	INPUT_RECORD buffer;
-	while (1) {
-		PeekConsoleInput(handle, &buffer, 1, &events);
-		if (events > 0){
-			ReadConsoleInput(handle, &buffer, 1, &events);
-			WORD in = buffer.Event.KeyEvent.wVirtualKeyCode;
-			if (in == 66) { //'b'
-				cout << "Building File" << endl;
-				ReadTestList("tests.list");
-				CreateGeneratedCpp("test_cpp.generated");
-				CreateGeneratedUnit("test_unit.generated");
-				break;
-			} else if (in == 84) { //'t'
-				cout << "Running All Tests" << endl;
-				RunAllTests();
-				break;
-			}
-			else if (in == 88) { //'x'
-				break;
-			}
-		}
-	}
-	return 0;
 }
