@@ -26,9 +26,9 @@ void d_subtract(d_Matrix *dst, d_Matrix *srcA, d_Matrix *srcB) {
 __global__ void transpose_Kernel(float *dst, const float *src, int m, int k) {
 	int tid = threadIdx.x;
 	if (tid == 0) {
-		for (int i = 0; i < m; i++) {
-			for (int j = 0; j < k; ++j) {
-				dst[j * m + i] = src[j * m + i];
+		for (int i = 0; i < k; i++) {
+			for (int j = 0; j < m; ++j) {
+				dst[j * k+ i] = src[j * k+ i];
 			}
 		}
 		__syncthreads();
