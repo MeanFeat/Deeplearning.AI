@@ -5,25 +5,6 @@ static vector<string> prefixes;
 static vector<string> functionNames;
 static vector<vector<vector<int>>> arguments;
 
-void BuildTempTests(const string fSource, const string fDest, int lineNum){
-#undef TEST_TEMP_LISTS
-	std::string line;
-	ifstream source(fSource);
-	ofstream dest(fDest.c_str());
-	dest.clear();
-	int i = 0;
-	while (source.good()) {
-		std::getline(source, line);
-		if (i == lineNum) {
-			dest << line << endl;
-			break;
-		}
-		i++;
-	}
-	dest.close();
-	source.close();
-}
-
 void ReadTestList(const string fName) {
 	std::string line;
 	ifstream file(fName);
@@ -102,7 +83,8 @@ void CreateGeneratedUnit(const string fileName) {
 		file << "TEST_CLASS(" << className << ") { public:" << endl;
 		for (int arg = 0; arg < arguments[fn].size(); arg++) {
 			string args;
-			file << "NAME_RUN(" << prefixes[fn] << "_";
+			string spacer = arg <= 9 ? "0" : "";
+			file << "NAME_RUN(" << prefixes[fn] << spacer << arg <<"_";
 			for (int a = 0; a < arguments[fn][arg].size(); a++) {
 				file << arguments[fn][arg][a];
 				if (a < arguments[fn][arg].size() - 1) {
@@ -162,12 +144,7 @@ int main() {
 	HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
 	DWORD events;
 	INPUT_RECORD buffer;
-	bool pendingTest = false;
 	while (1) {
-		if (pendingTest){
-			pendingTest = false;
-			break;
-		}
 		PeekConsoleInput(handle, &buffer, 1, &events);
 		if (events > 0) {
 			ReadConsoleInput(handle, &buffer, 1, &events);
@@ -198,8 +175,7 @@ int main() {
 				cin >> inTest;
 				int temp;
 				strCast(&temp, inTest);
-				BuildTempTests(GENERATED_TESTS, GENERATED_TEMP_TESTS, temp);
-				pendingTest = true;
+				break;
 			}
 			else if (in == 88) { //'x'
 				break;

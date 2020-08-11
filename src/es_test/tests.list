@@ -46,9 +46,9 @@ header : "Transpose_Matrix"
 prefix : tnsp
 functionName : testTranspose
 arguments : {
-	1000, 1000000
 	10000, 10000
 	1111, 1131
+	222, 999
 	8, 2
 	5, 1
 	1, 5

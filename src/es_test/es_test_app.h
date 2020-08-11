@@ -6,7 +6,7 @@
 using namespace std;
 
 #define GENERATED_TESTS "test_cpp.generated"
-#define GENERATED_TEMP_TESTS "test_temp_cpp.generated"
+
 enum ParseState {
 	functionName,
 	header,

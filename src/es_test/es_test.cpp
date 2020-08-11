@@ -1,6 +1,5 @@
 #include "es_test.h"
 #include <iostream>
-
 d_Matrix to_device(MatrixXf matrix) {
 	//transpose data only to Column Major
 	MatrixXf temp = matrix.transpose();
@@ -24,28 +23,36 @@ void PrintHeader(string testType) {
 		cout << border << endl;
 	}
 }
-void PrintOutcome(float cSum, float tSum, float diff, float thresh, bool passed) {
+string GetOutcomeString(float cSum, float tSum, float diff, float thresh, bool passed) {
+	string out;
+	if (passed)	{
+		out += "PASS\n";
+	} else {
+		out += "Fail:\n";
+	}
 	if (verbosity > 1) {
-		cout << "Eigen: " << cSum << " Device: " << tSum << endl;
-		cout << "Error " << diff << " : " << thresh << endl;
+		out += "Eigen: " + to_string(cSum) + " Device: " + to_string(tSum) + "\n";
+		out += "Error " + to_string(diff) + " : " + to_string(thresh) + "\n";
 	}
 	if (verbosity > 0) {
-		cout << "======================================================>> ";
+		out += "======================================================>> ";
 		if (passed) {
-			cout << "PASS!" << endl;
+			out += "PASS!\n";
 		}
 		else {
-			cout << "fail... " << diff - thresh << endl;
+			out += "fail... " + to_string(diff - thresh) + "\n";
 		}
 	}
+	return out;
 }
-bool GetOutcome(float cSum, float tSum, float thresh) {
+string GetOutcome(float cSum, float tSum, float thresh) {
 	float diff = abs(cSum - tSum);
 	bool passed = diff < thresh;
-	PrintOutcome(cSum, tSum, diff, thresh, passed);
-	return passed;
+	string out = GetOutcomeString(cSum, tSum, diff, thresh, passed);
+	cout << out;
+	return out;
 }
-bool testMultipy(int m, int n, int k) {
+string testMultipy(int m, int n, int k) {
 	cout << "Testing Multiply " << m << "," << n << " * " << n << "," << k << endl;
 	MatrixXf A = MatrixXf::Random(m, n);
 	MatrixXf B = MatrixXf::Random(n, k);
@@ -56,7 +63,7 @@ bool testMultipy(int m, int n, int k) {
 	float threshold = float((m + k) * n) * thresholdMultiplier;
 	return GetOutcome((A*B).sum(), MatrixXf(to_host(d_C)).sum(), threshold);
 }
-bool testTransposeRight(int m, int n, int k) {
+string testTransposeRight(int m, int n, int k) {
 	cout << "Testing Multiply (" << m << "," << n << ") * (" << n << "," << k << ").transpose()" << endl;
 	MatrixXf A = MatrixXf::Random(m, n);
 	MatrixXf B = MatrixXf::Random(k, n);
@@ -68,7 +75,7 @@ bool testTransposeRight(int m, int n, int k) {
 	float threshold = float((m + k) * n) * thresholdMultiplier;
 	return GetOutcome((A*B.transpose()).sum(), C.sum(), threshold);
 }
-bool testTransposeLeft(int m, int n, int k) {
+string testTransposeLeft(int m, int n, int k) {
 	cout << "Testing Multiply (" << m << "," << n << ").transpose() * (" << n << "," << k << ")" << endl;
 	MatrixXf A = MatrixXf::Random(n, m);
 	MatrixXf B = MatrixXf::Random(n, k);
@@ -80,7 +87,7 @@ bool testTransposeLeft(int m, int n, int k) {
 	float threshold = float((m + k) * n) * thresholdMultiplier;
 	return GetOutcome((A.transpose()*B).sum(), C.sum(), threshold);
 }
-bool testSum(int m, int k) {
+string testSum(int m, int k) {
 	cout << "Testing Sum " << m << "," << k << endl;
 	MatrixXf A = MatrixXf::Random(m, k);
 	d_Matrix d_A = to_device(A);
@@ -93,7 +100,7 @@ bool testSum(int m, int k) {
 	float threshold = float(m + k) * thresholdMultiplier;
 	return GetOutcome(A.sum(), testSum, m * k * thresholdMultiplier);
 }
-bool testTranspose(int m, int k) {
+string testTranspose(int m, int k) {
 	cout << "Testing Transpose " << m << "," << k << endl;
 	MatrixXf A = MatrixXf::Random(m, k);
 	d_Matrix d_A = to_device(A);
@@ -101,6 +108,6 @@ bool testTranspose(int m, int k) {
 	MatrixXf controlTranspose = A.transpose();
 	d_transpose(&d_testTranspose, &d_A);
 	MatrixXf testTranspose = to_host(d_testTranspose);
-	float threshold = float(m + k) * thresholdMultiplier;
+	float threshold = float(m * k) * thresholdMultiplier;
 	return GetOutcome(controlTranspose.sum(), testTranspose.sum(), threshold);
 }
