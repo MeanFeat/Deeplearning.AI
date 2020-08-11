@@ -1,29 +1,146 @@
+#include "es_test.h"
+#include <conio.h>
 #include <iostream>
-#include <Eigen/dense>
-#include "d_Matrix.h"
-#include "d_math.h"
-using namespace std;
-using namespace Eigen;
+#include <fstream>
 
-static int verbosity = 1;
-static const float thresholdMultiplier = (FLT_EPSILON * 0.4f);
+static vector<string> headers;
+static vector<string> prefixes;
+static vector<string> functionNames;
+static vector<vector<vector<int>>> arguments;
 
-d_Matrix to_device(MatrixXf matrix) {
-	//transpose data only to Column Major
-	MatrixXf temp = matrix.transpose();
-	return d_Matrix(temp.data(), (int)matrix.rows(), (int)matrix.cols());
+void ReadTestList(const string fName) {
+	std::string line;
+	ifstream file(fName);
+	ParseState state = ParseState::none;
+	vector<int> parseArgs;
+	vector<vector<int>> currentFuncArgs;
+	while (file.good()) {
+		std::getline(file, line);
+		std::stringstream iss(line);
+		std::string val, lastVal;
+		while (iss.good()) {
+			std::getline(iss, val, ':');
+			if (state == ParseState::none) {
+				if (strFind(lastVal, "header")) {
+					state = ParseState::header;
+					headers.push_back(val);
+				} else if (strFind(lastVal, "prefix")) {
+					state = ParseState::prefix;
+					prefixes.push_back(val);
+				} else if (strFind(lastVal, "functionName")) {
+					state = ParseState::functionName;
+					functionNames.push_back(val);
+				} 
+				if (strFind(lastVal, "arguments")) {
+					state = ParseState::args;
+				}
+				lastVal = val;
+			}
+			switch (state) {
+			case ParseState::none:
+			case ParseState::header:
+			case ParseState::prefix:
+			case ParseState::functionName: //fall through
+				state = ParseState::none;
+				break;
+			case ParseState::args: {
+				if (strFind(val, "}")) {
+					state = ParseState::none;
+					arguments.push_back(currentFuncArgs);
+					currentFuncArgs.clear();
+				} else{
+					if (!strFind(val, "{")) {
+						size_t pos = 0;
+						std::string token;
+						do {
+							token = val.substr(0, pos);
+							val.erase(0, pos + 1);
+							int temp;
+							strCast(&temp, val);
+							parseArgs.push_back(temp);
+						} while ((pos = val.find(',')) != std::string::npos);
+						currentFuncArgs.push_back(parseArgs);
+						parseArgs.clear();
+					}
+				}
+			} break;
+			default:
+				state = ParseState::none;
+				break;
+			}
+		}
+	}
+	file.close();
 }
-MatrixXf to_host(d_Matrix d_matrix) {
-	// return to Row Major order
-	MatrixXf out = MatrixXf(d_matrix.cols(), d_matrix.rows());
-	d_check(cudaMemcpy(out.data(), d_matrix.d_data(), d_matrix.memSize(), cudaMemcpyDeviceToHost));
-	return out.transpose();
+void CreateGeneratedUnit( const string fileName ){
+	ofstream file(fileName.c_str());
+	file.clear();
+	file << "//GENERATED FILE" << endl;
+	for( int fn = 0; fn < functionNames.size(); fn++){
+		string className = headers[fn];
+		className.erase(remove_if(className.begin(), className.end(), 
+			[](unsigned char x) {return x == '\"'; }), className.end());
+		file << "TEST_CLASS(" << className << ") { public:" << endl;
+		for (int arg = 0; arg < arguments[fn].size(); arg++){
+			string args;
+			file << "NAME_RUN(" << prefixes[fn] << "_";
+			for (int a = 0; a < arguments[fn][arg].size(); a++) {
+				file << arguments[fn][arg][a];
+				if (a < arguments[fn][arg].size()-1) {
+					file<<"x";
+				} else {
+					file << ",";
+				}
+			}
+			file << functionNames[fn] << "(";
+			for (int a = 0; a < arguments[fn][arg].size(); a++) {
+				file << arguments[fn][arg][a];
+				if (a < arguments[fn][arg].size() - 1) {
+					file << ",";
+				}
+			}
+			file << "));" << endl;
+		}
+		file << "};" << endl;
+	}
+	file.close();
 }
-static cudaStream_t cuda_stream;
-void PrintOutcome(float controlSum, float testSum, float diff, float threshold, bool passed) {
+void CreateGeneratedCpp( const string fileName ){
+	ofstream file(fileName.c_str());
+	file.clear();
+	file << "//GENERATED FILE" << endl;
+	for( int fn = 0; fn < functionNames.size(); fn++){
+		file << "PrintHeader(" << headers[fn] << ");" << endl;
+		for (int arg = 0; arg < arguments[fn].size(); arg++){
+			file << functionNames[fn] << "(";
+			for (int a = 0; a < arguments[fn][arg].size(); a++) {
+				file << arguments[fn][arg][a];
+				if (a < arguments[fn][arg].size()-1) {
+					file << ", ";
+				} else {
+					file << ");" << endl;
+				}
+			}
+		}
+	}
+	file.close();
+}
+void PrintHeader(string testType) {
+	if (verbosity > 0) {
+		int len = (int)strlen(testType.c_str());
+		string border = "============";
+		for (int i = 0; i < len; i++) {
+			border += "=";
+		}
+		cout << border << endl;
+		cout << "||Testing " << testType << "||" << endl;
+		cout << border << endl;
+	}
+}
+void PrintOutcome(float cSum, float tSum, float diff, float thresh, bool passed) {
 	if (verbosity > 1) {
-		cout << "Eigen: " << controlSum << " Device: " << testSum << endl;
-		cout << "Error " << diff << " : " << threshold << endl;
+		cout << "Eigen: " << cSum << " Device: " << tSum << endl;
+		cout << "Error " << diff << " : " << thresh << endl;
 	}
 	if (verbosity > 0) {
 		cout << "======================================================>> ";
@@ -31,18 +148,17 @@ void PrintOutcome(float controlSum, float testSum, float diff, float threshold, 
 			cout << "PASS!" << endl;
 		}
 		else {
-			cout << "fail... " << diff - threshold << endl;
+			cout << "fail... " << diff - thresh << endl;
 		}
 	}
 }
-bool GetOutcome(float controlSum, float testSum, float threshold) {
-	float diff = abs(controlSum - testSum);
-	bool passed = diff < threshold;
-	PrintOutcome(controlSum, testSum, diff, threshold, passed);
+bool GetOutcome(float cSum, float tSum, float thresh) {
+	float diff = abs(cSum - tSum);
+	bool passed = diff < thresh;
+	PrintOutcome(cSum, tSum, diff, thresh, passed);
 	return passed;
 }
 bool testMultipy(int m, int n, int k) {
-	float threshold = float((m + k) * n) * thresholdMultiplier;
 	cout << "Testing Multiply " << m << "," << n << " * " << n << "," << k << endl;
 	MatrixXf A = MatrixXf::Random(m, n);
 	MatrixXf B = MatrixXf::Random(n, k);
@@ -50,27 +166,11 @@ bool testMultipy(int m, int n, int k) {
 	d_Matrix d_B = to_device(B);
 	d_Matrix d_C = to_device(MatrixXf::Zero(m, k));
 	d_mult(&d_C, &d_A, &d_B);
-	MatrixXf C = MatrixXf(to_host(d_C));
-	float controlSum = (A*B).sum();
-	float testSum = C.sum();
-	float diff = abs(controlSum - testSum);
-	bool passed = diff < threshold;
-	PrintOutcome(controlSum, testSum, diff, threshold, passed);
-	return passed;
-}
-void TestMultiplies() {
-	cout << "======================" << endl;
-	cout << "||Testing Multiplies||" << endl;
-	cout << "======================" << endl;
-	//testMultipy(1234, 98765, 654);
-	//testMultipy(4321, 9595, 9462);
-	testMultipy(9999, 85, 11111);
-	testMultipy(100, 100, 100);
-	testMultipy(8, 6002, 2);
+	float threshold = float((m + k) * n) * thresholdMultiplier;
+	return GetOutcome((A*B).sum(), MatrixXf(to_host(d_C)).sum(), threshold);
 }
 bool testTransposeRight(int m, int n, int k) {
-	float threshold = float((m + k) * n) * thresholdMultiplier;
-	cout << "Testing Multiply (" << m << "," << n << ") * (" << n << "," << k << ").transpose()" <<endl;
+	cout << "Testing Multiply (" << m << "," << n << ") * (" << n << "," << k << ").transpose()" << endl;
 	MatrixXf A = MatrixXf::Random(m, n);
 	MatrixXf B = MatrixXf::Random(k, n);
 	d_Matrix d_A = to_device(A);
@@ -78,22 +178,10 @@ bool testTransposeRight(int m, int n, int k) {
 	d_Matrix d_C = to_device(MatrixXf::Zero(m, k));
 	d_mult_rhsT(&d_C, &d_A, &d_B);
 	MatrixXf C = MatrixXf(to_host(d_C));
-	float controlSum = (A*B.transpose()).sum();
-	float testSum = C.sum();
-	return GetOutcome(controlSum, testSum, threshold);
-}
-void TestMultsTransposeRight() {
-	cout << "====================================" << endl;
-	cout << "||Testing Multiply Transpose Right||" << endl;
-	cout << "====================================" << endl;
-	testTransposeRight(1234, 98765, 654);
-	testTransposeRight(4321, 9595, 9462);
-	testTransposeRight(9999, 85, 11111);
-	testTransposeRight(100, 100, 100);
-	testTransposeRight(8, 6002, 2);
+	float threshold = float((m + k) * n) * thresholdMultiplier;
+	return GetOutcome((A*B.transpose()).sum(), C.sum(), threshold);
 }
 bool testTransposeLeft(int m, int n, int k) {
-	float threshold = float((m + k) * n) * thresholdMultiplier;
 	cout << "Testing Multiply (" << m << "," << n << ").transpose() * (" << n << "," << k << ")" << endl;
 	MatrixXf A = MatrixXf::Random(n, m);
 	MatrixXf B = MatrixXf::Random(n, k);
@@ -102,50 +190,23 @@ bool testTransposeLeft(int m, int n, int k) {
 	d_Matrix d_C = to_device(MatrixXf::Zero(m, k));
 	d_mult_lhsT(&d_C, &d_A, &d_B);
 	MatrixXf C = MatrixXf(to_host(d_C));
-	float controlSum = (A.transpose()*B).sum();
-	float testSum = C.sum();
-	float diff = abs(controlSum - testSum);
-	bool passed = diff < threshold;
-	PrintOutcome(controlSum, testSum, diff, threshold, passed);
-	return passed;
+	float threshold = float((m + k) * n) * thresholdMultiplier;
+	return GetOutcome((A.transpose()*B).sum(), C.sum(), threshold);
 }
-void TestMultsTransposeLeft() {
-	cout << "====================================" << endl;
-	cout << "||Testing Multiply Transpose Left||" << endl;
-	cout << "====================================" << endl;
-	testTransposeLeft(1234, 98765, 654);
-	testTransposeLeft(4321, 9595, 9462);
-	testTransposeLeft(9999, 85, 11111);
-	testTransposeLeft(100, 100, 100);
-	testTransposeLeft(8, 6002, 2);
-}
-bool TestSum(int m, int k) {
+bool testSum(int m, int k) {
 	cout << "Testing Sum " << m << "," << k << endl;
 	MatrixXf A = MatrixXf::Random(m, k);
 	d_Matrix d_A = to_device(A);
 	float* d_testSum;
 	float testSum;
-	float controlSum = A.sum();
 	cudaMalloc((void**)&d_testSum, sizeof(float));
 	d_sumMatrix(d_testSum, &d_A);
 	cudaMemcpy(&testSum, d_testSum, sizeof(float), cudaMemcpyDeviceToHost);
 	cudaFree(d_testSum);
-	float diff = abs(controlSum - testSum);
-	float threshold = (m * k) * thresholdMultiplier;
-	bool passed = diff < threshold;
-	PrintOutcome(controlSum, testSum, diff, threshold, passed);
-	return passed;
+	float threshold = float(m + k) * thresholdMultiplier;
+	return GetOutcome(A.sum(), testSum, m * k * thresholdMultiplier);
 }
-void TestSums() {
-	cout << "================" << endl;
-	cout << "||Testing Sums||" << endl;
-	cout << "================" << endl;
-	TestSum(1000, 1000000);
-	TestSum(10000, 10000);
-	TestSum(1111, 1131);
-	TestSum(5000, 1);
-}
-bool TestTranspose(int m, int k) {
+bool testTranspose(int m, int k) {
 	cout << "Testing Transpose " << m << "," << k << endl;
 	MatrixXf A = MatrixXf::Random(m, k);
 	d_Matrix d_A = to_device(A);
@@ -153,28 +214,44 @@ bool TestTranspose(int m, int k) {
 	MatrixXf controlTranspose = A.transpose();
 	d_transpose(&d_testTranspose, &d_A);
 	MatrixXf testTranspose = to_host(d_testTranspose);
-	float diff = abs(controlTranspose.sum() - testTranspose.sum());
-	float threshold = (m * k) * thresholdMultiplier;
-	bool passed = controlTranspose == testTranspose;
-	PrintOutcome(controlTranspose.sum(), testTranspose.sum(), diff, threshold, passed);
-	return passed;
+	float threshold = float(m + k) * thresholdMultiplier;
+	return GetOutcome(controlTranspose.sum(), testTranspose.sum(), threshold);
 }
-void TestTransposes() {
-	cout << "======================" << endl;
-	cout << "||Testing Transposes||" << endl;
-	cout << "======================" << endl;
-	TestTranspose(1000, 1000000);
-	TestTranspose(10000, 10000);
-	TestTranspose(1111, 1131);
-	TestTranspose(5, 1);
-}
-int main() {
+
+void RunAllTests(){
 	initParallel();
 	setNbThreads(4);
 	verbosity = 2;
-	//TestMultiplies();
-	//TestMultsTransposeRight();
-	//TestMultsTransposeLeft();
-	//TestSums();
-	TestTransposes();
+#ifndef TEST_LISTS
+#define TEST_LISTS
+#include "test_cpp.generated"
+#endif
+}
+int main() {
+	cout << "(T)est, (B)uild, or e(X)it: ";
+	HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
+	DWORD events;
+	INPUT_RECORD buffer;
+	while (1) {
+		PeekConsoleInput(handle, &buffer, 1, &events);
+		if (events > 0){
+			ReadConsoleInput(handle, &buffer, 1, &events);
+			WORD in = buffer.Event.KeyEvent.wVirtualKeyCode;
+			if (in == 66) { //'b'
+				cout << "Building File" << endl;
+				ReadTestList("tests.list");
+				CreateGeneratedCpp("test_cpp.generated");
+				CreateGeneratedUnit("test_unit.generated");
+				break;
+			} else if (in == 84) { //'t'
+				cout << "Running All Tests" << endl;
+				RunAllTests();
+				break;
+			}
+			else if (in == 88) { //'x'
+				break;
+			}
+		}
+	}
+	return 0;
 }
