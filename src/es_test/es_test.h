@@ -11,7 +11,7 @@
 using namespace std;
 using namespace Eigen;
 
-static int verbosity = 2;
+static int verbosity = 1;
 static const float thresholdMultiplier = (FLT_EPSILON) * 2.f;
 
 d_Matrix to_device(MatrixXf matrix);

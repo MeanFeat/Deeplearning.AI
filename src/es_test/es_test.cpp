@@ -31,11 +31,11 @@ string GetOutcomeString(float cSum, float tSum, float diff, float thresh, bool p
 	} else {
 		out += "Fail:\n"; // Unit tests check for this
 	}
-	if (verbosity > 1) {
+	if (verbosity >= 2) {
 		out += "Eigen: " + to_string(cSum) + " Device: " + to_string(tSum) + "\n";
 		out += "Error " + to_string(diff) + " : " + to_string(thresh) + "\n";
 	}
-	if (verbosity > 0) {
+	if (verbosity >= 1) {
 		out += "======================================================>> ";
 		if (passed) {
 			out += "PASS!\n";
