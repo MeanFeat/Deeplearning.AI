@@ -5,7 +5,6 @@
 #include <iostream>
 using namespace std;
 
-#define GENERATED_TESTS "test_cpp.generated"
 
 enum ParseState {
 	functionName,

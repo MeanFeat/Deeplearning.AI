@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <None Include="testgen_create.bat" />
+    <None Include="testgen_generate.bat" />
     <None Include="tests.list" />
   </ItemGroup>
   <ItemGroup>
@@ -93,12 +95,14 @@
     <IncludePath>D:\Gamedev\CUDA\common\inc;..\..\..\eigen;..\es_core;..\es_cuda;..\common;$(IncludePath);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\include</IncludePath>
     <LibraryPath>..\..\x64\Release\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ReferencePath>$(ReferencePath)</ReferencePath>
     <IncludePath>D:\Gamedev\CUDA\common\inc;..\..\..\eigen;..\es_core;..\es_cuda;..\common;$(IncludePath);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\include</IncludePath>
     <LibraryPath>..\..\x64\Release\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -120,8 +124,11 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PreBuildEvent>
-      <Command>$(ProjectDir)\createGenerate.bat</Command>
+      <Command>"$(ProjectDir)\testgen_create.bat"</Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>$(ProjectDir)\testgen_generate.bat</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -166,8 +173,11 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PreBuildEvent>
-      <Command>$(ProjectDir)\createGenerate.bat</Command>
+      <Command>"$(ProjectDir)\testgen_create.bat"</Command>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>$(ProjectDir)\testgen_generate.bat</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

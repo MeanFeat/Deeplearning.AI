@@ -17,7 +17,7 @@ void ProcessMessage(string err) {
 namespace esunittest {
 #ifndef UNITTEST_LISTS
 #define UNITTEST_LISTS
-	#include "test_unit.generated"
+	#include GENERATED_UNIT_TESTS
 #endif
 }
 

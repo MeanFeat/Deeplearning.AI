@@ -139,7 +139,22 @@ void RunAllTests() {
 #endif
 }
 
-int main() {
+int main(int argc, char** argv) {
+	if (argc > 1){
+		for (int i = 0; i <= argc; ++i) {
+			if (strcmp(argv[i], "-b") == 0) {
+				if ( i + 3 > argc){
+					cout << "-b flag takes 3 args: .list file, cpp.generated, unit.generated" << endl;
+					return 0;
+				}
+				cout << "Building File" << endl;
+				ReadTestList(argv[i+1]);
+				CreateGeneratedCpp(argv[i + 2]);
+				CreateGeneratedUnit(argv[i + 3]);
+			}
+		}
+		return 0;
+	}
 	cout << "(T)est individual, Test (A)ll, (B)uild, or e(X)it: ";
 	HANDLE handle = GetStdHandle(STD_INPUT_HANDLE);
 	DWORD events;
@@ -152,8 +167,8 @@ int main() {
 			if (in == 66) { //'b'
 				cout << "Building File" << endl;
 				ReadTestList("tests.list");
-				CreateGeneratedCpp("test_cpp.generated");
-				CreateGeneratedUnit("test_unit.generated");
+				CreateGeneratedCpp(GENERATED_TESTS);
+				CreateGeneratedUnit(GENERATED_UNIT_TESTS);
 				break;
 			} else if (in == 65) { //'a'
 				cout << "Running All Tests" << endl;

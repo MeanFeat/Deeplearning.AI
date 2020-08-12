@@ -4,6 +4,9 @@
 #include <Eigen/dense>
 #include <iostream>
 
+#define GENERATED_TESTS "tests_cpp.generated"
+#define GENERATED_UNIT_TESTS "tests_unit.generated"
+
 using namespace std;
 using namespace Eigen;
 
