@@ -3,6 +3,7 @@ d_Matrix::d_Matrix(){}
 d_Matrix::d_Matrix(int rows, int cols) {
 	this->rowCount = rows;
 	this->colCount = cols;
+	d_check(cudaMalloc((void**)&device_data, memSize()));
 }
 d_Matrix::d_Matrix(float *host_data, int rows, int cols){
 	this->rowCount = rows;

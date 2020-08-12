@@ -97,7 +97,7 @@ float d_NetTrainer::CalcCost(){
 	return cache.cost;
 }
 void d_NetTrainer::BackwardPropagation(){
-	d_subtract(&cache.d_dZ.back(), &cache.d_A.back(), &d_trainLabels);
+	d_subtract_elem(&cache.d_dZ.back(), &cache.d_A.back(), &d_trainLabels);
 	d_set_dW(&derivative.d_dW.back(), &cache.d_dZ.back(), &cache.d_A[cache.d_A.size() - 2], Coeff());
 	d_set_db(&derivative.d_db.back(), &cache.d_dZ.back(), Coeff());
 	for(int l = (int)network->GetParams().layerActivations.size() - 2; l >= 0; --l){

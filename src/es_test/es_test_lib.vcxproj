@@ -25,9 +25,15 @@
     <ProjectReference Include="..\es_core\es_core.vcxproj">
       <Project>{389d51b1-0826-48ba-93cc-bdb12eea1357}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\es_cuda\es_cuda.vcxproj">
+      <Project>{e3cf0cc2-0d7c-4052-b909-fd0a3d2d6d56}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="es_test.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{857A9700-9367-4255-91E6-96923D770BD3}</ProjectGuid>
+    <ProjectGuid>{B6B8E69A-A601-40AB-9773-21A03BD93F62}</ProjectGuid>
     <RootNamespace>NN_PredictRadian</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -46,13 +52,13 @@
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -86,11 +92,13 @@
     <ReferencePath>$(ReferencePath)</ReferencePath>
     <IncludePath>D:\Gamedev\CUDA\common\inc;..\..\..\eigen;..\es_core;..\es_cuda;..\common;$(IncludePath);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\include</IncludePath>
     <LibraryPath>..\..\x64\Release\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ReferencePath>$(ReferencePath)</ReferencePath>
     <IncludePath>D:\Gamedev\CUDA\common\inc;..\..\..\eigen;..\es_core;..\es_cuda;..\common;$(IncludePath);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\include</IncludePath>
     <LibraryPath>..\..\x64\Release\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
+    <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -111,6 +119,10 @@
       <AdditionalLibraryDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\lib\x64\</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
     </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -154,6 +166,10 @@
       <AdditionalLibraryDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\lib\x64\</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
     </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

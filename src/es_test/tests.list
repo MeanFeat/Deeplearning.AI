@@ -1,0 +1,145 @@
+header : "Multiply_Matrix" 
+prefix : mm
+functionName : testMultipy
+arguments : {
+	1234, 98765, 654
+	4321, 9595, 9462
+	9999, 85, 11111
+	100, 100, 100
+	8, 6002, 2
+	8, 3, 2
+} 
+header : "Multiply_Transpose_Right" 
+prefix : mmtr
+functionName : testTransposeRight
+arguments : {
+	1234, 98765, 654
+	4321, 9595, 9462
+	9999, 85, 11111
+	100, 100, 100
+	8, 6002, 2
+	8, 3, 2
+} 
+header : "Multiplies_Tranpose_Left" 
+prefix : mmtl
+functionName : testTransposeLeft
+arguments : {
+	1234, 98765, 654
+	4321, 9595, 9462
+	9999, 85, 11111
+	100, 100, 100
+	8, 6002, 2
+} 
+header : "Element_Add" 
+prefix : add
+functionName : testAdd
+arguments : {
+	1234, 98765 
+	4321, 9595
+	990, 85
+	100, 100 
+	8, 60
+	1,1
+} 
+header : "Element_Subtract" 
+prefix : sub
+functionName : testSubtract
+arguments : {
+	1234, 98765 
+	4321, 9595
+	990, 85
+	100, 100 
+	8, 60
+	1,1
+} 
+header : "Element_Square" 
+prefix : sqr
+functionName : testSquare
+arguments : {
+	1234, 98765 
+	4321, 9595
+	990, 85
+	100, 100 
+	8, 60
+	1,1
+} 
+header : "Sums_Matrix"
+prefix : sm
+functionName : testSum
+arguments : {
+	1000, 10000
+	10000, 100
+	1111, 1131
+	1234, 999
+	5000, 1
+	500, 10
+	1, 10
+	1, 1
+}
+header : "Transpose_Matrix"
+prefix : tnsp
+functionName : testTranspose
+arguments : {
+	10000, 10000
+	1111, 1131
+	222, 999
+	8, 2
+	5, 1
+	1, 5
+}
+header : "Activation_Sigmoid" 
+prefix : sig
+functionName : testSigmoid
+arguments : {
+	1234, 98765 
+	4321, 9595
+	990, 85
+	100, 100 
+	8, 60
+	1,1
+} 
+header : "Activation_Tanh" 
+prefix : tnh
+functionName : testTanh
+arguments : {
+	1234, 98765 
+	4321, 9595
+	990, 85
+	100, 100 
+	8, 60
+	1,1
+} 
+header : "Activation_ReLU" 
+prefix : rlu
+functionName : testReLU
+arguments : {
+	1234, 98765 
+	4321, 9595
+	990, 85
+	100, 100 
+	8, 60
+	1,1
+} 	
+header : "Activation_Leaky_ReLU" 
+prefix : lrl
+functionName : testLReLU
+arguments : {
+	1234, 98765 
+	4321, 9595
+	990, 85
+	100, 100 
+	8, 60
+	1,1
+} 	
+header : "Multiply_Scalar" 
+prefix : msc
+functionName : testMultScalar
+arguments : {
+	1234, 98765 
+	4321, 9595
+	990, 85
+	100, 100 
+	8, 60
+	1,1
+} 
+	
