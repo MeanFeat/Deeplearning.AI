@@ -19,7 +19,7 @@ void d_add_elem(d_Matrix *dst, d_Matrix *srcA, d_Matrix *srcB);
 /* dst = srcA (-) srcB */
 void d_subtract_elem(d_Matrix *dst, d_Matrix *srcA, d_Matrix *srcB);
 /* dst = srcA * b */
-void d_mult_scalar(d_Matrix *dst, float b);
+void d_mult_scalar(d_Matrix *dst, const float b);
 /* dst = src.T */
 void d_transpose(d_Matrix *dst, d_Matrix *src);
 /* dst = srcA * srcB */

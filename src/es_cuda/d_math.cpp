@@ -39,7 +39,7 @@ __global__ void mult_scalar_Kernel(float *dst, const float b, int m, int k) {
 		dst[tid] = dst[tid] * b;
 	}
 }
-void d_mult_scalar(d_Matrix *dst, float b) {
+void d_mult_scalar(d_Matrix *dst, const float b) {
 	int m = dst->rows();
 	int k = dst->cols();
 	mult_scalar_Kernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), b, m, k);
@@ -250,7 +250,7 @@ __global__ void Sigmoid_Kernal(float *dst, int m, int k) {
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	int tid = row * k + col;
 	if (col < k && row < m) {
-		dst[tid] = 1.f / (1.f + __exp10f(-dst[tid]));
+		dst[tid] = 1.f / (1.f + exp(-dst[tid]));
 	}
 }
 __global__ void Tanh_Kernal(float *dst, int m, int k) {
@@ -288,6 +288,7 @@ void d_activate(d_Matrix *dst, Activation act) {
 	switch (act) {
 	case Sigmoid:
 		Sigmoid_Kernal << < dimGrid(m, k), dimBlock() >> > (dst->d_data(), m, k);
+		break;
 	case Tanh:
 		Tanh_Kernal << < dimGrid(m, k), dimBlock() >> > (dst->d_data(), m, k);
 		break;

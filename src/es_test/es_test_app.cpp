@@ -6,6 +6,7 @@ static vector<string> functionNames;
 static vector<vector<vector<int>>> arguments;
 
 void ReadTestList(const string fName) {
+	cout << "Reading file " << fName << endl;
 	std::string line;
 	ifstream file(fName);
 	ParseState state = ParseState::none;
@@ -20,6 +21,7 @@ void ReadTestList(const string fName) {
 			if (state == ParseState::none) {
 				if (strFind(lastVal, "header")) {
 					state = ParseState::header;
+					cout << "Header " << val << endl;
 					headers.push_back(val);
 				}
 				else if (strFind(lastVal, "prefix")) {
@@ -50,6 +52,7 @@ void ReadTestList(const string fName) {
 				}
 				else {
 					if (!strFind(val, "{")) {
+						cout << "\t[";
 						size_t pos = 0;
 						std::string token;
 						do {
@@ -58,7 +61,9 @@ void ReadTestList(const string fName) {
 							int temp;
 							strCast(&temp, val);
 							parseArgs.push_back(temp);
+							cout << temp << " "; 
 						} while ((pos = val.find(',')) != std::string::npos);
+						cout << "]" << endl;
 						currentFuncArgs.push_back(parseArgs);
 						parseArgs.clear();
 					}
@@ -70,6 +75,7 @@ void ReadTestList(const string fName) {
 			}
 		}
 	}
+	cout << "Finished reading file " << fName << endl;
 	file.close();
 }
 void CreateGeneratedUnit(const string fileName) {

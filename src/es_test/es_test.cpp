@@ -9,6 +9,7 @@ MatrixXf to_host(d_Matrix d_matrix) {
 	// return to Row Major order
 	MatrixXf out = MatrixXf(d_matrix.cols(), d_matrix.rows());
 	d_check(cudaMemcpy(out.data(), d_matrix.d_data(), d_matrix.memSize(), cudaMemcpyDeviceToHost));
+	d_matrix.free();
 	return out.transpose();
 }
 void PrintHeader(string testType) {
@@ -28,7 +29,7 @@ string GetOutcomeString(float cSum, float tSum, float diff, float thresh, bool p
 	if (passed)	{
 		out += "PASS\n";
 	} else {
-		out += "Fail:\n";
+		out += "Fail:\n"; // Unit tests check for this
 	}
 	if (verbosity > 1) {
 		out += "Eigen: " + to_string(cSum) + " Device: " + to_string(tSum) + "\n";
@@ -49,7 +50,10 @@ string GetOutcome(float cSum, float tSum, float thresh) {
 	float diff = abs(cSum - tSum);
 	bool passed = diff <= abs(thresh);
 	string out = GetOutcomeString(cSum, tSum, diff, thresh, passed);
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleTextAttribute(hConsole, passed ? 10 : 12 );
 	cout << out;
+	SetConsoleTextAttribute(hConsole, 10);
 	return out;
 }
 string testMultipy(int m, int n, int k) {
@@ -130,7 +134,7 @@ string testAdd(int m, int k) {
 	d_Matrix d_B = to_device(B);
 	d_Matrix d_C = to_device(MatrixXf::Zero(m, k));
 	d_add_elem(&d_C, &d_A, &d_B);
-	float controlSum = MatrixXf(to_host(d_C)).sum();
+	float controlSum = MatrixXf(A.array() + B.array()).sum();
 	float threshold = controlSum * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(d_C)).sum(), threshold);
 }
@@ -161,7 +165,7 @@ string testSigmoid(int m, int k) {
 	d_Matrix d_A = to_device(A);
 	d_activate(&d_A, Activation::Sigmoid);
 	float controlSum = MatrixXf(Net::Activate(Activation::Sigmoid, A)).sum();
-	float threshold = controlSum * thresholdMultiplier;
+	float threshold = m + k * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(d_A)).sum(), threshold);
 }
 string testTanh(int m, int k) {
@@ -170,7 +174,7 @@ string testTanh(int m, int k) {
 	d_Matrix d_A = to_device(A);
 	d_activate(&d_A, Activation::Tanh);
 	float controlSum = MatrixXf(Net::Activate(Activation::Tanh, A)).sum();
-	float threshold = controlSum * thresholdMultiplier;
+	float threshold = m+k * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(d_A)).sum(), threshold);
 }
 string testReLU(int m, int k) {
