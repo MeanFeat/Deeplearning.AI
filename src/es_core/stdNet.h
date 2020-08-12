@@ -9,7 +9,13 @@ using namespace Eigen;
 using namespace std;
 
 inline MatrixXf CalcSigmoid( const MatrixXf &in) {
-	return ((-1.f*in).array().exp() + 1).cwiseInverse();
+	//return in.unaryExpr([](float elem) { return 1.f / (1.f + exp(-elem)); });
+	//return ((-1.f*in).array().exp() + 1).cwiseInverse();
+	MatrixXf out = MatrixXf(in.rows(),in.cols());
+	for (int i = 0; i < in.size(); i++)	{
+		*(out.data() + i) = 1.f / (1.f + expf(-(*(in.data() + i))));
+	}
+	return out;
 }
 
 inline MatrixXf CalcTanh(const MatrixXf &in) {

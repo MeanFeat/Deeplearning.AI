@@ -47,7 +47,7 @@ string GetOutcomeString(float cSum, float tSum, float diff, float thresh, bool p
 }
 string GetOutcome(float cSum, float tSum, float thresh) {
 	float diff = abs(cSum - tSum);
-	bool passed = diff < thresh;
+	bool passed = diff <= abs(thresh);
 	string out = GetOutcomeString(cSum, tSum, diff, thresh, passed);
 	cout << out;
 	return out;
@@ -110,4 +110,84 @@ string testTranspose(int m, int k) {
 	MatrixXf testTranspose = to_host(d_testTranspose);
 	float threshold = float(m * k) * thresholdMultiplier;
 	return GetOutcome(controlTranspose.sum(), testTranspose.sum(), threshold);
+}
+string testMultScalar(int m, int k) {
+	cout << "Testing Multiply Element (" << m << "," << k << ") * b" << endl;
+	MatrixXf A = MatrixXf::Random(m, k);
+	float r = float(rand() / RAND_MAX);
+	d_Matrix d_A = to_device(A);
+	d_Matrix d_C = to_device(MatrixXf::Zero(m, k));
+	d_mult_scalar(&d_A, r);
+	float controlSum = MatrixXf(A * r).sum();
+	float threshold = controlSum * thresholdMultiplier;
+	return GetOutcome(controlSum, MatrixXf(to_host(d_A)).sum(), threshold);
+}
+string testAdd(int m, int k) {
+	cout << "Testing Add " << m << "," << k << " (+) " << m << "," << k << endl;
+	MatrixXf A = MatrixXf::Random(m, k);
+	MatrixXf B = MatrixXf::Random(m, k);
+	d_Matrix d_A = to_device(A);
+	d_Matrix d_B = to_device(B);
+	d_Matrix d_C = to_device(MatrixXf::Zero(m, k));
+	d_add_elem(&d_C, &d_A, &d_B);
+	float controlSum = MatrixXf(to_host(d_C)).sum();
+	float threshold = controlSum * thresholdMultiplier;
+	return GetOutcome(controlSum, MatrixXf(to_host(d_C)).sum(), threshold);
+}
+string testSubtract(int m, int k) {
+	cout << "Testing Add " << m << "," << k << " (-) " << m << "," << k << endl;
+	MatrixXf A = MatrixXf::Random(m, k);
+	MatrixXf B = MatrixXf::Random(m, k);
+	d_Matrix d_A = to_device(A);
+	d_Matrix d_B = to_device(B);
+	d_Matrix d_C = to_device(MatrixXf::Zero(m, k));
+	d_subtract_elem(&d_C, &d_A, &d_B);
+	float threshold = float(m + k) * thresholdMultiplier;
+	return GetOutcome(MatrixXf(A.array() - B.array()).sum(), MatrixXf(to_host(d_C)).sum(), threshold);
+}
+string testSquare(int m, int k) {
+	cout << "Testing Square " << m << "," << k << endl;
+	MatrixXf A = MatrixXf::Random(m, k);
+	d_Matrix d_A = to_device(A);
+	d_Matrix d_C = to_device(MatrixXf::Zero(k, m));
+	d_square(&d_C, &d_A);
+	float controlSum = MatrixXf(A.array()* A.array()).sum();
+	float threshold = controlSum * 0.00001f;
+	return GetOutcome(controlSum, MatrixXf(to_host(d_C)).sum(), threshold);
+}
+string testSigmoid(int m, int k) {
+	cout << "Testing Sigmoid " << m << "," << k << endl;
+	MatrixXf A = MatrixXf::Random(m, k);
+	d_Matrix d_A = to_device(A);
+	d_activate(&d_A, Activation::Sigmoid);
+	float controlSum = MatrixXf(Net::Activate(Activation::Sigmoid, A)).sum();
+	float threshold = controlSum * thresholdMultiplier;
+	return GetOutcome(controlSum, MatrixXf(to_host(d_A)).sum(), threshold);
+}
+string testTanh(int m, int k) {
+	cout << "Testing Tanh " << m << "," << k << endl;
+	MatrixXf A = MatrixXf::Random(m, k);
+	d_Matrix d_A = to_device(A);
+	d_activate(&d_A, Activation::Tanh);
+	float controlSum = MatrixXf(Net::Activate(Activation::Tanh, A)).sum();
+	float threshold = controlSum * thresholdMultiplier;
+	return GetOutcome(controlSum, MatrixXf(to_host(d_A)).sum(), threshold);
+}
+string testReLU(int m, int k) {
+	cout << "Testing ReLU " << m << "," << k << endl;
+	MatrixXf A = MatrixXf::Random(m, k);
+	d_Matrix d_A = to_device(A);
+	d_activate(&d_A, Activation::ReLU);
+	float controlSum = MatrixXf(Net::Activate(Activation::ReLU, A)).sum();
+	float threshold = controlSum * thresholdMultiplier;
+	return GetOutcome(controlSum, MatrixXf(to_host(d_A)).sum(), threshold);
+}
+string testLReLU(int m, int k) {
+	cout << "Testing ReLU " << m << "," << k << endl;
+	MatrixXf A = MatrixXf::Random(m, k);
+	d_Matrix d_A = to_device(A);
+	d_activate(&d_A, Activation::LReLU);
+	float controlSum = MatrixXf(Net::Activate(Activation::LReLU, A)).sum();
+	float threshold = controlSum * thresholdMultiplier;
+	return GetOutcome(controlSum, MatrixXf(to_host(d_A)).sum(), threshold);
 }
