@@ -19,11 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <None Include="testgen_create.bat" />
-    <None Include="testgen_generate.bat" />
-    <None Include="tests.list" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="es_test_lib.vcxproj">
       <Project>{b6b8e69a-a601-40ab-9773-21a03bd93f62}</Project>
     </ProjectReference>
@@ -33,6 +28,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="es_test_app.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="testgen_generate.bat" />
+    <None Include="tests.list" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{857A9700-9367-4255-91E6-96923D770BD3}</ProjectGuid>
@@ -124,7 +123,8 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PreBuildEvent>
-      <Command>"$(ProjectDir)\testgen_create.bat"</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>$(ProjectDir)\testgen_generate.bat</Command>
@@ -173,7 +173,8 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PreBuildEvent>
-      <Command>"$(ProjectDir)\testgen_create.bat"</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>$(ProjectDir)\testgen_generate.bat</Command>

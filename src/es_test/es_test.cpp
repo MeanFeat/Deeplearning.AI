@@ -2,6 +2,7 @@
 #include <iostream>
 d_Matrix to_device(MatrixXf matrix) {
 	//transpose data only to Column Major
+	d_mathInit();
 	MatrixXf temp = matrix.transpose();
 	return d_Matrix(temp.data(), (int)matrix.rows(), (int)matrix.cols());
 }
@@ -133,22 +134,34 @@ string testAdd(int m, int k) {
 	d_Matrix d_A = to_device(A);
 	d_Matrix d_B = to_device(B);
 	d_Matrix d_C = to_device(MatrixXf::Zero(m, k));
-	d_add_elem(&d_C, &d_A, &d_B);
+	d_add_elem(&d_C, d_A, d_B);
 	float controlSum = MatrixXf(A.array() + B.array()).sum();
 	float threshold = controlSum * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(d_C)).sum(), threshold);
 }
 string testSubtract(int m, int k) {
-	cout << "Testing Add " << m << "," << k << " (-) " << m << "," << k << endl;
+	cout << "Testing Subtract " << m << "," << k << " (-) " << m << "," << k << endl;
 	MatrixXf A = MatrixXf::Random(m, k);
 	MatrixXf B = MatrixXf::Random(m, k);
 	d_Matrix d_A = to_device(A);
 	d_Matrix d_B = to_device(B);
 	d_Matrix d_C = to_device(MatrixXf::Zero(m, k));
-	d_subtract_elem(&d_C, &d_A, &d_B);
+	d_subtract_elem(&d_C, d_A, d_B);
 	float threshold = float(m + k) * thresholdMultiplier;
 	return GetOutcome(MatrixXf(A.array() - B.array()).sum(), MatrixXf(to_host(d_C)).sum(), threshold);
 }
+string testMultElem(int m, int k) {
+	cout << "Testing MultElem " << m << "," << k << " (*) " << m << "," << k << endl;
+	MatrixXf A = MatrixXf::Random(m, k);
+	MatrixXf B = MatrixXf::Random(m, k);
+	d_Matrix d_A = to_device(A);
+	d_Matrix d_B = to_device(B);
+	d_Matrix d_C = to_device(MatrixXf::Zero(m, k));
+	d_mult_elem(&d_C, d_A, d_B);
+	float threshold = float(m + k) * thresholdMultiplier;
+	return GetOutcome(MatrixXf(A.array() * B.array()).sum(), MatrixXf(to_host(d_C)).sum(), threshold);
+}
+
 string testSquare(int m, int k) {
 	cout << "Testing Square " << m << "," << k << endl;
 	MatrixXf A = MatrixXf::Random(m, k);

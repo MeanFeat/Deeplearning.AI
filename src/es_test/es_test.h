@@ -11,7 +11,7 @@
 using namespace std;
 using namespace Eigen;
 
-static int verbosity = 1;
+static int verbosity = 3;
 static const float thresholdMultiplier = (FLT_EPSILON) * 2.f;
 
 d_Matrix to_device(MatrixXf matrix);
@@ -25,6 +25,7 @@ string testTranspose(int m, int k);
 string testMultScalar(int m, int k);
 string testAdd(int m, int k);
 string testSubtract(int m, int k);
+string testMultElem(int m, int k);
 string testSquare(int m, int k);
 string testSigmoid(int m, int k);
 string testTanh(int m, int k);
