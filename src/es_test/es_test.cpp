@@ -2,6 +2,7 @@
 #include <iostream>
 d_Matrix to_device(MatrixXf matrix) {
 	//transpose data only to Column Major
+	d_mathInit();
 	MatrixXf temp = matrix.transpose();
 	return d_Matrix(temp.data(), (int)matrix.rows(), (int)matrix.cols());
 }
@@ -46,17 +47,18 @@ string GetOutcomeString(float cSum, float tSum, float diff, float thresh, bool p
 	}
 	return out;
 }
-string GetOutcome(float cSum, float tSum, float thresh) {
+testResult GetOutcome(float cSum, float tSum, float thresh) {
+	testResult result;
 	float diff = abs(cSum - tSum);
-	bool passed = diff <= abs(thresh);
-	string out = GetOutcomeString(cSum, tSum, diff, thresh, passed);
+	result.passed = diff <= abs(thresh);
+	result.message = GetOutcomeString(cSum, tSum, diff, thresh, result.passed);
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleTextAttribute(hConsole, passed ? 10 : 12 );
-	cout << out;
+	SetConsoleTextAttribute(hConsole, result.passed ? 10 : 12 );
+	cout << result.message;
 	SetConsoleTextAttribute(hConsole, 10);
-	return out;
+	return result;
 }
-string testMultipy(int m, int n, int k) {
+testResult testMultipy(int m, int n, int k) {
 	cout << "Testing Multiply " << m << "," << n << " * " << n << "," << k << endl;
 	MatrixXf A = MatrixXf::Random(m, n);
 	MatrixXf B = MatrixXf::Random(n, k);
@@ -67,7 +69,7 @@ string testMultipy(int m, int n, int k) {
 	float threshold = float((m + k) * n) * thresholdMultiplier;
 	return GetOutcome((A*B).sum(), MatrixXf(to_host(d_C)).sum(), threshold);
 }
-string testTransposeRight(int m, int n, int k) {
+testResult testTransposeRight(int m, int n, int k) {
 	cout << "Testing Multiply (" << m << "," << n << ") * (" << n << "," << k << ").transpose()" << endl;
 	MatrixXf A = MatrixXf::Random(m, n);
 	MatrixXf B = MatrixXf::Random(k, n);
@@ -79,7 +81,7 @@ string testTransposeRight(int m, int n, int k) {
 	float threshold = float((m + k) * n) * thresholdMultiplier;
 	return GetOutcome((A*B.transpose()).sum(), C.sum(), threshold);
 }
-string testTransposeLeft(int m, int n, int k) {
+testResult testTransposeLeft(int m, int n, int k) {
 	cout << "Testing Multiply (" << m << "," << n << ").transpose() * (" << n << "," << k << ")" << endl;
 	MatrixXf A = MatrixXf::Random(n, m);
 	MatrixXf B = MatrixXf::Random(n, k);
@@ -91,7 +93,7 @@ string testTransposeLeft(int m, int n, int k) {
 	float threshold = float((m + k) * n) * thresholdMultiplier;
 	return GetOutcome((A.transpose()*B).sum(), C.sum(), threshold);
 }
-string testSum(int m, int k) {
+testResult testSum(int m, int k) {
 	cout << "Testing Sum " << m << "," << k << endl;
 	MatrixXf A = MatrixXf::Random(m, k);
 	d_Matrix d_A = to_device(A);
@@ -104,7 +106,7 @@ string testSum(int m, int k) {
 	float threshold = float(m + k) * thresholdMultiplier;
 	return GetOutcome(A.sum(), testSum, m * k * thresholdMultiplier);
 }
-string testTranspose(int m, int k) {
+testResult testTranspose(int m, int k) {
 	cout << "Testing Transpose " << m << "," << k << endl;
 	MatrixXf A = MatrixXf::Random(m, k);
 	d_Matrix d_A = to_device(A);
@@ -115,7 +117,7 @@ string testTranspose(int m, int k) {
 	float threshold = float(m * k) * thresholdMultiplier;
 	return GetOutcome(controlTranspose.sum(), testTranspose.sum(), threshold);
 }
-string testMultScalar(int m, int k) {
+testResult testMultScalar(int m, int k) {
 	cout << "Testing Multiply Element (" << m << "," << k << ") * b" << endl;
 	MatrixXf A = MatrixXf::Random(m, k);
 	float r = float(rand() / RAND_MAX);
@@ -126,30 +128,57 @@ string testMultScalar(int m, int k) {
 	float threshold = controlSum * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(d_A)).sum(), threshold);
 }
-string testAdd(int m, int k) {
+testResult testAdd(int m, int k) {
 	cout << "Testing Add " << m << "," << k << " (+) " << m << "," << k << endl;
 	MatrixXf A = MatrixXf::Random(m, k);
 	MatrixXf B = MatrixXf::Random(m, k);
 	d_Matrix d_A = to_device(A);
 	d_Matrix d_B = to_device(B);
 	d_Matrix d_C = to_device(MatrixXf::Zero(m, k));
-	d_add_elem(&d_C, &d_A, &d_B);
+	d_add_elem(&d_C, d_A, d_B);
 	float controlSum = MatrixXf(A.array() + B.array()).sum();
 	float threshold = controlSum * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(d_C)).sum(), threshold);
 }
-string testSubtract(int m, int k) {
-	cout << "Testing Add " << m << "," << k << " (-) " << m << "," << k << endl;
+testResult testSubtract(int m, int k) {
+	cout << "Testing Subtract " << m << "," << k << " (-) " << m << "," << k << endl;
 	MatrixXf A = MatrixXf::Random(m, k);
 	MatrixXf B = MatrixXf::Random(m, k);
 	d_Matrix d_A = to_device(A);
 	d_Matrix d_B = to_device(B);
 	d_Matrix d_C = to_device(MatrixXf::Zero(m, k));
-	d_subtract_elem(&d_C, &d_A, &d_B);
+	d_subtract_elem(&d_C, d_A, d_B);
 	float threshold = float(m + k) * thresholdMultiplier;
 	return GetOutcome(MatrixXf(A.array() - B.array()).sum(), MatrixXf(to_host(d_C)).sum(), threshold);
 }
-string testSquare(int m, int k) {
+testResult testMultElem(int m, int k) {
+	cout << "Testing MultElem " << m << "," << k << " (*) " << m << "," << k << endl;
+	MatrixXf A = MatrixXf::Random(m, k);
+	MatrixXf B = MatrixXf::Random(m, k);
+	d_Matrix d_A = to_device(A);
+	d_Matrix d_B = to_device(B);
+	d_Matrix d_C = to_device(MatrixXf::Zero(m, k));
+	d_mult_elem(&d_C, d_A, d_B);
+	float threshold = float(m + k) * thresholdMultiplier;
+	return GetOutcome(MatrixXf(A.array() * B.array()).sum(), MatrixXf(to_host(d_C)).sum(), threshold);
+}
+testResult testSet(int m, int k, float val) {
+	cout << "Testing Set " << m << "," << k << " (=) " << val << endl;
+	d_Matrix d_C = to_device(MatrixXf::Random(m, k));
+	d_set_elem(&d_C, val);
+	MatrixXf result = to_host(d_C);
+	string elemList = "";
+	bool passed = true;
+	for (int i = 0; i < result.size(); i++)	{
+		float ith = *(result.data() + i);
+		if (ith != val){
+			passed = false;
+			elemList += to_string(i) + ", ";
+		}
+	}
+	return testResult(passed, elemList);
+}
+testResult testSquare(int m, int k) {
 	cout << "Testing Square " << m << "," << k << endl;
 	MatrixXf A = MatrixXf::Random(m, k);
 	d_Matrix d_A = to_device(A);
@@ -159,7 +188,7 @@ string testSquare(int m, int k) {
 	float threshold = controlSum * 0.00001f;
 	return GetOutcome(controlSum, MatrixXf(to_host(d_C)).sum(), threshold);
 }
-string testSigmoid(int m, int k) {
+testResult testSigmoid(int m, int k) {
 	cout << "Testing Sigmoid " << m << "," << k << endl;
 	MatrixXf A = MatrixXf::Random(m, k);
 	d_Matrix d_A = to_device(A);
@@ -168,7 +197,7 @@ string testSigmoid(int m, int k) {
 	float threshold = m + k * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(d_A)).sum(), threshold);
 }
-string testTanh(int m, int k) {
+testResult testTanh(int m, int k) {
 	cout << "Testing Tanh " << m << "," << k << endl;
 	MatrixXf A = MatrixXf::Random(m, k);
 	d_Matrix d_A = to_device(A);
@@ -177,7 +206,7 @@ string testTanh(int m, int k) {
 	float threshold = m+k * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(d_A)).sum(), threshold);
 }
-string testReLU(int m, int k) {
+testResult testReLU(int m, int k) {
 	cout << "Testing ReLU " << m << "," << k << endl;
 	MatrixXf A = MatrixXf::Random(m, k);
 	d_Matrix d_A = to_device(A);
@@ -186,7 +215,7 @@ string testReLU(int m, int k) {
 	float threshold = controlSum * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(d_A)).sum(), threshold);
 }
-string testLReLU(int m, int k) {
+testResult testLReLU(int m, int k) {
 	cout << "Testing ReLU " << m << "," << k << endl;
 	MatrixXf A = MatrixXf::Random(m, k);
 	d_Matrix d_A = to_device(A);

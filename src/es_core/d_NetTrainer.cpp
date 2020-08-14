@@ -2,6 +2,7 @@
 static cudaStream_t cuda_stream;
 cudaEvent_t start, stop;
 d_Matrix to_device(MatrixXf matrix) {
+	d_mathInit();
 	//transpose data only to Column Major
 	MatrixXf temp = matrix.transpose();
 	return d_Matrix(temp.data(), (int)matrix.rows(), (int)matrix.cols());
@@ -97,7 +98,7 @@ float d_NetTrainer::CalcCost(){
 	return cache.cost;
 }
 void d_NetTrainer::BackwardPropagation(){
-	d_subtract_elem(&cache.d_dZ.back(), &cache.d_A.back(), &d_trainLabels);
+	d_subtract_elem(&cache.d_dZ.back(), cache.d_A.back(), d_trainLabels);
 	d_set_dW(&derivative.d_dW.back(), &cache.d_dZ.back(), &cache.d_A[cache.d_A.size() - 2], Coeff());
 	d_set_db(&derivative.d_db.back(), &cache.d_dZ.back(), Coeff());
 	for(int l = (int)network->GetParams().layerActivations.size() - 2; l >= 0; --l){

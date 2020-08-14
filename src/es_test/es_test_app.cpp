@@ -3,15 +3,15 @@
 static vector<string> headers;
 static vector<string> prefixes;
 static vector<string> functionNames;
-static vector<vector<vector<int>>> arguments;
+static vector<vector<vector<float>>> arguments;
 
 void ReadTestList(const string fName) {
 	cout << "Reading file " << fName << endl;
 	std::string line;
 	ifstream file(fName);
 	ParseState state = ParseState::none;
-	vector<int> parseArgs;
-	vector<vector<int>> currentFuncArgs;
+	vector<float> parseArgs;
+	vector<vector<float>> currentFuncArgs;
 	while (file.good()) {
 		std::getline(file, line);
 		std::stringstream iss(line);
@@ -58,7 +58,7 @@ void ReadTestList(const string fName) {
 						do {
 							token = val.substr(0, pos);
 							val.erase(0, pos + 1);
-							int temp;
+							float temp;
 							strCast(&temp, val);
 							parseArgs.push_back(temp);
 							cout << temp << " "; 
@@ -92,7 +92,15 @@ void CreateGeneratedUnit(const string fileName) {
 			string spacer = arg <= 9 ? "0" : "";
 			file << "NAME_RUN(" << prefixes[fn] << spacer << arg <<"_";
 			for (int a = 0; a < arguments[fn][arg].size(); a++) {
-				file << arguments[fn][arg][a];
+				float thisArg = arguments[fn][arg][a];
+				if (float(int(thisArg)) == thisArg) {
+					file << to_string(int(thisArg));
+				} else {
+					string str = to_string(thisArg);
+					str.replace(str.find("."), 1, "p");
+					str.erase(str.find_last_not_of('0') + 1, std::string::npos);
+					file << str << "f";
+				}
 				if (a < arguments[fn][arg].size() - 1) {
 					file << "x";
 				}
@@ -179,6 +187,7 @@ int main(int argc, char** argv) {
 			} else if (in == 65) { //'a'
 				cout << "Running All Tests" << endl;
 				RunAllTests();
+				break;
 			} else if (in == 84) { //'t'
 				cout << "Test " << endl;
 				ifstream file(GENERATED_TESTS);

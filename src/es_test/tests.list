@@ -7,13 +7,13 @@ arguments : {
 	9999, 85, 11111
 	100, 100, 100
 	8, 6002, 2
-	8, 3, 2
+	8, 3, 3
 } 
 header : "Multiply_Transpose_Right" 
 prefix : mmtr
 functionName : testTransposeRight
 arguments : {
-	1234, 98765, 654
+	1234, 98765, 653
 	4321, 9595, 9462
 	9999, 85, 11111
 	100, 100, 100
@@ -24,11 +24,12 @@ header : "Multiplies_Tranpose_Left"
 prefix : mmtl
 functionName : testTransposeLeft
 arguments : {
-	1234, 98765, 654
-	4321, 9595, 9462
+	1234, 98765, 653
+	4321, 9595, 9461
 	9999, 85, 11111
 	100, 100, 100
 	8, 6002, 2
+	8, 3, 2
 } 
 header : "Element_Add" 
 prefix : add
@@ -40,7 +41,27 @@ arguments : {
 	100, 100 
 	8, 60
 	1,1
-} 
+}
+header : "Element_Set" 
+prefix : set
+functionName : testSet
+arguments : {
+	4321, 9595, 0.f
+	990, 85, 0.f
+	100, 100, 0.f 
+	8, 60, 0.f
+	1,1, 0.f 
+	4321, 9595, 0.5f
+	990, 85, 0.5f
+	100, 100, 0.5f 
+	8, 60, 0.5f
+	1,1, 0.5f
+	4321, 9595, 1.f
+	990, 85, 1.f 
+	100, 100, 1.f 
+	8, 60, 1.f
+	1,1, 1.f
+}   
 header : "Element_Subtract" 
 prefix : sub
 functionName : testSubtract
@@ -52,6 +73,17 @@ arguments : {
 	8, 60
 	1,1
 } 
+header : "Element_Multiply" 
+prefix : mel
+functionName : testMultElem
+arguments : {
+	1234, 98765 
+	4321, 9595
+	990, 85
+	100, 100 
+	8, 60
+	1,1
+}
 header : "Element_Square" 
 prefix : sqr
 functionName : testSquare
