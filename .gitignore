@@ -10,9 +10,5 @@ Release/
 *.dll
 
 *.ipch
-
 \.vs/ExpertSystems/v14/
-
-.vs/config/
-
-*.generated
+.vs/config/*.generated
