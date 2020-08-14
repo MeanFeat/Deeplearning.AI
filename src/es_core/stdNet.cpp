@@ -56,10 +56,13 @@ MatrixXf Net::Activate(Activation act, const MatrixXf &In){
 		break;
 	}
 }
-MatrixXf Net::ForwardPropagation(const MatrixXf X){
+
+MatrixXf Net::ForwardPropagation(const MatrixXf &X) {
 	MatrixXf lastOutput = X;
-	for(int i = 0; i < (int)params.layerSizes.size() - 1; ++i){
-		lastOutput = Activate(params.layerActivations[i], (params.W[i] * lastOutput).colwise() + (VectorXf)params.b[i]);
+	for(int i = 0; i < (int)params.layerSizes.size() - 1; ++i) {
+		MatrixXf weighed = params.W[i] * lastOutput;
+		weighed.colwise() += (VectorXf)params.b[i];
+		lastOutput = Activate(params.layerActivations[i], weighed);
 	}
 	return lastOutput;
 }

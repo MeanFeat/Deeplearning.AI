@@ -30,6 +30,9 @@ inline MatrixXf CalcLReLU(const MatrixXf &in) {
 	return in.unaryExpr([](float elem) { return elem > 0.0f ? elem : elem * 0.01f; });
 }
 
+inline MatrixXf CalcSine(const MatrixXf &in) {
+	return (in.array().sin());
+}
 
 inline MatrixXf Log(const MatrixXf &in) {
 	return in.array().log();
@@ -46,12 +49,13 @@ class Net {
 public:
 	Net();
 	Net(int inputSize, std::vector<int> hiddenSizes, int outputSize, vector<Activation> activations);
+	Net(const string fName);
 	~Net();
 	NetParameters &GetParams();
 	void SetParams(vector<MatrixXf> W, vector<MatrixXf> b);
 	void AddLayer(int A, int B);
-	static MatrixXf Activate(Activation act, const MatrixXf &In);
-	MatrixXf ForwardPropagation(const MatrixXf X);
+	static MatrixXf Activate(Activation act, const MatrixXf &In);	
+	MatrixXf ForwardPropagation(const MatrixXf &X);
 
 	int Depth() {
 		return (int)GetParams().layerSizes.size() - 1;

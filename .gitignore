@@ -8,11 +8,7 @@ Release/
 *.db
 *.opendb
 *.dll
-
-*.ipch
-
-\.vs/ExpertSystems/v14/
-
-.vs/config/
-
-*.generated
+
+*.ipch
+\.vs/ExpertSystems/v14/
+.vs/config/*.generated

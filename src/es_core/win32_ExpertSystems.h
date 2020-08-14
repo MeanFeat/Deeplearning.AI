@@ -66,7 +66,7 @@ internal void Win32ProcessPendingMessages() {
 internal void Win32DisplayBufferInWindow(HDC DeviceContext, HWND hwind, Buffer buffer) {
 	RECT winRect = {};
 	GetWindowRect(hwind, &winRect);
-	StretchDIBits(DeviceContext, 0, -buffer.titleOffset, winRect.right - winRect.left, winRect.bottom - winRect.top,
+	StretchDIBits(DeviceContext, 0, 0, winRect.right - winRect.left, winRect.bottom - winRect.top,
 				  0, 0, buffer.width, buffer.height, buffer.memory, &buffer.bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
 }
 
