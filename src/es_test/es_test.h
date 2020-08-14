@@ -23,6 +23,7 @@ string testTransposeLeft(int m, int n, int k);
 string testSum(int m, int k);
 string testTranspose(int m, int k);
 string testMultScalar(int m, int k);
+string testSet(int m, int k, float val);
 string testAdd(int m, int k);
 string testSubtract(int m, int k);
 string testMultElem(int m, int k);

@@ -161,7 +161,22 @@ string testMultElem(int m, int k) {
 	float threshold = float(m + k) * thresholdMultiplier;
 	return GetOutcome(MatrixXf(A.array() * B.array()).sum(), MatrixXf(to_host(d_C)).sum(), threshold);
 }
-
+string testSet(int m, int k, float val) {
+	cout << "Testing Set " << m << "," << k << " (+) " << m << "," << k << endl;
+	d_Matrix d_C = to_device(MatrixXf::Random(m, k));
+	d_set_elem(&d_C, val);
+	MatrixXf result = to_host(d_C);
+	string elemList = "";
+	bool passed = true;
+	for (int i = 0; i < result.size(); i++)	{
+		float ith = *(result.data() + i);
+		if (ith != val){
+			passed = false;
+			elemList += to_string(i) + ", ";
+		}
+	}
+	return passed ? "PASS" : "Fail: " + elemList;
+}
 string testSquare(int m, int k) {
 	cout << "Testing Square " << m << "," << k << endl;
 	MatrixXf A = MatrixXf::Random(m, k);
