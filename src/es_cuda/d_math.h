@@ -13,7 +13,6 @@ using namespace std;
 
 using ptrFunc = float(*)(float, float);
 
-
 void d_mathInit();
 
 inline dim3 dimGrid(int m, int k) {
@@ -43,8 +42,7 @@ void d_mult_rhsT(d_Matrix * dst, d_Matrix * srcA, d_Matrix * srcB);
 void d_sum(float *dst, d_Matrix* src);
 void d_sumMatrix(float* dst, d_Matrix* src);
 void d_sumMatrix(float* dst, float* src, int m, int k);
-void d_square(float *dst, d_Matrix* src);
-void d_square(d_Matrix* dst, d_Matrix* src);
+void d_square(d_Matrix* dst, const d_Matrix* src);
 void d_forwardLayer(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_last, d_Matrix *d_bias);
 void d_activate(d_Matrix *dst, Activation act);
 void d_backSigmoid(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A);
@@ -57,5 +55,5 @@ void d_set_dW_Reg(d_Matrix *dst, d_Matrix *d_dZ, d_Matrix *d_A, d_Matrix *d_W, f
 void d_set_db(d_Matrix *dst, d_Matrix *d_dZ, float coefficient);
 void d_updateParameterADAM(d_Matrix * dst, d_Matrix * d_derivative, d_Matrix * d_momentum, d_Matrix * d_momentumSqr, float learnRate);
 void d_updateParameter(d_Matrix * dst, d_Matrix * d_derivative, float learnRate);
-void d_calcCost(float *dst, d_Matrix* d_modelErr, vector<d_Matrix>* d_modelWeights, float regMult, float coeff, float trainLabelCount);
+void d_calcCost(float *dst, d_Matrix* d_modelErr, vector<d_Matrix>* d_modelWeights,const  float regMult,const  float coeff,const  float trainLabelCount);
 void d_drawPixels(int * buffer, int m, int k, const float * vals, bool discrete);

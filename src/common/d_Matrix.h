@@ -27,7 +27,7 @@ public:
 	void free(){
 		cudaFree(device_data);
 	}
-protected:
+private:
 	int rowCount;
 	int colCount;
 	float* device_data;
