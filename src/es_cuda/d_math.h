@@ -4,9 +4,18 @@
 #include "color.h"
 #include "d_Matrix.h"
 #include <vector>
+
+static bool isInitialized = false;
+
 using namespace std;
 #define BLOCK_SIZE 16
 #define LRELU_LEAK 0.01f
+
+using ptrFunc = float(*)(float, float);
+
+
+void d_mathInit();
+
 inline dim3 dimGrid(int m, int k) {
 	return dim3((k + BLOCK_SIZE - 1) / BLOCK_SIZE, (m + BLOCK_SIZE - 1) / BLOCK_SIZE);
 }
@@ -15,9 +24,11 @@ inline dim3 dimBlock() {
 }
 
 /* dst = srcA (+) srcB */
-void d_add_elem(d_Matrix *dst, d_Matrix *srcA, d_Matrix *srcB);
+void d_add_elem(d_Matrix *dst, const d_Matrix &srcA, const d_Matrix &srcB);
 /* dst = srcA (-) srcB */
-void d_subtract_elem(d_Matrix *dst, d_Matrix *srcA, d_Matrix *srcB);
+void d_subtract_elem(d_Matrix *dst, const d_Matrix &srcA, const d_Matrix &srcB);
+/* dst = srcA (*) srcB */
+void d_mult_elem(d_Matrix *dst, const d_Matrix &srcA, const d_Matrix &srcB);
 /* dst = srcA * b */
 void d_mult_scalar(d_Matrix *dst, const float b);
 /* dst = src.T */

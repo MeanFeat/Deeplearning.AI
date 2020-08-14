@@ -9,6 +9,9 @@ public:
 	float* d_data(){
 		return device_data;
 	}
+	float* d_data() const {
+		return device_data;
+	}
 	int rows(){
 		return rowCount;
 	}
