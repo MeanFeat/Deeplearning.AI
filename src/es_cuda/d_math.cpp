@@ -3,9 +3,11 @@
 __device__ ptrFunc d_pfAdd = __fadd_rn;
 __device__ ptrFunc d_pfSub = __fsub_rn;
 __device__ ptrFunc d_pfMult = __fmul_rn;
+__device__ ptrFunc d_pfSet = _set_elem;
 static ptrFunc pfAdd;
 static ptrFunc pfSub;
 static ptrFunc pfMult;
+static ptrFunc pfSet;
 
 #define setFunctionPointer( h_ptr, d_ptr ) cudaMemcpyFromSymbol(&h_ptr, d_ptr, sizeof(ptrFunc));
 
@@ -14,6 +16,7 @@ void d_mathInit(){
 		setFunctionPointer(pfAdd, d_pfAdd);
 		setFunctionPointer(pfSub, d_pfSub);
 		setFunctionPointer(pfMult, d_pfMult);
+		setFunctionPointer(pfSet, d_pfSet);
 	}
 }
 __global__ void launch2D_elem_Kernel(ptrFunc op, float *c, const float *a, const float *b, int m, int k){
@@ -24,23 +27,54 @@ __global__ void launch2D_elem_Kernel(ptrFunc op, float *c, const float *a, const
 		c[tid] = (*op)(a[tid], b[tid]);
 	}
 }
-/* dst = dst (op) srcA */
-template<typename T>
-void d_launch_single_thread(ptrFunc op, float *dst, T srcA) {
+__global__ void launch_elem_broad_Kernel(ptrFunc op, float *c, const float *a, const float b, int m, int k) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int tid = row * k + col;
+	if (col < k && row < m) {
+		c[tid] = (*op)(a[tid], b);
+	}
+}
+/* dst (op)= a */
+void d_launch_single_thread(ptrFunc op, float *dst, const float a) {
+	launch_elem_broad_Kernel << <1, 1 >> > (op, dst, dst, a, 1, 1);
+}
+/* dst (op)= srcA */
+void d_launch_single_thread(ptrFunc op, float *dst, const float *srcA) {
 	launch2D_elem_Kernel << <1, 1 >> > (op, dst, dst, srcA, 1, 1);
 }
-/* dst = srcA (op) srcB */
-template<typename Ta, typename Tb>
-void d_launch_single_thread(ptrFunc op, float *dst, const Ta srcA, const Tb *srcB) {
-	launch2D_elem_Kernel<<<1,1>>>(op, dst, srcA, srcB, 1, 1);
+/* dst = srcA (op) b */
+void d_launch_single_thread(ptrFunc op, float *dst, const float *srcA, const float b) {
+	launch_elem_broad_Kernel <<<1,1>>>(op, dst, srcA, b, 1, 1);
 }
-template<typename Ta, typename Tb>
-void d_launch2D_elem(ptrFunc func, d_Matrix *dst, const Ta srcA, const Tb srcB) {
+/* dst = srcA (op) srcB */
+void d_launch_single_thread(ptrFunc op, float *dst, const float *srcA, const float *srcB) {
+	launch2D_elem_Kernel << <1, 1 >> > (op, dst, srcA, srcB, 1, 1);
+}
+/* dst = srcA (op) srcB */
+void d_launch2D_elem(ptrFunc func, d_Matrix *dst, const float *srcA, const float *srcB) {
 	int m = dst->rows();
 	int k = dst->cols();
 	launch2D_elem_Kernel << <dimGrid(m, k), dimBlock() >> > (func, dst->d_data(), srcA, srcB, m, k);
 	d_catchErr();
 } 
+/* dst = srcA (op) b */
+void d_launch2D_elem(ptrFunc func, d_Matrix *dst, const float * srcA, const float b) {
+	int m = dst->rows();
+	int k = dst->cols();
+	launch_elem_broad_Kernel << <dimGrid(m, k), dimBlock() >> > (func, dst->d_data(), srcA, b, m, k);
+	d_catchErr();
+}
+/* dst = a */
+void d_set_elem(float *dst, const float a) {
+	d_launch_single_thread(pfSet, dst, a);
+}
+/* dst = a */
+void d_set_elem(d_Matrix *dst, const float a) {
+	int m = dst->rows();
+	int k = dst->cols();
+	launch_elem_broad_Kernel << <dimGrid(m, k), dimBlock() >> > (pfSet, dst->d_data(), dst->d_data(), a, m, k);
+}
 /* dst = srcA (+) srcB */
 void d_add_elem(d_Matrix *dst, const d_Matrix &srcA, const d_Matrix &srcB) {
 	d_launch2D_elem(pfAdd, dst, srcA.d_data(), srcB.d_data());
@@ -511,9 +545,7 @@ void d_square(d_Matrix* dst, const d_Matrix* src) {
 __global__ void finalCost_Kernel(float *dst, float *sumTotal, float regMult, float trainCount) {
 	dst[0] = dst[0] + (0.5f * (regMult * (sumTotal[0] / (trainCount*2.0f))));
 }
-__global__ void setZero_Kernel(float *dst) {
-	dst[0] = 0.0f;
-}
+
 void d_calcCost(float *dst, d_Matrix* d_err, vector<d_Matrix>* d_modelWeights, float regMult, float coeff, float trainLableCount) {
 	d_Matrix *d_diff = new d_Matrix(d_err->rows(), d_err->cols());
 	int m = d_err->rows();
@@ -524,7 +556,7 @@ void d_calcCost(float *dst, d_Matrix* d_err, vector<d_Matrix>* d_modelWeights, f
 	// Add Regularization
 	float* d_sqrSumTotal;
 	cudaMalloc((void**)&d_sqrSumTotal, sizeof(float));
-	setZero_Kernel << <1, 1 >> > (d_sqrSumTotal); d_catchErr();
+	d_set_elem(d_sqrSumTotal, 0.f);
 	for (int i = 0; i < (int)d_modelWeights->size() - 1; ++i) {
 		d_Matrix *layerWeights = &d_modelWeights->at(i);
 		int m = layerWeights->rows();
@@ -534,7 +566,7 @@ void d_calcCost(float *dst, d_Matrix* d_err, vector<d_Matrix>* d_modelWeights, f
 		d_check(cudaMalloc((void**)&d_sqrSum, sizeof(float)));
 		d_square(&d_squared, layerWeights); d_catchErr();
 		d_sumMatrix(d_sqrSum, d_squared.d_data(), m, k);
-		d_launch_single_thread(pfAdd, d_sqrSumTotal, d_sqrSumTotal, d_sqrSum);
+		d_launch_single_thread(pfAdd, d_sqrSumTotal, d_sqrSum);
 		d_check(cudaFree(d_sqrSum));
 		d_check(cudaFree(d_squared.d_data()));
 	}

@@ -21,7 +21,10 @@ inline dim3 dimGrid(int m, int k) {
 inline dim3 dimBlock() {
 	return dim3(BLOCK_SIZE, BLOCK_SIZE);
 }
-
+/* dst (=) a*/
+void d_set_elem(float *dst, const float a);
+/* dst (=) a*/
+void d_set_elem(d_Matrix *dst, const float a);
 /* dst = srcA (+) srcB */
 void d_add_elem(d_Matrix *dst, const d_Matrix &srcA, const d_Matrix &srcB);
 /* dst = srcA (-) srcB */
@@ -57,3 +60,7 @@ void d_updateParameterADAM(d_Matrix * dst, d_Matrix * d_derivative, d_Matrix * d
 void d_updateParameter(d_Matrix * dst, d_Matrix * d_derivative, float learnRate);
 void d_calcCost(float *dst, d_Matrix* d_modelErr, vector<d_Matrix>* d_modelWeights,const  float regMult,const  float coeff,const  float trainLabelCount);
 void d_drawPixels(int * buffer, int m, int k, const float * vals, bool discrete);
+
+inline __device__ float _set_elem( float a, const float b ){
+	return b;
+}
