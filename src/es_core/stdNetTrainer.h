@@ -1,5 +1,4 @@
 #pragma once
-#ifndef STD_NET_TRAINER_H
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -26,15 +25,21 @@ struct NetCache {
 class NetTrainer {
 public:
 	NetTrainer();
-	NetTrainer(Net &net, MatrixXf &data, MatrixXf &labels, float weightScale, float learnRate, float regTerm);
+	NetTrainer(Net *net, MatrixXf *data, MatrixXf *labels, float weightScale, float learnRate, float regTerm);
 	~NetTrainer();
+	
 	NetTrainParameters &GetTrainParams();
 	NetCache &GetCache();
+	Net *network;
+	MatrixXf *trainData;
+	MatrixXf *trainLabels;
+	float coeff;
 	void AddLayer(int A, int B, float weightScale);
+	
 	MatrixXf ForwardTrain();
-	float CalcCost(const MatrixXf & h, const MatrixXf & Y);
+	float CalcCost(const MatrixXf *h, const MatrixXf *Y);
 	void BackwardPropagation();
-	void BackLayer(MatrixXf &dZ, const MatrixXf *LowerA, int layerIndex);
+	void BackLayer(MatrixXf &dZ, int l, const MatrixXf *LowerA);
 	void UpdateParameters();
 	void UpdateParametersWithMomentum();
 	void UpdateParametersADAM();
@@ -42,23 +47,17 @@ public:
 	void UpdateSingleStep();
 	void ModifyLearningRate(float m);
 	void ModifyRegTerm(float m);
-	MatrixXf BackActivation(const MatrixXf &dZ, int layerIndex);
+	MatrixXf BackActivation(int l, const MatrixXf &dZ);
 	MatrixXf BackSigmoid(const MatrixXf &dZ, int index);
 	MatrixXf BackTanh(const MatrixXf &dZ, int index);
 	MatrixXf BackReLU(const MatrixXf &dZ, int index);
 	MatrixXf BackLReLU(const MatrixXf &dZ, int index);
 	MatrixXf BackSine(const MatrixXf &dZ, int index);
 
-private:
-	Net *network;
-	MatrixXf *trainData;
-	MatrixXf *trainLabels;
-	float coeff;
+protected:
 	NetCache cache;
 	NetParameters dropParams;
 	NetTrainParameters trainParams;
 	NetTrainParameters momentum;
 	NetTrainParameters momentumSqr;
 };
-#define STD_NET_TRAINER_H
-#endif

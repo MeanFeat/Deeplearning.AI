@@ -1,6 +1,4 @@
 #pragma once
-#ifndef STD_NET_H
-
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -62,10 +60,8 @@ public:
 	MatrixXf ForwardPropagation(const MatrixXf &X);
 
 	void SaveNetwork();
-	void LoadNetwork(const string fileName);
+	void LoadNetwork();
 
 protected:
 	NetParameters params;
 };
-#define STD_NET_H
-#endif // !STD_NET_H
