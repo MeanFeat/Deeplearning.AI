@@ -1,4 +1,5 @@
 #pragma once
+#ifndef STD_MATH_H
 #include <Eigen/dense>
 #include <vector>
 #include <iostream>
@@ -19,14 +20,18 @@ namespace Eigen {
 		out.close();
 	}
 	template<class Matrix>
-	void read_binary(const char* filename, Matrix& matrix) {
-		std::ifstream in(filename, ios::in | std::ios::binary);
-		typename Matrix::Index rows = 0, cols = 0;
-		in.read((char*)(&rows), sizeof(typename Matrix::Index));
-		in.read((char*)(&cols), sizeof(typename Matrix::Index));
-		matrix.resize(rows, cols);
-		in.read((char *)matrix.data(), rows*cols * sizeof(typename Matrix::Scalar));
-		in.close();
+	bool read_binary(Matrix& outMatrix, const char* filename) {
+		ifstream in(filename, ios::in | ios::binary);
+		if (in.good()) {
+			typename Matrix::Index rows = 0, cols = 0;
+			in.read((char*)(&rows), sizeof(typename Matrix::Index));
+			in.read((char*)(&cols), sizeof(typename Matrix::Index));
+			outMatrix.resize(rows, cols);
+			in.read((char *)outMatrix.data(), rows * cols * sizeof(typename Matrix::Scalar));
+			in.close();
+			return true;
+		}
+		return false;
 	}
 
 	MatrixXf BuildMatFromFile(string fName) {
@@ -87,3 +92,5 @@ namespace Eigen {
 	}
 
 }
+#define STD_MATH_H
+#endif
