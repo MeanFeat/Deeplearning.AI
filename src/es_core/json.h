@@ -21,13 +21,13 @@ bool strFind(std::string str, std::string token) {
 }
 
 Activation ReadActivation(string str) {
-	if( strFind(str, "Sigmoid") ) {
+	if( strFind(str, "sigmoid") ) {
 		return Activation::Sigmoid;
-	} else if( strFind(str, "Tanh") ) {
+	} else if( strFind(str, "tanh") ) {
 		return Activation::Tanh;
-	} else if( strFind(str, "ReLU") ) {
+	} else if( strFind(str, "relu") ) {
 		return Activation::ReLU;
-	} else if( strFind(str, "LReLU") ) {
+	} else if( strFind(str, "leaky_relu") ) {
 		return Activation::LReLU;
 	} else {
 		return Activation::Linear;
