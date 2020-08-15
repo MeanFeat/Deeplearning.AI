@@ -166,11 +166,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	MatrixXf Y;//= (MatrixXf)BuildMatFromFile("SpiralLabels.csv"); write_binary("SpiralLabels_64.dat", Y);
 
 #if x64
-	read_binary("Spiral_64.dat", X);
-	read_binary("SpiralLabels_64.dat", Y);
+	read_binary( X, "Spiral_64.dat" );
+	read_binary( Y, "SpiralLabels_64.dat" );
 #else
-	read_binary("Spiral.dat", X);
-	read_binary("SpiralLabels.dat", Y);
+	read_binary( X, "Spiral.dat" );
+	read_binary( Y, "SpiralLabels.dat" );
 #endif
 
 	X = BuildPolynomials(X);
@@ -194,9 +194,10 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Tanh });
 		initParallel();
 		setNbThreads(4);
-		trainer = NetTrainer(&neural, &X, &Y, 0.15f,
+		trainer = NetTrainer(neural, X, Y, 0.15f,
 							 1.25f, 
 							 20.f);
+
 
 		time(&startTime);
 		HDC deviceContext = GetDC(window);

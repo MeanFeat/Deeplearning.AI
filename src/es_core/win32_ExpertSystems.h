@@ -1,5 +1,5 @@
 #pragma  once
-#if !defined(WIN32_EXPERTSYSTEMS_H)
+#ifndef WIN32_EXPERTSYSTEMS_H
 #include <math.h>
 #include <stdint.h>
 #include <windows.h>

@@ -20,14 +20,14 @@ bool strFind(std::string str, std::string token) {
 	return str.find(token) != std::string::npos;
 }
 
-Activation ReadActivation(std::string str) {
-	if( strFind(str, "sigmoid") ) {
+Activation ReadActivation(string str) {
+	if( strFind(str, "Sigmoid") ) {
 		return Activation::Sigmoid;
-	} else if( strFind(str, "tanh") ) {
+	} else if( strFind(str, "Tanh") ) {
 		return Activation::Tanh;
-	} else if( strFind(str, "relu") ) {
+	} else if( strFind(str, "ReLU") ) {
 		return Activation::ReLU;
-	} else if( strFind(str, "leaky_relu") ) {
+	} else if( strFind(str, "LReLU") ) {
 		return Activation::LReLU;
 	} else {
 		return Activation::Linear;
