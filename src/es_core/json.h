@@ -20,7 +20,7 @@ bool strFind(std::string str, std::string token) {
 	return str.find(token) != std::string::npos;
 }
 
-Activation ReadActivation(std::string str) {
+Activation ReadActivation(string str) {
 	if( strFind(str, "sigmoid") ) {
 		return Activation::Sigmoid;
 	} else if( strFind(str, "tanh") ) {
