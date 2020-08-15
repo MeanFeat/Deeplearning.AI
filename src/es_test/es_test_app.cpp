@@ -5,6 +5,15 @@ static vector<string> prefixes;
 static vector<string> functionNames;
 static vector<vector<vector<float>>> arguments;
 
+void PrintFile(const string fName){
+	std::string line;
+	ifstream filePrint(fName);
+	while (filePrint.good()) {
+		std::getline(filePrint, line);
+		cout << line << endl;
+	}
+}
+
 void ReadTestList(const string fName) {
 	cout << "Reading file " << fName << endl;
 	std::string line;
@@ -21,7 +30,6 @@ void ReadTestList(const string fName) {
 			if (state == ParseState::none) {
 				if (strFind(lastVal, "header")) {
 					state = ParseState::header;
-					cout << "Header " << val << endl;
 					headers.push_back(val);
 				}
 				else if (strFind(lastVal, "prefix")) {
@@ -52,7 +60,6 @@ void ReadTestList(const string fName) {
 				}
 				else {
 					if (!strFind(val, "{")) {
-						cout << "\t[";
 						size_t pos = 0;
 						std::string token;
 						do {
@@ -61,9 +68,7 @@ void ReadTestList(const string fName) {
 							float temp;
 							strCast(&temp, val);
 							parseArgs.push_back(temp);
-							cout << temp << " "; 
 						} while ((pos = val.find(',')) != std::string::npos);
-						cout << "]" << endl;
 						currentFuncArgs.push_back(parseArgs);
 						parseArgs.clear();
 					}
@@ -75,11 +80,12 @@ void ReadTestList(const string fName) {
 			}
 		}
 	}
+	PrintFile(fName);
 	cout << "Finished reading file " << fName << endl;
 	file.close();
 }
-void CreateGeneratedUnit(const string fileName) {
-	ofstream file(fileName.c_str());
+void CreateGeneratedUnit(const string fName) {
+	ofstream file(fName.c_str());
 	file.clear();
 	file << "//GENERATED FILE" << endl;
 	for (int fn = 0; fn < functionNames.size(); fn++) {
@@ -90,7 +96,7 @@ void CreateGeneratedUnit(const string fileName) {
 		for (int arg = 0; arg < arguments[fn].size(); arg++) {
 			string args;
 			string spacer = arg <= 9 ? "0" : "";
-			file << "NAME_RUN(" << prefixes[fn] << spacer << arg <<"_";
+			file << "\tNAME_RUN(" << prefixes[fn] << spacer << arg <<"_";
 			for (int a = 0; a < arguments[fn][arg].size(); a++) {
 				float thisArg = arguments[fn][arg][a];
 				if (float(int(thisArg)) == thisArg) {
@@ -120,9 +126,10 @@ void CreateGeneratedUnit(const string fileName) {
 		file << "};" << endl;
 	}
 	file.close();
+	PrintFile(fName);
 }
-void CreateGeneratedCpp(const string fileName) {
-	ofstream file(fileName.c_str());
+void CreateGeneratedCpp(const string fName) {
+	ofstream file(fName.c_str());
 	file.clear();
 	file << "//GENERATED FILE" << endl;
 	for (int fn = 0; fn < functionNames.size(); fn++) {
@@ -141,6 +148,7 @@ void CreateGeneratedCpp(const string fileName) {
 		}
 	}
 	file.close();
+	PrintFile(fName);
 }
 
 void RunAllTests() {

@@ -1,7 +1,6 @@
+@echo off &setlocal
 IF NOT EXIST tests_cpp.generated goto Create
 IF NOT EXIST tests_unit.generated goto Create
-
-@echo off &setlocal
 
 Set orig=tests.list
 Set gen=tests_cpp.generated
@@ -18,11 +17,15 @@ for /f %%j in ('"forfiles /m %gen% /c "cmd /c echo @ftime" "') do set gen_ModTim
 SET "var1=%orig_ModTime::=%"
 SET "var2=%gen_ModTime::=%"
 
-if %var1% LSS %var2% goto End
+if %var1% LSS %var2% goto Message
 
 :Create
+echo Generating Files
 type nul > tests_cpp.generated 
 type nul > tests_unit.generated
 start D:\Gamedev\ExpertSystems.AI\x64\Release\es_test_app.exe "-b" "D:\Gamedev\ExpertSystems.AI\src\es_test\tests.list" "D:\Gamedev\ExpertSystems.AI\src\es_test\tests_cpp.generated" "D:\Gamedev\ExpertSystems.AI\src\es_test\tests_unit.generated"
+
+:Message
+echo The list has not been modified.
 
 :End
