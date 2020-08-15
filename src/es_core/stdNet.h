@@ -62,7 +62,7 @@ public:
 	}
 
 	void SaveNetwork();
-	void LoadNetwork();
+	void LoadNetwork(const string fName);
 
 protected:
 	NetParameters params;

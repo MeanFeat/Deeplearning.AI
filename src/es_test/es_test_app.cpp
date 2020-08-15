@@ -18,7 +18,7 @@ void ReadTestList(const string fName) {
 	cout << "Reading file " << fName << endl;
 	std::string line;
 	ifstream file(fName);
-	ParseState state = ParseState::none;
+	TestParseState state = TestParseState::none;
 	vector<float> parseArgs;
 	vector<vector<float>> currentFuncArgs;
 	while (file.good()) {
@@ -27,34 +27,34 @@ void ReadTestList(const string fName) {
 		std::string val, lastVal;
 		while (iss.good()) {
 			std::getline(iss, val, ':');
-			if (state == ParseState::none) {
+			if (state == TestParseState::none) {
 				if (strFind(lastVal, "header")) {
-					state = ParseState::header;
+					state = TestParseState::header;
 					headers.push_back(val);
 				}
 				else if (strFind(lastVal, "prefix")) {
-					state = ParseState::prefix;
+					state = TestParseState::prefix;
 					prefixes.push_back(val);
 				}
 				else if (strFind(lastVal, "functionName")) {
-					state = ParseState::functionName;
+					state = TestParseState::functionName;
 					functionNames.push_back(val);
 				}
 				if (strFind(lastVal, "arguments")) {
-					state = ParseState::args;
+					state = TestParseState::args;
 				}
 				lastVal = val;
 			}
 			switch (state) {
-			case ParseState::none:
-			case ParseState::header:
-			case ParseState::prefix:
-			case ParseState::functionName: //fall through
-				state = ParseState::none;
+			case TestParseState::none:
+			case TestParseState::header:
+			case TestParseState::prefix:
+			case TestParseState::functionName: //fall through
+				state = TestParseState::none;
 				break;
-			case ParseState::args: {
+			case TestParseState::args: {
 				if (strFind(val, "}")) {
-					state = ParseState::none;
+					state = TestParseState::none;
 					arguments.push_back(currentFuncArgs);
 					currentFuncArgs.clear();
 				}
@@ -75,7 +75,7 @@ void ReadTestList(const string fName) {
 				}
 			} break;
 			default:
-				state = ParseState::none;
+				state = TestParseState::none;
 				break;
 			}
 		}

@@ -164,6 +164,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\common\color.h" />
+    <ClInclude Include="..\common\es_parser.h" />
     <ClInclude Include="..\common\types.h" />
     <ClInclude Include="d_NetTrainer.h" />
     <ClInclude Include="stdDraw.h" />
