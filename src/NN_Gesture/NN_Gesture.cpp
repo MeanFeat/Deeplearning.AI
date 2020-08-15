@@ -294,7 +294,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		while( globalRunning && steps < 500) {
 			Win32ProcessPendingMessages();
 			if( isTraining ) {
-				for( int e = 0; e < 1; e++ ) {
+				for( int e = 0; e < 100; e++ ) {
 					trainer.UpdateSingleStep();
 				}
 				UpdateHistory(history);
