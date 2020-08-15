@@ -167,6 +167,7 @@
     <ClInclude Include="..\common\types.h" />
     <ClInclude Include="d_NetTrainer.h" />
     <ClInclude Include="stdDraw.h" />
+    <ClInclude Include="stdMatrix.h" />
     <ClInclude Include="stdNet.h" />
     <ClInclude Include="stdNetTrainer.h" />
     <ClInclude Include="win32_ExpertSystems.h" />
