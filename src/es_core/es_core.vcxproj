@@ -108,6 +108,8 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>es_core_pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Lib>
       <AdditionalDependencies>cudart.lib;es_cuda.lib;</AdditionalDependencies>
@@ -147,6 +149,8 @@
       <OpenMPSupport>true</OpenMPSupport>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>es_core_pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -160,11 +164,22 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='CUDA_Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='CUDA_Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeaderFile>es_core_pch.h</PrecompiledHeaderFile>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\common\color.h" />
     <ClInclude Include="..\common\es_parser.h" />
     <ClInclude Include="..\common\types.h" />
     <ClInclude Include="d_NetTrainer.h" />
+    <ClInclude Include="es_core_pch.h" />
     <ClInclude Include="stdDraw.h" />
     <ClInclude Include="stdMatrix.h" />
     <ClInclude Include="stdNet.h" />
@@ -174,6 +189,14 @@
   <ItemGroup>
     <ClCompile Include="..\common\color.cpp" />
     <ClCompile Include="d_NetTrainer.cpp" />
+    <ClCompile Include="es_core_pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">es_core_pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">es_core_pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='CUDA_Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='CUDA_Debug|x64'">es_core_pch.h</PrecompiledHeaderFile>
+    </ClCompile>
     <ClCompile Include="stdNet.cpp" />
     <ClCompile Include="stdNetTrainer.cpp" />
   </ItemGroup>

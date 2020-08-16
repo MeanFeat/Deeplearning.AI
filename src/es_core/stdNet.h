@@ -1,8 +1,4 @@
 #pragma once
-#include <vector>
-#include <iostream>
-#include <fstream>
-#include <Eigen/dense>
 #include "types.h"
 
 inline Eigen::MatrixXf CalcSigmoid(const Eigen::MatrixXf &in) {

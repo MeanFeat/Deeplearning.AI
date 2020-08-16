@@ -1,8 +1,5 @@
 #pragma once
-#include <Eigen/dense>
-#include <vector>
-#include <iostream>
-#include <fstream>
+#include "es_core_pch.h"
 
 typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic > MatrixDynamic;
 namespace Eigen {
