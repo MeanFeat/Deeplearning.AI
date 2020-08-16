@@ -111,9 +111,9 @@ void d_mult_scalar(d_Matrix *dst, const float b) {
 __global__ void transpose_Naive_Kernel(float *dst, const float *src, int m, int k) {
 	int tid = threadIdx.x;
 	if (tid == 0) {
-		for (int i = 0; i < k; i++) {
+		for (int i = 0; i < k; ++i) {
 			for (int j = 0; j < m; ++j) {
-				dst[j * k+ i] = src[j * k + i];
+				dst[i * m + j] = src[j * k + i];
 			}
 		}
 		__syncthreads();
