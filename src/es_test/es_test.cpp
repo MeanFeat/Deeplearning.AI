@@ -38,25 +38,10 @@ testResult GetOutcome(float cSum, float tSum, float thresh) {
 	TEXTCOLOUR(cout << result.message << endl;, result.passed ? passCol : 12 );
 	return result;
 }
-testData &RequestTestData(int m, int k) {
-	char ind[100];
-	sprintf_s(ind, "%d,%d", m, k);
-	if (dataPool.find(ind) == dataPool.end()) {
-		TEXTCOLOUR(cout << "Creating new data" << endl; , 6);
-		testData td;
-		td.host = MatrixXf::Random(m, k);
-		td.device = to_device(td.host);
-		dataPool[ind] = td;
-	}
-	else {
-		TEXTCOLOUR(cout << "Re-using data from pool!" << endl;, 6);
-	}
-	return dataPool[ind];
-}
 testResult testMultipy(int m, int n, int k) {
 	cout << "Testing Multiply " << m << "," << n << " * " << n << "," << k << endl;
-	testData A = RequestTestData(m, n);
-	testData B = RequestTestData(n, k);
+	testData A = testData(m, n);
+	testData B = testData(n, k);
 	d_Matrix d_C = d_Matrix(m, k);
 	d_mult(&d_C, &A.device, &B.device);
 	float threshold = float((m + k) * n) * thresholdMultiplier;
@@ -64,8 +49,8 @@ testResult testMultipy(int m, int n, int k) {
 }
 testResult testTransposeRight(int m, int n, int k) {
 	cout << "Testing Multiply (" << m << "," << n << ") * (" << n << "," << k << ").transpose()" << endl;
-	testData A = RequestTestData(m, n);
-	testData B = RequestTestData(k, n);
+	testData A = testData(m, n);
+	testData B = testData(k, n);
 	d_Matrix d_C = d_Matrix(m, k);
 	d_mult_rhsT(&d_C, &A.device, &B.device);
 	float threshold = float((m + k) * n) * thresholdMultiplier;
@@ -73,8 +58,8 @@ testResult testTransposeRight(int m, int n, int k) {
 }
 testResult testTransposeLeft(int m, int n, int k) {
 	cout << "Testing Multiply (" << m << "," << n << ").transpose() * (" << n << "," << k << ")" << endl;
-	testData A = RequestTestData(n, m);
-	testData B = RequestTestData(n, k);
+	testData A = testData(n, m);
+	testData B = testData(n, k);
 	d_Matrix d_C = d_Matrix(m, k);
 	d_mult_lhsT(&d_C, &A.device, &B.device);
 	float threshold = float((m + k) * n) * thresholdMultiplier;
@@ -82,7 +67,7 @@ testResult testTransposeLeft(int m, int n, int k) {
 }
 testResult testSum(int m, int k) {
 	cout << "Testing Sum " << m << "," << k << endl;
-	testData A = RequestTestData(m, k);
+	testData A = testData(m, k);
 	float* d_testSum;
 	float result;
 	cudaMalloc((void**)&d_testSum, sizeof(float));
@@ -94,7 +79,7 @@ testResult testSum(int m, int k) {
 }
 testResult testTranspose(int m, int k) {
 	cout << "Testing Transpose " << m << "," << k << endl;
-	testData A = RequestTestData(m, k);
+	testData A = testData(m, k);
 	d_Matrix d_C = d_Matrix(k, m);
 	d_transpose(&d_C, &A.device);
 	MatrixXf control = A.host.transpose();
@@ -113,7 +98,7 @@ testResult testTranspose(int m, int k) {
 }
 testResult testMultScalar(int m, int k) {
 	cout << "Testing Multiply Element (" << m << "," << k << ") * b" << endl;
-	testData A = RequestTestData(m, k);
+	testData A = testData(m, k);
 	float r = float(rand() / RAND_MAX);
 	d_Matrix d_C = to_device(MatrixXf::Zero(m, k));
 	d_mult_scalar(&A.device, r);
@@ -123,8 +108,8 @@ testResult testMultScalar(int m, int k) {
 }
 testResult testAdd(int m, int k) {
 	cout << "Testing Add " << m << "," << k << " (+) " << m << "," << k << endl;
-	testData A = RequestTestData(m, k);
-	testData B = RequestTestData(m, k);
+	testData A = testData(m, k);
+	testData B = testData(m, k);
 	d_Matrix d_C = d_Matrix(m, k);
 	d_add_elem(&d_C, A.device, B.device);
 	float controlSum = MatrixXf(A.host.array() + B.host.array()).sum();
@@ -133,17 +118,17 @@ testResult testAdd(int m, int k) {
 }
 testResult testSubtract(int m, int k) {
 	cout << "Testing Subtract " << m << "," << k << " (-) " << m << "," << k << endl;
-	testData A = RequestTestData(m, k);
-	testData B = RequestTestData(m, k);
-	d_Matrix d_C = to_device(MatrixXf::Zero(m, k));
+	testData A = testData(m, k);
+	testData B = testData(m, k);
+	d_Matrix d_C = d_Matrix(m, k);
 	d_subtract_elem(&d_C, A.device, B.device);
 	float threshold = float(m + k) * thresholdMultiplier;
 	return GetOutcome(MatrixXf(A.host.array() - B.host.array()).sum(), MatrixXf(to_host(d_C)).sum(), threshold);
 }
 testResult testMultElem(int m, int k) {
 	cout << "Testing MultElem " << m << "," << k << " (*) " << m << "," << k << endl;
-	testData A = RequestTestData(m, k);
-	testData B = RequestTestData(m, k);
+	testData A = testData(m, k);
+	testData B = testData(m, k);
 	d_Matrix d_C = to_device(MatrixXf::Zero(m, k));
 	d_mult_elem(&d_C, A.device, B.device);
 	float threshold = float(m + k) * thresholdMultiplier;
@@ -151,7 +136,7 @@ testResult testMultElem(int m, int k) {
 }
 testResult testSet(int m, int k, float val) {
 	cout << "Testing Set " << m << "," << k << " (=) " << val << endl;
-	testData A = RequestTestData(m, k);
+	testData A = testData(m, k);
 	d_Matrix d_C = A.device;
 	d_set_elem(&d_C, val);
 	MatrixXf result = to_host(d_C);
@@ -168,7 +153,7 @@ testResult testSet(int m, int k, float val) {
 }
 testResult testSquare(int m, int k) {
 	cout << "Testing Square " << m << "," << k << endl;
-	testData A = RequestTestData(m, k);
+	testData A = testData(m, k);
 	d_Matrix d_C = d_Matrix(k, m);
 	d_square(&d_C, &A.device);
 	float controlSum = MatrixXf(A.host.array()* A.host.array()).sum();
@@ -177,7 +162,7 @@ testResult testSquare(int m, int k) {
 }
 testResult testSigmoid(int m, int k) {
 	cout << "Testing Sigmoid " << m << "," << k << endl;
-	testData A = RequestTestData(m, k);
+	testData A = testData(m, k);
 	d_activate(&A.device, Activation::Sigmoid);
 	float controlSum = MatrixXf(Net::Activate(Activation::Sigmoid, A.host)).sum();
 	float threshold = m + k * thresholdMultiplier;
@@ -185,7 +170,7 @@ testResult testSigmoid(int m, int k) {
 }
 testResult testTanh(int m, int k) {
 	cout << "Testing Tanh " << m << "," << k << endl;
-	testData A = RequestTestData(m, k);
+	testData A = testData(m, k);
 	d_activate(&A.device, Activation::Tanh);
 	float controlSum = MatrixXf(Net::Activate(Activation::Tanh, A.host)).sum();
 	float threshold = m+k * thresholdMultiplier;
@@ -193,7 +178,7 @@ testResult testTanh(int m, int k) {
 }
 testResult testReLU(int m, int k) {
 	cout << "Testing ReLU " << m << "," << k << endl;
-	testData A = RequestTestData(m, k);
+	testData A = testData(m, k);
 	d_activate(&A.device, Activation::ReLU);
 	float controlSum = MatrixXf(Net::Activate(Activation::ReLU, A.host)).sum();
 	float threshold = controlSum * thresholdMultiplier;
@@ -201,7 +186,7 @@ testResult testReLU(int m, int k) {
 }
 testResult testLReLU(int m, int k) {
 	cout << "Testing ReLU " << m << "," << k << endl;
-	testData A = RequestTestData(m, k);
+	testData A = testData(m, k);
 	d_activate(&A.device, Activation::LReLU);
 	float controlSum = MatrixXf(Net::Activate(Activation::LReLU, A.host)).sum();
 	float threshold = controlSum * thresholdMultiplier;

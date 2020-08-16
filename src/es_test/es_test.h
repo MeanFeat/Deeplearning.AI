@@ -26,16 +26,21 @@ struct testResult {
 	testResult(bool p, string m) : passed(p), message(m) {}
 	~testResult(){}
 };
+d_Matrix to_device(MatrixXf matrix);
+MatrixXf to_host(d_Matrix d_matrix);
 struct testData {
 	MatrixXf host;
 	d_Matrix device;
+	testData() {}
+	testData(int m, int k ) {
+		host = MatrixXf::Random(m, k);
+		device = to_device(host);
+	}
+	~testData() {
+		device.free();
+	}
 };
 
-static std::map<string, testData> dataPool;
-testData &RequestTestData(int m, int k);
-
-d_Matrix to_device(MatrixXf matrix);
-MatrixXf to_host(d_Matrix d_matrix);
 void PrintHeader(string testType);
 testResult GetOutcome(float cSum, float tSum, float thresh);
 testResult testMultipy(int m, int n, int k);
