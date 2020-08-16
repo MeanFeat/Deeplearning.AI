@@ -21,7 +21,7 @@ struct testResult {
 	float threshold;
 	testResult() {}
 	testResult(bool p, std::string m) : passed(p), message(m) {}
-	~testResult(){}
+	~testResult() {}
 };
 d_Matrix to_device(Eigen::MatrixXf matrix);
 Eigen::MatrixXf to_host(d_Matrix d_matrix);
@@ -29,7 +29,7 @@ struct testData {
 	Eigen::MatrixXf host;
 	d_Matrix device;
 	testData() {}
-	testData(int m, int k ) {
+	testData(int m, int k) {
 		host = Eigen::MatrixXf::Random(m, k);
 		device = to_device(host);
 	}
@@ -55,5 +55,3 @@ testResult testSigmoid(int m, int k);
 testResult testTanh(int m, int k);
 testResult testReLU(int m, int k);
 testResult testLReLU(int m, int k);
-
-

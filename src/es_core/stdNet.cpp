@@ -3,56 +3,55 @@
 
 using namespace Eigen;
 using namespace std;
-Net::Net(){}
-Net::Net(int inputSize, std::vector<int> hiddenSizes, int outputSize, vector<Activation> activations){
-	
+Net::Net() {}
+Net::Net(int inputSize, std::vector<int> hiddenSizes, int outputSize, vector<Activation> activations) {
 	params.layerActivations = activations;
 	params.layerSizes.push_back(inputSize);
-	for(int l = 0; l < (int)hiddenSizes.size(); ++l){
+	for (int l = 0; l < (int)hiddenSizes.size(); ++l) {
 		params.layerSizes.push_back(hiddenSizes[l]);
 	}
 	params.layerSizes.push_back(outputSize);
 	AddLayer(hiddenSizes[0], inputSize);
-	for(int h = 1; h < (int)hiddenSizes.size(); ++h){
+	for (int h = 1; h < (int)hiddenSizes.size(); ++h) {
 		AddLayer(hiddenSizes[h], hiddenSizes[h - 1]);
 	}
 	AddLayer(outputSize, hiddenSizes.back());
 }
 
-Net::Net(const string fName){
+Net::Net(const string fName) {
 	LoadNetwork(fName);
 }
 
-Net::~Net(){}
-NetParameters &Net::GetParams(){
+Net::~Net() {}
+NetParameters &Net::GetParams() {
 	return params;
 }
-void Net::SetParams(vector<MatrixXf> W, vector<MatrixXf> b){
+void Net::SetParams(vector<MatrixXf> W, vector<MatrixXf> b) {
 	params.W = W;
 	params.b = b;
 }
-void Net::AddLayer(int A, int B){
+void Net::AddLayer(int A, int B) {
 	params.W.push_back(MatrixXf::Random(A, B));
 	params.b.push_back(MatrixXf::Zero(A, 1));
 }
 MatrixXf Net::Activate(const MatrixXf &In, Activation act) {
-	switch(act){
-		case Linear:
+	switch (act) {
+	case Linear:
 		return In;
 		break;
-		case Sigmoid:
+	case Sigmoid:
 		return CalcSigmoid(In);
 		break;
-		case Tanh:
+	case Tanh:
 		return CalcTanh(In);
 		break;
-		case ReLU:
+	case ReLU:
 		return CalcReLU(In);
 		break;
-		case LReLU:
+	case LReLU:
 		return CalcLReLU(In);
 		break;
-		default:
+	default:
 		return In;
 		break;
 	}
@@ -60,14 +59,14 @@ MatrixXf Net::Activate(const MatrixXf &In, Activation act) {
 
 MatrixXf Net::ForwardPropagation(const MatrixXf &X) {
 	MatrixXf lastOutput = X;
-	for(int i = 0; i < (int)params.layerSizes.size() - 1; ++i) {
+	for (int i = 0; i < (int)params.layerSizes.size() - 1; ++i) {
 		MatrixXf weighed = params.W[i] * lastOutput;
 		weighed.colwise() += (VectorXf)params.b[i];
 		lastOutput = Net::Activate(weighed, params.layerActivations[i]);
 	}
 	return lastOutput;
 }
-void Net::SaveNetwork(){}
+void Net::SaveNetwork() {}
 
 Activation ReadActivation(string str) {
 	if (strFind(str, "sigmoid")) {
@@ -88,16 +87,16 @@ Activation ReadActivation(string str) {
 }
 
 enum class NetParseState {
-			layer,
-			activation,
-			weightShape,
-			biasShape,
-			weightValues,
-			biasValues,
-			none
-		};
+	layer,
+	activation,
+	weightShape,
+	biasShape,
+	weightValues,
+	biasValues,
+	none
+};
 
-void Net::LoadNetwork(const string fName){
+void Net::LoadNetwork(const string fName) {
 	std::string line;
 	ifstream file(fName);
 	vector<int> shapeDims;

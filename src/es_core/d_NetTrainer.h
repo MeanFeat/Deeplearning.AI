@@ -7,15 +7,15 @@
 #include "d_Math.h"
 
 struct d_NetTrainParameters {
-	std::vector<d_Matrix> d_W;
-	std::vector<d_Matrix> d_b;
-	float learnRate;
+	float coefficiant;
 	float learnCoeff;
 	float learnMult;
-	float regTerm;
+	float learnRate;
 	float regMod;
 	float regMult;
-	float coefficiant;
+	float regTerm;
+	std::vector<d_Matrix> d_b;
+	std::vector<d_Matrix> d_W;
 	unsigned int trainExamplesCount;
 };
 struct d_NetTrainDerivatives {
@@ -28,10 +28,10 @@ struct d_NetCache {
 	float cost;
 };
 struct d_NetProfiler {
-	float forwardTime;
 	float backpropTime;
-	float updateTime;
 	float calcCostTime;
+	float forwardTime;
+	float updateTime;
 	float visualizationTime;
 };
 class d_NetTrainer {

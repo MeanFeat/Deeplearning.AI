@@ -5,11 +5,11 @@
 #include <Eigen/dense>
 #include "types.h"
 
-inline Eigen::MatrixXf CalcSigmoid( const Eigen::MatrixXf &in) {
+inline Eigen::MatrixXf CalcSigmoid(const Eigen::MatrixXf &in) {
 	//return in.unaryExpr([](float elem) { return 1.f / (1.f + exp(-elem)); });
 	//return ((-1.f*in).array().exp() + 1).cwiseInverse();
-	Eigen::MatrixXf out = Eigen::MatrixXf(in.rows(),in.cols());
-	for (int i = 0; i < in.size(); i++)	{
+	Eigen::MatrixXf out = Eigen::MatrixXf(in.rows(), in.cols());
+	for (int i = 0; i < in.size(); i++) {
 		*(out.data() + i) = 1.f / (1.f + expf(-(*(in.data() + i))));
 	}
 	return out;

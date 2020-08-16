@@ -24,7 +24,7 @@ public:
 	NetTrainer();
 	NetTrainer(Net *net, Eigen::MatrixXf *data, Eigen::MatrixXf *labels, float weightScale, float learnRate, float regTerm);
 	~NetTrainer();
-	
+
 	NetTrainParameters &GetTrainParams();
 	NetCache &GetCache();
 	Net *network;
@@ -32,7 +32,7 @@ public:
 	Eigen::MatrixXf *trainLabels;
 	float coeff;
 	void AddLayer(int A, int B);
-	
+
 	Eigen::MatrixXf ForwardTrain();
 	float CalcCost(const Eigen::MatrixXf *h, const Eigen::MatrixXf *Y);
 	void BackwardPropagation();
