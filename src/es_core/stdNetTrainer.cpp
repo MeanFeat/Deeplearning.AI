@@ -1,3 +1,4 @@
+#include "es_core_pch.h"
 #include "stdNetTrainer.h"
 
 using namespace Eigen;

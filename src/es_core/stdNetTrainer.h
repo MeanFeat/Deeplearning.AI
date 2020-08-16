@@ -1,8 +1,4 @@
 #pragma once
-#include <vector>
-#include <iostream>
-#include <fstream>
-#include <Eigen/dense>
 #include "stdNet.h"
 
 struct NetTrainParameters {

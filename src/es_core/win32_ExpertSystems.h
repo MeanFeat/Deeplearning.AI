@@ -1,14 +1,6 @@
 #pragma  once
 #if !defined(WIN32_EXPERTSYSTEMS_H)
-#include <math.h>
-#include <stdint.h>
-#include <windows.h>
-#include <stdio.h>
-#include <malloc.h>
-#include <iostream>
-#include <fstream>
-#include <stdlib.h>
-#include <Eigen/dense>
+#include "es_core_pch.h"
 #include "stdDraw.h"
 #include "stdMatrix.h"
 #include "stdNet.h"

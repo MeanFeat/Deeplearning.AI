@@ -1,10 +1,8 @@
 #pragma once
+#include "es_test_pch.h"
 #include "stdNet.h"
 #include "d_Matrix.h"
 #include "d_math.h"
-#include <Eigen/dense>
-#include <iostream>
-#include <map>
 
 #define GENERATED_TESTS "tests_cpp.generated"
 #define GENERATED_UNIT_TESTS "tests_unit.generated"
