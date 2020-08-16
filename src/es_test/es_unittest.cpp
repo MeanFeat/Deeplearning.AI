@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "CppUnitTest.h"
 #include "es_test.h"
-string err;
+
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 #define NAME_RUN(n,arg) TEST_METHOD(n) {  ProcessMessage(arg); }
