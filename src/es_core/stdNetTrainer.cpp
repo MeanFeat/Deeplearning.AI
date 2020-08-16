@@ -1,5 +1,8 @@
 #include "stdNetTrainer.h"
 
+using namespace Eigen;
+using namespace std;
+
 //ADAM
 static const float b1 = 0.9f;
 static const float b2 = 1.f - FLT_EPSILON;
@@ -9,7 +12,6 @@ static const float invB1 = 1.f - b1;
 static const float invB2 = 1.f - b2;
 static const float invBSq1 = 1.f - b1Sqr;
 static const float invBSq2 = 1.f - b2Sqr;
-
 
 NetTrainer::NetTrainer() {
 }

@@ -1,5 +1,6 @@
 #include "es_test_app.h"
-
+using namespace std;
+using namespace Eigen;
 static vector<string> headers;
 static vector<string> prefixes;
 static vector<string> functionNames;

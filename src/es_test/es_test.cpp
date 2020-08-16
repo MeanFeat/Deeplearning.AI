@@ -1,5 +1,7 @@
 #include "es_test.h"
 
+using namespace std;
+using namespace Eigen;
 void PrintHeader(string testType) {
 	if (verbosity > 0) {
 		int len = (int)strlen(testType.c_str());

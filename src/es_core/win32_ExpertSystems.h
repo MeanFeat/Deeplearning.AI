@@ -19,8 +19,6 @@
 #define local_persist static 
 #define global_variable static
 
-using namespace Eigen;
-
 typedef int8_t int8;
 typedef int16_t int16;
 typedef int32_t int32;

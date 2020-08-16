@@ -1,6 +1,8 @@
 ﻿#include "stdNet.h"
 #include "es_parser.h"
 
+using namespace Eigen;
+using namespace std;
 Net::Net(){}
 Net::Net(int inputSize, std::vector<int> hiddenSizes, int outputSize, vector<Activation> activations){
 	

@@ -1,5 +1,7 @@
 #include "win32_ExpertSystems.h"
 #include <time.h>
+using namespace Eigen;
+using namespace std;
 #define WINWIDTH 200
 #define WINHEIGHT 200
 #define WINHALFWIDTH int(WINWIDTH * 0.5f)

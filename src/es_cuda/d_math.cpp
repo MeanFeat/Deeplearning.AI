@@ -1,5 +1,6 @@
 #include "d_math.h"
 
+using namespace std;
 __device__ ptrFunc d_pfAdd = __fadd_rn;
 __device__ ptrFunc d_pfSub = __fsub_rn;
 __device__ ptrFunc d_pfMult = __fmul_rn;
