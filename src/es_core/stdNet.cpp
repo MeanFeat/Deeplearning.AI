@@ -33,7 +33,7 @@ void Net::AddLayer(int A, int B){
 	params.W.push_back(MatrixXf::Random(A, B));
 	params.b.push_back(MatrixXf::Zero(A, 1));
 }
-MatrixXf Net::Activate(Activation act, const MatrixXf &In){
+MatrixXf Net::Activate(const MatrixXf &In, Activation act) {
 	switch(act){
 		case Linear:
 		return In;
@@ -61,7 +61,7 @@ MatrixXf Net::ForwardPropagation(const MatrixXf &X) {
 	for(int i = 0; i < (int)params.layerSizes.size() - 1; ++i) {
 		MatrixXf weighed = params.W[i] * lastOutput;
 		weighed.colwise() += (VectorXf)params.b[i];
-		lastOutput = Activate(params.layerActivations[i], weighed);
+		lastOutput = Net::Activate(weighed, params.layerActivations[i]);
 	}
 	return lastOutput;
 }

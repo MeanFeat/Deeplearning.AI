@@ -64,7 +64,7 @@ MatrixXf NetTrainer::ForwardTrain() {
 	for(int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i) {
 		MatrixXf weighed = network->GetParams().W[i] * lastOutput;
 		cache.Z[i].noalias() = ( weighed ).colwise() + (VectorXf)network->GetParams().b[i];
-		lastOutput = Net::Activate(network->GetParams().layerActivations[i], cache.Z[i]);
+		lastOutput = Net::Activate(cache.Z[i], network->GetParams().layerActivations[i]);
 		cache.A[i].noalias() = lastOutput;
 	}
 	return lastOutput;

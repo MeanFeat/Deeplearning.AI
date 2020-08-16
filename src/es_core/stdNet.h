@@ -54,7 +54,7 @@ public:
 	NetParameters &GetParams();
 	void SetParams(vector<MatrixXf> W, vector<MatrixXf> b);
 	void AddLayer(int A, int B);
-	static MatrixXf Activate(Activation act, const MatrixXf &In);	
+	static MatrixXf Activate(const MatrixXf &In, Activation act);
 	MatrixXf ForwardPropagation(const MatrixXf &X);
 
 	int Depth() {

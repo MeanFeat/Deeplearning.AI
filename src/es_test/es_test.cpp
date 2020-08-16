@@ -164,7 +164,7 @@ testResult testSigmoid(int m, int k) {
 	cout << "Testing Sigmoid " << m << "," << k << endl;
 	testData A = testData(m, k);
 	d_activate(&A.device, Activation::Sigmoid);
-	float controlSum = MatrixXf(Net::Activate(Activation::Sigmoid, A.host)).sum();
+	float controlSum = MatrixXf(Net::Activate(A.host,Activation::Sigmoid)).sum();
 	float threshold = m + k * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(A.device)).sum(), threshold);
 }
@@ -172,7 +172,7 @@ testResult testTanh(int m, int k) {
 	cout << "Testing Tanh " << m << "," << k << endl;
 	testData A = testData(m, k);
 	d_activate(&A.device, Activation::Tanh);
-	float controlSum = MatrixXf(Net::Activate(Activation::Tanh, A.host)).sum();
+	float controlSum = MatrixXf(Net::Activate(A.host,Activation::Tanh)).sum();
 	float threshold = m+k * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(A.device)).sum(), threshold);
 }
@@ -180,7 +180,7 @@ testResult testReLU(int m, int k) {
 	cout << "Testing ReLU " << m << "," << k << endl;
 	testData A = testData(m, k);
 	d_activate(&A.device, Activation::ReLU);
-	float controlSum = MatrixXf(Net::Activate(Activation::ReLU, A.host)).sum();
+	float controlSum = MatrixXf(Net::Activate(A.host,Activation::ReLU)).sum();
 	float threshold = controlSum * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(A.device)).sum(), threshold);
 }
@@ -188,7 +188,7 @@ testResult testLReLU(int m, int k) {
 	cout << "Testing ReLU " << m << "," << k << endl;
 	testData A = testData(m, k);
 	d_activate(&A.device, Activation::LReLU);
-	float controlSum = MatrixXf(Net::Activate(Activation::LReLU, A.host)).sum();
+	float controlSum = MatrixXf(Net::Activate(A.host,Activation::LReLU)).sum();
 	float threshold = controlSum * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(A.device)).sum(), threshold);
 }
