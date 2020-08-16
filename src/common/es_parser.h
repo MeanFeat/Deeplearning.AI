@@ -1,5 +1,5 @@
 #pragma once
-
+#include "es_core_pch.h"
 template <class T>
 void strCast(T *out, std::string str) {
 	std::stringstream convertor(str);

@@ -1,5 +1,5 @@
 #include "win32_ExpertSystems.h"
-#include <time.h>
+
 using namespace Eigen;
 using namespace std;
 #define WINWIDTH 200
@@ -189,7 +189,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
 			WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 			WINWIDTH * 4, WINHEIGHT * 4, 0, 0, Instance, 0);
-		neural = Net((int)X.rows(), { 8,8 }, (int)Y.rows(), {
+		neural = Net((int)X.rows(), { 18,8 }, (int)Y.rows(), {
 			Tanh,
 			Tanh,
 			Tanh });

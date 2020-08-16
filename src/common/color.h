@@ -1,5 +1,5 @@
 #pragma once
-#if !defined(COLOR_H)
+#ifndef COLOR_H
 
 class Color {
 public:

@@ -1,7 +1,5 @@
 #include "win32_ExpertSystems.h"
-#include "stdMatrix.h"
-#include "windowsx.h"
-#include <time.h>
+
 using namespace Eigen;
 using namespace std;
 #define WINWIDTH 400

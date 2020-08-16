@@ -1,3 +1,4 @@
+#include "es_core_pch.h"
 #include "color.h"
 int Color::ToBit() {
 	return ((r << 16) | ((g << 8) | b));

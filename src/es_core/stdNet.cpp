@@ -1,4 +1,5 @@
-﻿#include "stdNet.h"
+﻿#include "es_core_pch.h"
+#include "stdNet.h"
 #include "es_parser.h"
 
 using namespace Eigen;
