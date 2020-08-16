@@ -97,14 +97,18 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 				isCapturingEight = false;
 				RecordSample(deltaCapture, 1.f);
 				break;
-				case 'V': //fall through
+				case 'V':
 				*verifyLabel = 1.f;
 				skipStep = true;
 				break;
 				case 'C':
 				*verifyLabel = 0.f;
 				skipStep = true;
+				break;
 				case 'T':
+				if (isTraining){
+					trainer.UpdateHostNetwork();
+				}
 				isTraining = !isTraining;
 				break;
 				case '0':
@@ -291,7 +295,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		float h = 0.f;
 		int steps = 0;
 		//Main Loop
-		while( globalRunning && steps < 500) {
+		while( globalRunning ) {
 			Win32ProcessPendingMessages();
 			if( isTraining ) {
 				for( int e = 0; e < 1; e++ ) {
