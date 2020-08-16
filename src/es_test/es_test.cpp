@@ -1,5 +1,5 @@
+#include "es_test_pch.h"
 #include "es_test.h"
-
 using namespace std;
 using namespace Eigen;
 void PrintHeader(string testType) {
@@ -37,7 +37,7 @@ testResult GetOutcome(float cSum, float tSum, float thresh) {
 	result.passed = diff <= abs(thresh);
 	result.message = GetOutcomeString(cSum, tSum, diff, thresh, result.passed);
 	int passCol = diff > 0.f ? 14 : 10;
-	TEXTCOLOUR(cout << result.message << endl;, result.passed ? passCol : 12);
+	TEXTCOLOUR(cout << result.message << endl; , result.passed ? passCol : 12);
 	return result;
 }
 testResult testMultipy(int m, int n, int k) {
