@@ -2,6 +2,8 @@
 #include "stdMatrix.h"
 #include "windowsx.h"
 #include <time.h>
+using namespace Eigen;
+using namespace std;
 #define WINWIDTH 400
 #define WINHEIGHT WINWIDTH
 #define WINHALFWIDTH int((WINWIDTH-1)*0.5f)

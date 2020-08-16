@@ -6,9 +6,6 @@
 #include <iostream>
 #include <map>
 
-using namespace std;
-using namespace Eigen;
-
 #define GENERATED_TESTS "tests_cpp.generated"
 #define GENERATED_UNIT_TESTS "tests_unit.generated"
 #define DEFAULTTEXTCOLOUR 10
@@ -19,21 +16,21 @@ static const float thresholdMultiplier = (FLT_EPSILON) * 2.f;
 
 struct testResult {
 	bool passed;
-	string message;
+	std::string message;
 	float error;
 	float threshold;
 	testResult() {}
-	testResult(bool p, string m) : passed(p), message(m) {}
+	testResult(bool p, std::string m) : passed(p), message(m) {}
 	~testResult(){}
 };
-d_Matrix to_device(MatrixXf matrix);
-MatrixXf to_host(d_Matrix d_matrix);
+d_Matrix to_device(Eigen::MatrixXf matrix);
+Eigen::MatrixXf to_host(d_Matrix d_matrix);
 struct testData {
-	MatrixXf host;
+	Eigen::MatrixXf host;
 	d_Matrix device;
 	testData() {}
 	testData(int m, int k ) {
-		host = MatrixXf::Random(m, k);
+		host = Eigen::MatrixXf::Random(m, k);
 		device = to_device(host);
 	}
 	~testData() {
@@ -41,7 +38,7 @@ struct testData {
 	}
 };
 
-void PrintHeader(string testType);
+void PrintHeader(std::string testType);
 testResult GetOutcome(float cSum, float tSum, float thresh);
 testResult testMultipy(int m, int n, int k);
 testResult testTransposeRight(int m, int n, int k);

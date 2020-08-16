@@ -1,4 +1,6 @@
 #include "d_NetTrainer.h"
+using namespace Eigen;
+using namespace std;
 static cudaStream_t cuda_stream;
 cudaEvent_t start, stop;
 d_Matrix to_device(MatrixXf matrix) {

@@ -7,7 +7,6 @@
 
 static bool isInitialized = false;
 
-using namespace std;
 #define BLOCK_SIZE 16
 #define LRELU_LEAK 0.01f
 
@@ -58,7 +57,7 @@ void d_set_dW_Reg(d_Matrix *dst, d_Matrix *d_dZ, d_Matrix *d_A, d_Matrix *d_W, f
 void d_set_db(d_Matrix *dst, d_Matrix *d_dZ, float coefficient);
 void d_updateParameterADAM(d_Matrix * dst, d_Matrix * d_derivative, d_Matrix * d_momentum, d_Matrix * d_momentumSqr, float learnRate);
 void d_updateParameter(d_Matrix * dst, d_Matrix * d_derivative, float learnRate);
-void d_calcCost(float *dst, d_Matrix* d_modelErr, vector<d_Matrix>* d_modelWeights,const  float regMult,const  float coeff,const  float trainLabelCount);
+void d_calcCost(float *dst, d_Matrix* d_modelErr, std::vector<d_Matrix>* d_modelWeights,const  float regMult,const  float coeff,const  float trainLabelCount);
 void d_drawPixels(int * buffer, int m, int k, const float * vals, bool discrete);
 
 inline __device__ float _set_elem( float a, const float b ){
