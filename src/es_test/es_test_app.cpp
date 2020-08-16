@@ -173,6 +173,8 @@ int main(int argc, char** argv) {
 				ReadTestList(argv[i+1]);
 				CreateGeneratedCpp(argv[i + 2]);
 				CreateGeneratedUnit(argv[i + 3]);
+			} else if (strcmp(argv[i], "-a") == 0){
+				RunAllTests();
 			}
 		}
 		return 0;
