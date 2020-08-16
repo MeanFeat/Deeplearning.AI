@@ -4,7 +4,6 @@
 #include <conio.h>
 #include <fstream>
 #include <iostream>
-using namespace std;
 
 enum class TestParseState {
 	functionName,

@@ -5,47 +5,46 @@
 #include "stdNet.h"
 #include "d_Matrix.h"
 #include "d_Math.h"
-using namespace Eigen;
-using namespace std;
+
 struct d_NetTrainParameters {
-	vector<d_Matrix> d_W;
-	vector<d_Matrix> d_b;
-	float learnRate;
+	float coefficiant;
 	float learnCoeff;
 	float learnMult;
-	float regTerm;
+	float learnRate;
 	float regMod;
 	float regMult;
-	float coefficiant;
+	float regTerm;
+	std::vector<d_Matrix> d_b;
+	std::vector<d_Matrix> d_W;
 	unsigned int trainExamplesCount;
 };
 struct d_NetTrainDerivatives {
-	vector<d_Matrix> d_dW;
-	vector<d_Matrix> d_db;
+	std::vector<d_Matrix> d_dW;
+	std::vector<d_Matrix> d_db;
 };
 struct d_NetCache {
-	vector<d_Matrix> d_A;
-	vector<d_Matrix> d_dZ;
+	std::vector<d_Matrix> d_A;
+	std::vector<d_Matrix> d_dZ;
 	float cost;
 };
 struct d_NetProfiler {
-	float forwardTime;
 	float backpropTime;
-	float updateTime;
 	float calcCostTime;
+	float forwardTime;
+	float updateTime;
 	float visualizationTime;
 };
 class d_NetTrainer {
 public:
 	d_NetTrainer();
-	d_NetTrainer(Net *net, MatrixXf *data, MatrixXf *labels, float weightScale, float learnRate, float regTerm);
+	d_NetTrainer(Net *net, Eigen::MatrixXf *data, Eigen::MatrixXf *labels, float weightScale, float learnRate, float regTerm);
 	~d_NetTrainer();
 	d_NetTrainParameters GetTrainParams();
 	d_NetCache GetCache();
 	d_NetProfiler GetProfiler();
 	Net *network;
 	d_Matrix d_trainLabels;
-	void BuildVisualization(MatrixXf screen, int * buffer, int m, int k);
+	void BuildVisualization(Eigen::MatrixXf screen, int * buffer, int m, int k);
 	void Visualization(int * buffer, int m, int k, bool discrete);
 	void UpdateHostNetwork();
 	void UpdateSingleStep();
@@ -75,7 +74,7 @@ protected:
 	d_NetTrainDerivatives momentum;
 	d_NetTrainDerivatives momentumSqr;
 	int *d_Buffer;
-	vector<d_Matrix> d_VisualA;
+	std::vector<d_Matrix> d_VisualA;
 	d_NetProfiler profiler;
 private:
 	void AddLayer(int A, int B);

@@ -1,11 +1,12 @@
 #include "es_test_app.h"
-
+using namespace std;
+using namespace Eigen;
 static vector<string> headers;
 static vector<string> prefixes;
 static vector<string> functionNames;
 static vector<vector<vector<float>>> arguments;
 
-void PrintFile(const string fName){
+void PrintFile(const string fName) {
 	std::string line;
 	ifstream filePrint(fName);
 	while (filePrint.good()) {
@@ -96,12 +97,13 @@ void CreateGeneratedUnit(const string fName) {
 		for (int arg = 0; arg < arguments[fn].size(); arg++) {
 			string args;
 			string spacer = arg <= 9 ? "0" : "";
-			file << "\tNAME_RUN(" << prefixes[fn] << spacer << arg <<"_";
+			file << "\tNAME_RUN(" << prefixes[fn] << spacer << arg << "_";
 			for (int a = 0; a < arguments[fn][arg].size(); a++) {
 				float thisArg = arguments[fn][arg][a];
 				if (float(int(thisArg)) == thisArg) {
 					file << to_string(int(thisArg));
-				} else {
+				}
+				else {
 					string str = to_string(thisArg);
 					str.replace(str.find("."), 1, "p");
 					str.erase(str.find_last_not_of('0') + 1, std::string::npos);
@@ -162,18 +164,19 @@ void RunAllTests() {
 }
 
 int main(int argc, char** argv) {
-	if (argc > 1){
+	if (argc > 1) {
 		for (int i = 0; i <= argc; ++i) {
 			if (strcmp(argv[i], "-b") == 0) {
-				if ( i + 3 > argc){
+				if (i + 3 > argc) {
 					cout << "-b flag takes 3 args: .list file, cpp.generated, unit.generated" << endl;
 					return 0;
 				}
 				cout << "Building File" << endl;
-				ReadTestList(argv[i+1]);
+				ReadTestList(argv[i + 1]);
 				CreateGeneratedCpp(argv[i + 2]);
 				CreateGeneratedUnit(argv[i + 3]);
-			} else if (strcmp(argv[i], "-a") == 0){
+			}
+			else if (strcmp(argv[i], "-a") == 0) {
 				RunAllTests();
 			}
 		}
@@ -194,16 +197,18 @@ int main(int argc, char** argv) {
 				CreateGeneratedCpp(GENERATED_TESTS);
 				CreateGeneratedUnit(GENERATED_UNIT_TESTS);
 				break;
-			} else if (in == 65) { //'a'
+			}
+			else if (in == 65) { //'a'
 				cout << "Running All Tests" << endl;
 				RunAllTests();
 				break;
-			} else if (in == 84) { //'t'
+			}
+			else if (in == 84) { //'t'
 				cout << "Test " << endl;
 				ifstream file(GENERATED_TESTS);
 				string line;
 				int lineNumber = 0;
-				while(file.good()){
+				while (file.good()) {
 					std::getline(file, line);
 					if (line != "") {
 						string spacer = lineNumber <= 9 ? "  " : " ";

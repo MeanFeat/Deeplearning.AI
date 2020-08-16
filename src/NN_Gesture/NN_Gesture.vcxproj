@@ -135,7 +135,6 @@
       <OpenMPSupport>true</OpenMPSupport>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>

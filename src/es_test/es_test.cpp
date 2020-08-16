@@ -1,5 +1,7 @@
 #include "es_test.h"
 
+using namespace std;
+using namespace Eigen;
 void PrintHeader(string testType) {
 	if (verbosity > 0) {
 		int len = (int)strlen(testType.c_str());
@@ -34,8 +36,8 @@ testResult GetOutcome(float cSum, float tSum, float thresh) {
 	float diff = abs(cSum - tSum);
 	result.passed = diff <= abs(thresh);
 	result.message = GetOutcomeString(cSum, tSum, diff, thresh, result.passed);
-	int passCol = diff > 0.f ? 14:10;
-	TEXTCOLOUR(cout << result.message << endl;, result.passed ? passCol : 12 );
+	int passCol = diff > 0.f ? 14 : 10;
+	TEXTCOLOUR(cout << result.message << endl;, result.passed ? passCol : 12);
 	return result;
 }
 testResult testMultipy(int m, int n, int k) {
@@ -89,7 +91,7 @@ testResult testTranspose(int m, int k) {
 	for (int i = 0; i < result.size(); i++) {
 		float con = *(control.data() + i);
 		float res = *(result.data() + i);
-		if (abs(con-res) > FLT_EPSILON) {
+		if (abs(con - res) > FLT_EPSILON) {
 			passed = false;
 			elemList += to_string(i) + ", ";
 		}
@@ -142,9 +144,9 @@ testResult testSet(int m, int k, float val) {
 	MatrixXf result = to_host(d_C);
 	string elemList = "";
 	bool passed = true;
-	for (int i = 0; i < result.size(); i++)	{
+	for (int i = 0; i < result.size(); i++) {
 		float ith = *(result.data() + i);
-		if (ith != val){
+		if (ith != val) {
 			passed = false;
 			elemList += to_string(i) + ", ";
 		}
@@ -164,7 +166,7 @@ testResult testSigmoid(int m, int k) {
 	cout << "Testing Sigmoid " << m << "," << k << endl;
 	testData A = testData(m, k);
 	d_activate(&A.device, Activation::Sigmoid);
-	float controlSum = MatrixXf(Net::Activate(Activation::Sigmoid, A.host)).sum();
+	float controlSum = MatrixXf(Net::Activate(A.host, Activation::Sigmoid)).sum();
 	float threshold = m + k * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(A.device)).sum(), threshold);
 }
@@ -172,15 +174,15 @@ testResult testTanh(int m, int k) {
 	cout << "Testing Tanh " << m << "," << k << endl;
 	testData A = testData(m, k);
 	d_activate(&A.device, Activation::Tanh);
-	float controlSum = MatrixXf(Net::Activate(Activation::Tanh, A.host)).sum();
-	float threshold = m+k * thresholdMultiplier;
+	float controlSum = MatrixXf(Net::Activate(A.host, Activation::Tanh)).sum();
+	float threshold = m + k * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(A.device)).sum(), threshold);
 }
 testResult testReLU(int m, int k) {
 	cout << "Testing ReLU " << m << "," << k << endl;
 	testData A = testData(m, k);
 	d_activate(&A.device, Activation::ReLU);
-	float controlSum = MatrixXf(Net::Activate(Activation::ReLU, A.host)).sum();
+	float controlSum = MatrixXf(Net::Activate(A.host, Activation::ReLU)).sum();
 	float threshold = controlSum * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(A.device)).sum(), threshold);
 }
@@ -188,7 +190,7 @@ testResult testLReLU(int m, int k) {
 	cout << "Testing ReLU " << m << "," << k << endl;
 	testData A = testData(m, k);
 	d_activate(&A.device, Activation::LReLU);
-	float controlSum = MatrixXf(Net::Activate(Activation::LReLU, A.host)).sum();
+	float controlSum = MatrixXf(Net::Activate(A.host, Activation::LReLU)).sum();
 	float threshold = controlSum * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(A.device)).sum(), threshold);
 }

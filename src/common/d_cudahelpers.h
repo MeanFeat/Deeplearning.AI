@@ -14,15 +14,15 @@
 #define d_catchErr()
 #define d_profile(start,stop,output, args ) args;
 #endif
-inline void profileStop(cudaEvent_t start, cudaEvent_t stop, float *output){
+inline void profileStop(cudaEvent_t start, cudaEvent_t stop, float *output) {
 	cudaEventRecord(stop);
 	cudaEventSynchronize(stop);
 	cudaEventElapsedTime(output, start, stop);
 }
-inline void checkErr(cudaError err, const char *file, const int line){
+inline void checkErr(cudaError err, const char *file, const int line) {
 #ifdef CUDA_ERROR_CHECK
-	if(cudaSuccess != err){
-		char txt[256] = {0};
+	if (cudaSuccess != err) {
+		char txt[256] = { 0 };
 		_snprintf_s(txt, 256, "#CUDA ERROR::checkErr() failed at %s (%i) : %s\n", file, line, cudaGetErrorString(err));
 		OutputDebugStringA(txt);
 		exit(-1);
@@ -30,11 +30,11 @@ inline void checkErr(cudaError err, const char *file, const int line){
 #endif
 	return;
 }
-inline void catchErr(const char *file, const int line){
+inline void catchErr(const char *file, const int line) {
 #ifdef CUDA_ERROR_CHECK
 	cudaError err = cudaGetLastError();
-	if(cudaSuccess != err){
-		char txt[256] = {0};
+	if (cudaSuccess != err) {
+		char txt[256] = { 0 };
 		_snprintf_s(txt, 256, "#CUDA ERROR::catchErr() failed at %s (%i) : %s\n", file, line, cudaGetErrorString(err));
 		OutputDebugStringA(txt);
 		exit(-1);

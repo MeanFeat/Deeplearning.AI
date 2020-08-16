@@ -1,5 +1,6 @@
 #include "d_math.h"
 
+using namespace std;
 __device__ ptrFunc d_pfAdd = __fadd_rn;
 __device__ ptrFunc d_pfSub = __fsub_rn;
 __device__ ptrFunc d_pfMult = __fmul_rn;
@@ -11,7 +12,7 @@ static ptrFunc pfSet;
 
 #define setFunctionPointer( h_ptr, d_ptr ) cudaMemcpyFromSymbol(&h_ptr, d_ptr, sizeof(ptrFunc));
 
-void d_mathInit(){
+void d_mathInit() {
 	if (!isInitialized) {
 		setFunctionPointer(pfAdd, d_pfAdd);
 		setFunctionPointer(pfSub, d_pfSub);
@@ -19,10 +20,10 @@ void d_mathInit(){
 		setFunctionPointer(pfSet, d_pfSet);
 	}
 }
-__global__ void launch2D_elem_Kernel(ptrFunc op, float *c, const float *a, const float *b, int m, int k){
-	int row = blockIdx.y * blockDim.y + threadIdx.y; 
-	int col = blockIdx.x * blockDim.x + threadIdx.x; 
-	int tid = row * k + col; 
+__global__ void launch2D_elem_Kernel(ptrFunc op, float *c, const float *a, const float *b, int m, int k) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int tid = row * k + col;
 	if (col < k && row < m) {
 		c[tid] = (*op)(a[tid], b[tid]);
 	}
@@ -45,7 +46,7 @@ void d_launch_single_thread(ptrFunc op, float *dst, const float *srcA) {
 }
 /* dst = srcA (op) b */
 void d_launch_single_thread(ptrFunc op, float *dst, const float *srcA, const float b) {
-	launch_elem_broad_Kernel <<<1,1>>>(op, dst, srcA, b, 1, 1);
+	launch_elem_broad_Kernel << <1, 1 >> > (op, dst, srcA, b, 1, 1);
 }
 /* dst = srcA (op) srcB */
 void d_launch_single_thread(ptrFunc op, float *dst, const float *srcA, const float *srcB) {
@@ -57,7 +58,7 @@ void d_launch2D_elem(ptrFunc func, d_Matrix *dst, const float *srcA, const float
 	int k = dst->cols();
 	launch2D_elem_Kernel << <dimGrid(m, k), dimBlock() >> > (func, dst->d_data(), srcA, srcB, m, k);
 	d_catchErr();
-} 
+}
 /* dst = srcA (op) b */
 void d_launch2D_elem(ptrFunc func, d_Matrix *dst, const float * srcA, const float b) {
 	int m = dst->rows();
@@ -122,7 +123,7 @@ __global__ void transpose_Naive_Kernel(float *dst, const float *src, int m, int 
 void d_transpose(d_Matrix *dst, d_Matrix *src) {
 	int m = src->rows();
 	int k = src->cols();
-	transpose_Naive_Kernel << <1,1 >> > (dst->d_data(), src->d_data(), m, k);
+	transpose_Naive_Kernel << <1, 1 >> > (dst->d_data(), src->d_data(), m, k);
 	d_catchErr();
 }
 __global__ void mult_Kernel(float *dst, const float *srcA, const float *srcB, const int m, const int n, const int k) {
@@ -243,7 +244,7 @@ __global__ void sumMatrix_Kernel(float *dst, float *src, int m, int k) {
 		dst[0] = src[0];
 	}
 }
-void d_sumMatrix(float* dst, d_Matrix *src){
+void d_sumMatrix(float* dst, d_Matrix *src) {
 	d_sumMatrix(dst, src->d_data(), src->rows(), src->cols());  d_catchErr();
 }
 void d_sumMatrix(float* dst, float* src, int m, int k) {
@@ -552,7 +553,7 @@ void d_calcCost(float *dst, d_Matrix* d_err, vector<d_Matrix>* d_modelWeights, f
 	int k = d_err->cols();
 	d_square(d_diff, d_err);
 	d_sumMatrix(dst, d_diff);
-	d_mult_scalar(dst, coeff,1,1);
+	d_mult_scalar(dst, coeff, 1, 1);
 	// Add Regularization
 	float* d_sqrSumTotal;
 	cudaMalloc((void**)&d_sqrSumTotal, sizeof(float));
@@ -561,7 +562,7 @@ void d_calcCost(float *dst, d_Matrix* d_err, vector<d_Matrix>* d_modelWeights, f
 		d_Matrix *layerWeights = &d_modelWeights->at(i);
 		int m = layerWeights->rows();
 		int k = layerWeights->cols();
-		d_Matrix d_squared(m,k);
+		d_Matrix d_squared(m, k);
 		float* d_sqrSum;
 		d_check(cudaMalloc((void**)&d_sqrSum, sizeof(float)));
 		d_square(&d_squared, layerWeights); d_catchErr();

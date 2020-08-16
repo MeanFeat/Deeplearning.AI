@@ -5,54 +5,50 @@
 #include <Eigen/dense>
 #include "stdNet.h"
 
-using namespace Eigen;
-using namespace std;
-
 struct NetTrainParameters {
-	vector<MatrixXf> dW;
-	vector<MatrixXf> db;
+	std::vector<Eigen::MatrixXf> dW;
+	std::vector<Eigen::MatrixXf> db;
 	float learningRate;
 	float learningMod;
 	float regTerm;
 };
 
 struct NetCache {
-	vector<MatrixXf> Z;
-	vector<MatrixXf> A;
+	std::vector<Eigen::MatrixXf> Z;
+	std::vector<Eigen::MatrixXf> A;
 	float cost;
 };
 
 class NetTrainer {
 public:
 	NetTrainer();
-	NetTrainer(Net *net, MatrixXf *data, MatrixXf *labels, float weightScale, float learnRate, float regTerm);
+	NetTrainer(Net *net, Eigen::MatrixXf *data, Eigen::MatrixXf *labels, float weightScale, float learnRate, float regTerm);
 	~NetTrainer();
-	
+
 	NetTrainParameters &GetTrainParams();
 	NetCache &GetCache();
 	Net *network;
-	MatrixXf *trainData;
-	MatrixXf *trainLabels;
+	Eigen::MatrixXf *trainData;
+	Eigen::MatrixXf *trainLabels;
 	float coeff;
 	void AddLayer(int A, int B);
-	
-	MatrixXf ForwardTrain();
-	float CalcCost(const MatrixXf *h, const MatrixXf *Y);
+
+	Eigen::MatrixXf ForwardTrain();
+	float CalcCost(const Eigen::MatrixXf *h, const Eigen::MatrixXf *Y);
 	void BackwardPropagation();
-	void BackLayer(MatrixXf &dZ, int l, const MatrixXf *LowerA);
+	void BackLayer(Eigen::MatrixXf &dZ, int l, const Eigen::MatrixXf *LowerA);
 	void UpdateParameters();
-	void UpdateSingleParamADAM(MatrixXf * w, MatrixXf * d, MatrixXf * m, MatrixXf * mS);
 	void UpdateParametersADAM();
 	void BuildDropoutMask();
 	void UpdateSingleStep();
 	void ModifyLearningRate(float m);
 	void ModifyRegTerm(float m);
-	MatrixXf BackActivation(int l, const MatrixXf &dZ);
-	MatrixXf BackSigmoid(const MatrixXf &dZ, int index);
-	MatrixXf BackTanh(const MatrixXf &dZ, int index);
-	MatrixXf BackReLU(const MatrixXf &dZ, int index);
-	MatrixXf BackLReLU(const MatrixXf &dZ, int index);
-	MatrixXf BackSine(const MatrixXf &dZ, int index);
+	Eigen::MatrixXf BackActivation(int l, const Eigen::MatrixXf &dZ);
+	Eigen::MatrixXf BackSigmoid(const Eigen::MatrixXf &dZ, int index);
+	Eigen::MatrixXf BackTanh(const Eigen::MatrixXf &dZ, int index);
+	Eigen::MatrixXf BackReLU(const Eigen::MatrixXf &dZ, int index);
+	Eigen::MatrixXf BackLReLU(const Eigen::MatrixXf &dZ, int index);
+	Eigen::MatrixXf BackSine(const Eigen::MatrixXf &dZ, int index);
 
 protected:
 	NetCache cache;
