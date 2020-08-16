@@ -6,7 +6,6 @@
 
 typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic > MatrixDynamic;
 namespace Eigen {
-
 	template<class Matrix>
 	void write_binary(const char* filename, const Matrix& matrix) {
 		std::ofstream out(filename, ios::out | ios::binary | ios::trunc);
@@ -27,14 +26,15 @@ namespace Eigen {
 		in.close();
 	}
 	template<class Matrix>
-	void write_csv(const char* filename, Matrix& matrix){
+	void write_csv(const char* filename, Matrix& matrix) {
 		std::ofstream file;
 		file.open(filename);
-		for(int i = 0; i < matrix.rows() * matrix.cols(); ++i){
+		for (int i = 0; i < matrix.rows() * matrix.cols(); ++i) {
 			file << (*(matrix.data() + i));
-			if( (i % matrix.rows()) == matrix.rows() - 1){
+			if ((i % matrix.rows()) == matrix.rows() - 1) {
 				file << std::endl;
-			} else{
+			}
+			else {
 				file << ',';
 			}
 		}
@@ -61,8 +61,8 @@ namespace Eigen {
 			tempMat.push_back(row);
 		}
 		Eigen::MatrixXf outMat(tempMat.size(), tempMat[0].size());
-		for (int i =0; i < (int)tempMat.size(); i++){
-			for(int j = 0; j < (int)tempMat[i].size(); j++) {
+		for (int i = 0; i < (int)tempMat.size(); i++) {
+			for (int j = 0; j < (int)tempMat[i].size(); j++) {
 				outMat(i, j) = tempMat[i][j];
 			}
 		}
@@ -79,10 +79,9 @@ namespace Eigen {
 		unsigned int numRows = (unsigned int)matrix.rows();
 		unsigned int numCols = (unsigned int)matrix.cols() - 1;
 
-		if(colToRemove < numCols)
+		if (colToRemove < numCols)
 			matrix.block(0, colToRemove, numRows, numCols - colToRemove) = matrix.rightCols(numCols - colToRemove);
 
 		matrix.conservativeResize(numRows, numCols);
 	}
-
 }

@@ -67,7 +67,6 @@ void RecordSample(vector<Vector2f> vec, float label) {
 	}
 }
 
-
 void CopyNestedVec(MatrixXf &saveData, vector<vector<Vector2f>> * s, int maxCount) {
 	int k = 0;
 	for (int i = 0; i < saveData.cols(); i++) {
@@ -128,7 +127,6 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 		}
 		break;
 		}
-
 	} break;
 	case WM_KEYDOWN:
 	{
@@ -179,7 +177,7 @@ void UpdateDisplay(vector<Vector2f> &i8, vector<Vector2f> &mTrail, vector<Vector
 					Color(int(50 * invScale), int(50 * invScale), int(50 * invScale), 0));
 			}
 			vector<float> scaledHist = hist;
-			for (auto& x : scaledHist){
+			for (auto& x : scaledHist) {
 				x = min(x*historyZoom, WINHEIGHT);
 			}
 			DrawHistory(backBuffer, scaledHist, Color(200, 100, 100, 255));
@@ -189,7 +187,6 @@ void UpdateDisplay(vector<Vector2f> &i8, vector<Vector2f> &mTrail, vector<Vector
 				if (successFade > 0.f) {
 					DrawLine(backBuffer, float(ICONLEFT), float(ICONTOP + i), float(ICONLEFT - 25), float(ICONTOP + i + 25), Color(0, int(255 * successFade), 0, 0));
 					DrawLine(backBuffer, float(ICONLEFT), float(ICONTOP + i), float(ICONLEFT + 75), float(ICONTOP + i + 75), Color(0, int(255 * successFade), 0, 0));
-
 				}
 				else {
 					DrawLine(backBuffer, float(ICONLEFT + 50), float(ICONTOP + i - 50), float(ICONLEFT - 50), float(ICONTOP + i + 50), Color(200, 0, 0, 0));
@@ -307,10 +304,10 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		vector<Vector2f> mouseTrail;
 		int sampleIndex = 0;
 		//neural = Net("Gesture-Weights.json");
-		neural = Net((int)readDeltas.rows(), {100,50}, (int)readLabels.rows(), {
+		neural = Net((int)readDeltas.rows(), { 100,50 }, (int)readLabels.rows(), {
 			Tanh,
 			Tanh,
-			Sigmoid});
+			Sigmoid });
 		trainer = d_NetTrainer(&neural, &readDeltas, &readLabels, 1.f, 1.25f, 0.0001f);
 		vector<float> history;
 		float h = 0.f;

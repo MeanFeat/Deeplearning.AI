@@ -8,8 +8,8 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 void ProcessMessage(testResult rst) {
 	std::string err = rst.message;
-	if (!rst.passed){
-		err = "\n"+err;
+	if (!rst.passed) {
+		err = "\n" + err;
 		std::wstring widestr = std::wstring(err.begin(), err.end());
 		Assert::Fail((widestr.c_str()));
 	}
@@ -18,7 +18,6 @@ void ProcessMessage(testResult rst) {
 namespace esunittest {
 #ifndef UNITTEST_LISTS
 #define UNITTEST_LISTS
-	#include GENERATED_UNIT_TESTS
+#include GENERATED_UNIT_TESTS
 #endif
 }
-

@@ -15,8 +15,8 @@
 #include "stdNetTrainer.h"
 #include "d_NetTrainer.h"
 
-#define internal static 
-#define local_persist static 
+#define internal static
+#define local_persist static
 #define global_variable static
 
 typedef int8_t int8;
@@ -36,7 +36,7 @@ typedef float real64;
 #define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
 #define clamp(x,lo,hi) min( hi, max(lo,x) )
 
-void InitializeWindow(WNDCLASSA *winclass, HINSTANCE instance, WNDPROC windowCallback, Buffer *backBuffer, int width, int height, LPSTR className ) {
+void InitializeWindow(WNDCLASSA *winclass, HINSTANCE instance, WNDPROC windowCallback, Buffer *backBuffer, int width, int height, LPSTR className) {
 	backBuffer->bitmapInfo.bmiHeader.biSize = sizeof(backBuffer->bitmapInfo.bmiHeader);
 	backBuffer->bitmapInfo.bmiHeader.biWidth = width;
 	backBuffer->bitmapInfo.bmiHeader.biHeight = height;
@@ -55,7 +55,7 @@ void InitializeWindow(WNDCLASSA *winclass, HINSTANCE instance, WNDPROC windowCal
 
 internal void Win32ProcessPendingMessages() {
 	MSG Message;
-	while(PeekMessage(&Message, 0, 0, 0, PM_REMOVE)) {
+	while (PeekMessage(&Message, 0, 0, 0, PM_REMOVE)) {
 		TranslateMessage(&Message);
 		DispatchMessageA(&Message);
 	}
@@ -65,7 +65,7 @@ internal void Win32DisplayBufferInWindow(HDC DeviceContext, HWND hwind, Buffer b
 	RECT winRect = {};
 	GetWindowRect(hwind, &winRect);
 	StretchDIBits(DeviceContext, 0, 0, winRect.right - winRect.left, winRect.bottom - winRect.top,
-				  0, 0, buffer.width, buffer.height, buffer.memory, &buffer.bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
+		0, 0, buffer.width, buffer.height, buffer.memory, &buffer.bitmapInfo, DIB_RGB_COLORS, SRCCOPY);
 }
 
 #define WIN32_EXPERTSYSTEMS_H
