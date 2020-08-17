@@ -18,28 +18,28 @@ struct NetCache {
 class NetTrainer {
 public:
 	NetTrainer();
-	NetTrainer(Net *net, Eigen::MatrixXf *data, Eigen::MatrixXf *labels, float weightScale, float learnRate, float regTerm);
+	NetTrainer(Net *net, const Eigen::MatrixXf &data, const Eigen::MatrixXf &labels, float weightScale, float learnRate, float regTerm);
 	~NetTrainer();
 
 	NetTrainParameters &GetTrainParams();
 	NetCache &GetCache();
 	Net *network;
-	Eigen::MatrixXf *trainData;
-	Eigen::MatrixXf *trainLabels;
+	Eigen::MatrixXf trainData;
+	Eigen::MatrixXf trainLabels;
 	float coeff;
 	void AddLayer(int A, int B);
 
 	Eigen::MatrixXf ForwardTrain();
-	float CalcCost(const Eigen::MatrixXf *h, const Eigen::MatrixXf *Y);
+	float CalcCost(const Eigen::MatrixXf &h, const Eigen::MatrixXf &Y);
 	void BackwardPropagation();
-	void BackLayer(Eigen::MatrixXf &dZ, int l, const Eigen::MatrixXf *LowerA);
+	void BackLayer(Eigen::MatrixXf &dZ, const Eigen::MatrixXf &LowerA, int layerIndex);
 	void UpdateParameters();
 	void UpdateParametersADAM();
 	void BuildDropoutMask();
 	void UpdateSingleStep();
 	void ModifyLearningRate(float m);
 	void ModifyRegTerm(float m);
-	Eigen::MatrixXf BackActivation(int l, const Eigen::MatrixXf &dZ);
+	Eigen::MatrixXf BackActivation(const Eigen::MatrixXf &dZ, int layerIndex);
 	Eigen::MatrixXf BackSigmoid(const Eigen::MatrixXf &dZ, int index);
 	Eigen::MatrixXf BackTanh(const Eigen::MatrixXf &dZ, int index);
 	Eigen::MatrixXf BackReLU(const Eigen::MatrixXf &dZ, int index);

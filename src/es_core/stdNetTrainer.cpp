@@ -17,11 +17,11 @@ static const float invBSq2 = 1.f - b2Sqr;
 NetTrainer::NetTrainer() {
 }
 
-NetTrainer::NetTrainer(Net *net, MatrixXf *data, MatrixXf *labels, float weightScale, float learnRate, float regTerm) {
+NetTrainer::NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &labels, float weightScale, float learnRate, float regTerm) {
 	network = net;
 	trainData = data;
 	trainLabels = labels;
-	coeff = float(1.f / labels->cols());
+	coeff = float(1.f / trainLabels.cols());
 	int nodeCount = 0;
 	for (int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i) {
 		nodeCount += network->GetParams().layerSizes[i];
@@ -60,8 +60,8 @@ void NetTrainer::AddLayer(int A, int B) {
 }
 
 MatrixXf NetTrainer::ForwardTrain() {
-	MatrixXf lastOutput = MatrixXf(trainData->rows(), trainData->cols());
-	lastOutput.noalias() = *trainData;
+	MatrixXf lastOutput = MatrixXf(trainData.rows(), trainData.cols());
+	lastOutput.noalias() = trainData;
 	for (int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i) {
 		MatrixXf weighed = network->GetParams().W[i] * lastOutput;
 		cache.Z[i].noalias() = (weighed).colwise() + (VectorXf)network->GetParams().b[i];
@@ -71,13 +71,13 @@ MatrixXf NetTrainer::ForwardTrain() {
 	return lastOutput;
 }
 
-float NetTrainer::CalcCost(const MatrixXf *h, const MatrixXf *Y) {
+float NetTrainer::CalcCost(const MatrixXf &h, const MatrixXf &Y) {
 	float sumSqrW = 0.f;
 	for (int w = 0; w < (int)network->GetParams().W.size() - 1; ++w) {
 		sumSqrW += (network->GetParams().W[w].array() * network->GetParams().W[w].array()).sum();
 	}
-	float regCost = 0.5f * float((trainParams.regTerm*trainParams.learningMod) * (sumSqrW / (2.f * (float)trainLabels->cols())));
-	MatrixXf diff = *Y - *h;
+	float regCost = 0.5f * float((trainParams.regTerm*trainParams.learningMod) * (sumSqrW / (2.f * (float)trainLabels.cols())));
+	MatrixXf diff = Y - h;
 	return ((diff.array() * diff.array()).sum() * coeff) + regCost;
 }
 
@@ -115,7 +115,7 @@ Eigen::MatrixXf NetTrainer::BackSine(const MatrixXf &dZ, int index) {
 	return (wT).cwiseProduct(MatrixXf(cache.A[index].array().cos()));
 }
 
-MatrixXf NetTrainer::BackActivation(int layerIndex, const MatrixXf &dZ) {
+MatrixXf NetTrainer::BackActivation(const MatrixXf &dZ, int layerIndex) {
 	switch (network->GetParams().layerActivations[layerIndex]) {
 	case Sigmoid:
 		return BackSigmoid(dZ, layerIndex);
@@ -137,21 +137,21 @@ MatrixXf NetTrainer::BackActivation(int layerIndex, const MatrixXf &dZ) {
 		break;
 	}
 }
-void NetTrainer::BackLayer(MatrixXf &dZ, int layerIndex, const MatrixXf *LowerA) {
-	dZ = BackActivation(layerIndex, dZ);
+void NetTrainer::BackLayer(MatrixXf &dZ, const MatrixXf &LowerA, int layerIndex) {
+	dZ = BackActivation(dZ, layerIndex);
 	float lambda = 0.5f * (trainParams.regTerm * trainParams.learningMod);
-	trainParams.dW[layerIndex] = coeff * MatrixXf((dZ * LowerA->transpose()).array() + (lambda * network->GetParams().W[layerIndex]).array());
+	trainParams.dW[layerIndex] = coeff * MatrixXf((dZ * LowerA.transpose()).array() + (lambda * network->GetParams().W[layerIndex]).array());
 	trainParams.db[layerIndex] = dZ.rowwise().sum();
 	trainParams.db[layerIndex] *= coeff;
 }
 void NetTrainer::BackwardPropagation() {
-	MatrixXf dZ = MatrixXf(cache.A.back() - *trainLabels);
+	MatrixXf dZ = MatrixXf(cache.A.back() - trainLabels);
 	trainParams.dW.back() = coeff * (dZ * cache.A[cache.A.size() - 2].transpose());
 	trainParams.db.back() = coeff * dZ.rowwise().sum();
 	for (int l = (int)network->GetParams().layerActivations.size() - 2; l >= 1; --l) {
-		BackLayer(dZ, l, &cache.A[l - 1]);
+		BackLayer(dZ, cache.A[l - 1], l);
 	}
-	BackLayer(dZ, 0, trainData);
+	BackLayer(dZ, trainData, 0);
 }
 void NetTrainer::UpdateParameters() {
 	float learnRate = (trainParams.learningRate*trainParams.learningMod);
@@ -191,9 +191,10 @@ void NetTrainer::BuildDropoutMask() {
 		}
 	}
 }
+
 void NetTrainer::UpdateSingleStep() {
 	//BuildDropoutMask();
-	cache.cost = CalcCost(&ForwardTrain(), trainLabels);
+	cache.cost = CalcCost(ForwardTrain(), trainLabels);
 	BackwardPropagation();
 	UpdateParametersADAM();
 }

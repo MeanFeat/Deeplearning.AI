@@ -33,32 +33,32 @@ void d_mult_elem(d_Matrix *dst, const d_Matrix &srcA, const d_Matrix &srcB);
 /* dst = srcA * b */
 void d_mult_scalar(d_Matrix *dst, const float b);
 /* dst = src.T */
-void d_transpose(d_Matrix *dst, d_Matrix *src);
+void d_transpose(d_Matrix *dst, const d_Matrix *src);
 /* dst = srcA * srcB */
-void d_mult(d_Matrix * dst, d_Matrix * srcA, d_Matrix * srcB);
+void d_mult(d_Matrix * dst, const d_Matrix * srcA, const d_Matrix * srcB);
 /* dst = srcA.T * srcB */
-void d_mult_lhsT(d_Matrix * dst, d_Matrix * srcA, d_Matrix * srcB);
+void d_mult_lhsT(d_Matrix * dst, const d_Matrix * srcA, const d_Matrix * srcB);
 /* dst = srcA * srcB.T */
-void d_mult_rhsT(d_Matrix * dst, d_Matrix * srcA, d_Matrix * srcB);
+void d_mult_rhsT(d_Matrix * dst, const d_Matrix * srcA, const d_Matrix * srcB);
 /* dst = src.sum() */
 void d_sum(float *dst, d_Matrix* src);
-void d_sumMatrix(float* dst, d_Matrix* src);
-void d_sumMatrix(float* dst, float* src, int m, int k);
+void d_sumMatrix(float* dst, const d_Matrix* src);
+void d_sumMatrix(float* dst, const float* src, int m, int k);
 void d_square(d_Matrix* dst, const d_Matrix* src);
-void d_forwardLayer(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_last, d_Matrix *d_bias);
+void d_forwardLayer(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_last, const d_Matrix *d_bias);
 void d_activate(d_Matrix *dst, Activation act);
-void d_backSigmoid(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A);
-void d_backTanh(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A);
-void d_backReLU(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A);
-void d_backLReLU(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A);
-void d_backSine(d_Matrix *dst, d_Matrix *d_W, d_Matrix *d_dZ, d_Matrix *d_A);
-void d_set_dW(d_Matrix *dst, d_Matrix *d_dZ, d_Matrix *d_A, float coefficient);
-void d_set_dW_Reg(d_Matrix *dst, d_Matrix *d_dZ, d_Matrix *d_A, d_Matrix *d_W, float coefficient, float regTerm);
-void d_set_db(d_Matrix *dst, d_Matrix *d_dZ, float coefficient);
-void d_updateParameterADAM(d_Matrix * dst, d_Matrix * d_derivative, d_Matrix * d_momentum, d_Matrix * d_momentumSqr, float learnRate);
-void d_updateParameter(d_Matrix * dst, d_Matrix * d_derivative, float learnRate);
-void d_calcCost(float *dst, d_Matrix* d_modelErr, std::vector<d_Matrix>* d_modelWeights, const  float regMult, const  float coeff, const  float trainLabelCount);
-void d_drawPixels(int * buffer, int m, int k, const float * vals, bool discrete);
+void d_backSigmoid(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A);
+void d_backTanh(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A);
+void d_backReLU(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A);
+void d_backLReLU(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A);
+void d_backSine(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A);
+void d_set_dW(d_Matrix *dst, const d_Matrix *d_dZ, const d_Matrix *d_A, float coefficient);
+void d_set_dW_Reg(d_Matrix *dst, const d_Matrix *d_dZ, const  d_Matrix *d_A, const  d_Matrix *d_W, float coefficient, float regTerm);
+void d_set_db(d_Matrix *dst, const d_Matrix *d_dZ, float coefficient);
+void d_updateParameterADAM(d_Matrix * dst, const d_Matrix *d_derivative, const d_Matrix *d_momentum, const d_Matrix *d_momentumSqr, float learnRate);
+void d_updateParameter(d_Matrix * dst, const d_Matrix * d_derivative, float learnRate);
+void d_calcCost(float *dst, const d_Matrix* d_modelErr, const std::vector<d_Matrix>* d_modelWeights, const  float regMult, const  float coeff, const  float trainLabelCount);
+void d_drawPixels(int * buffer, int m, int k, const float *vals, bool discrete);
 
 inline __device__ float _set_elem(float a, const float b) {
 	return b;

@@ -18,7 +18,16 @@ public:
 	int cols() {
 		return colCount;
 	}
+	int rows() const {
+		return rowCount;
+	}
+	int cols() const {
+		return colCount;
+	}
 	int size() {
+		return rowCount * colCount;
+	}
+	int size() const {
 		return rowCount * colCount;
 	}
 	size_t memSize() {
