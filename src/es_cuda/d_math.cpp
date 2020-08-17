@@ -257,6 +257,14 @@ void d_sumMatrix(float* dst, const float* src, int m, int k) {
 	d_catchErr();
 }
 __global__
+void add_row_broad_Kernel(float *dst, const float *srcMat, const float *srcVec, int m, int k) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	if (col < k && row < m) {
+		dst[row * k + col] = srcMat[row * k + col] + srcVec[row];
+	}
+}
+__global__
 void forwardLayer_Kernel(float *dst, const float *d_W, const float *d_last, const float * d_bias, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -272,8 +280,10 @@ void d_forwardLayer(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_last, 
 	int m = d_W->rows();
 	int n = d_W->cols();
 	int k = d_last->cols();
-	forwardLayer_Kernel << <dimGrid(m, k), dimBlock() >> >
-		(dst->d_data(), d_W->d_data(), d_last->d_data(), d_bias->d_data(), m, n, k);
+	d_mult(dst, d_W, d_last);
+	add_row_broad_Kernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), dst->d_data(), d_bias->d_data(), m, k);
+	//forwardLayer_Kernel << <dimGrid(m, k), dimBlock() >> >
+	//	(dst->d_data(), d_W->d_data(), d_last->d_data(), d_bias->d_data(), m, n, k);
 	d_catchErr();
 }
 __global__
