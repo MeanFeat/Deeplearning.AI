@@ -22,6 +22,7 @@ struct d_NetTrainDerivatives {
 };
 struct d_NetCache {
 	std::vector<d_Matrix> d_A;
+	std::vector<d_Matrix> d_AT;
 	std::vector<d_Matrix> d_dZ;
 	float cost;
 };

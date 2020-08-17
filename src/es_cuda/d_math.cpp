@@ -189,7 +189,7 @@ void mult_rhsT_Kernel(float *dst, const float *srcA, const float *srcB, int m, i
 		dst[row * k + col] = sum;
 	}
 } /* dst = srcA * srcB.T */
-void d_mult_rhsT(d_Matrix* dst, const d_Matrix* srcA, const d_Matrix* srcB) {
+void d_mult_rhsT(d_Matrix* dst, const d_Matrix *srcA, const d_Matrix *srcB) {
 	//d_Matrix trans = d_Matrix(srcB->cols(), srcB->rows());
 	float *d_trans;
 	d_check(cudaMalloc((void**)&d_trans, srcB->memSize()));
@@ -521,11 +521,11 @@ void set_dW_Reg_Kernel(float *dst, const float *d_W, float coefficient, float re
 		dst[row * k + col] += (regTerm * d_W[row * k + col]);
 	}
 } /* dst = coeff * (d_dZ * d_A.T) (+) (0.5f * learn * d_W) */
-void d_set_dW_Reg(d_Matrix* dst, const d_Matrix* d_dZ, const d_Matrix* d_A, const d_Matrix *d_W, float coefficient, float regTerm) {
+void d_set_dW_Reg(d_Matrix* dst, const d_Matrix* d_dZ, const d_Matrix* d_AT, const d_Matrix *d_W, float coefficient, float regTerm) {
 	int m = d_dZ->rows();
 	int n = d_dZ->cols();
-	int k = d_A->rows();
-	d_mult_rhsT(dst, d_dZ, d_A);
+	int k = d_AT->cols();
+	d_mult(dst, d_dZ, d_AT);
 	set_dW_Reg_Kernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), d_W->d_data(), coefficient, regTerm, m, n, k);
 	d_mult_scalar(dst, coefficient);
 	d_catchErr();

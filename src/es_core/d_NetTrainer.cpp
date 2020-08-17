@@ -41,6 +41,7 @@ d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &label
 	cudaStreamCreate(&cuda_stream);
 	network = net;
 	cache.d_A.push_back(to_device(data));
+	cache.d_AT.push_back(to_device(data.transpose()));
 	d_trainLabels = to_device(labels);
 	trainParams.trainExamplesCount = (unsigned int)data.cols();
 	trainParams.coefficiant = 1.f / (float)trainParams.trainExamplesCount;
@@ -62,6 +63,7 @@ d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &label
 }
 void d_NetTrainer::AddLayer(int A, int B) {
 	cache.d_A.push_back(d_Matrix(A, GetTrainExamplesCount()));
+	cache.d_AT.push_back(d_Matrix(GetTrainExamplesCount(), A));
 	cache.d_dZ.push_back(d_Matrix(A, GetTrainExamplesCount()));
 	derivative.d_dW.push_back(d_Matrix(A, B));
 	derivative.d_db.push_back(d_Matrix(A, 1));
@@ -91,6 +93,7 @@ void d_NetTrainer::ForwardTrain() {
 	for (int i = 0; i < network->GetDepth(); ++i) {
 		d_forwardLayer(&cache.d_A[i + 1], &trainParams.d_W[i], &cache.d_A[i], &trainParams.d_b[i]);
 		d_activate(&cache.d_A[i + 1], network->GetParams().layerActivations[i]);
+		d_transpose(&cache.d_AT[i + 1], &cache.d_A[i + 1]);
 	}
 }
 float d_NetTrainer::CalcCost() {
@@ -127,7 +130,7 @@ void d_NetTrainer::BackwardPropagation() {
 		default:
 			break;
 		}
-		d_set_dW_Reg(&derivative.d_dW[l], &cache.d_dZ[l], &cache.d_A[l], &trainParams.d_W[l], GetCoeff(), 0.5f * trainParams.regMod);
+		d_set_dW_Reg(&derivative.d_dW[l], &cache.d_dZ[l], &cache.d_AT[l], &trainParams.d_W[l], GetCoeff(), 0.5f * trainParams.regMod);
 		d_set_db(&derivative.d_db[l], &cache.d_dZ[l], GetCoeff());
 	}
 }

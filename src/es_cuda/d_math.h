@@ -53,7 +53,7 @@ void d_backReLU(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const 
 void d_backLReLU(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A);
 void d_backSine(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A);
 void d_set_dW(d_Matrix *dst, const d_Matrix *d_dZ, const d_Matrix *d_A, float coefficient);
-void d_set_dW_Reg(d_Matrix *dst, const d_Matrix *d_dZ, const  d_Matrix *d_A, const  d_Matrix *d_W, float coefficient, float regTerm);
+void d_set_dW_Reg(d_Matrix *dst, const d_Matrix *d_dZ, const  d_Matrix *d_AT, const  d_Matrix *d_W, float coefficient, float regTerm);
 void d_set_db(d_Matrix *dst, const d_Matrix *d_dZ, float coefficient);
 void d_updateParameterADAM(d_Matrix * dst, const d_Matrix *d_derivative, const d_Matrix *d_momentum, const d_Matrix *d_momentumSqr, float learnRate);
 void d_updateParameter(d_Matrix * dst, const d_Matrix * d_derivative, float learnRate);
