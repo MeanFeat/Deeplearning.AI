@@ -139,7 +139,7 @@ MatrixXf BuildRadians(MatrixXf m) {
 	return out;
 }
 void UpdatePrediction() {
-	trainer.UpdateHostNetwork();
+	trainer.RefreshHostNetwork();
 	MatrixXf mouse = MatrixXf(2, 1);
 	mouse(0, 0) = mouseX - WINHALFWIDTH;
 	mouse(1, 0) = mouseY - WINHALFHEIGHT;

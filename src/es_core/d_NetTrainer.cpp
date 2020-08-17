@@ -26,7 +26,7 @@ d_NetCache d_NetTrainer::GetCache() {
 	return cache;
 }
 
-void d_NetTrainer::UpdateHostNetwork() {
+void d_NetTrainer::RefreshHostNetwork() {
 	for (int i = 0; i < trainParams.d_W.size(); ++i) {
 		network->GetParams().W[i] = to_host(trainParams.d_W[i]);
 		network->GetParams().b[i] = to_host(trainParams.d_b[i]);

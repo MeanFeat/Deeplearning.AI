@@ -107,7 +107,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			break;
 		case 'T':
 			if (isTraining) {
-				trainer.UpdateHostNetwork();
+				trainer.RefreshHostNetwork();
 			}
 			isTraining = !isTraining;
 			break;

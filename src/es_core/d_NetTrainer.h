@@ -44,7 +44,7 @@ public:
 	d_Matrix d_trainLabels;
 	void BuildVisualization(const Eigen::MatrixXf &screen, int * buffer, int m, int k);
 	void Visualization(int *buffer, int m, int k, bool discrete);
-	void UpdateHostNetwork();
+	void RefreshHostNetwork();
 	void UpdateSingleStep();
 	float CalcCost();
 	float GetCost() {
