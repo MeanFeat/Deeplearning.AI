@@ -311,7 +311,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		float h = 0.f;
 		int steps = 0;
 		//Main Loop
-		while (globalRunning) {
+		while (globalRunning && steps < 500) {
 			Win32ProcessPendingMessages();
 			if (isTraining) {
 				for (int e = 0; e < 1; e++) {
