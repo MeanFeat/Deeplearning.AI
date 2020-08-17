@@ -121,13 +121,20 @@ void transpose_Naive_Kernel(float *dst, const float *src, int m, int k) {
 				dst[i * m + j] = src[j * k + i];
 			}
 		}
-		__syncthreads();
 	}
-} /* dst = src.T */
+}
+__global__
+void transpose_Kernel(float *dst, const float *src, int m, int k) {
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	if (row < m && col < k) {
+		dst[row + col * m] = src[col + row * k];
+	}
+}/* dst = src.T */
 void d_transpose(d_Matrix *dst, const d_Matrix *src) {
 	int m = src->rows();
 	int k = src->cols();
-	transpose_Naive_Kernel << <1, 1 >> > (dst->d_data(), src->d_data(), m, k);
+	transpose_Kernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), src->d_data(), m, k);
 	d_catchErr();
 }
 __global__
@@ -183,12 +190,14 @@ void mult_rhsT_Kernel(float *dst, const float *srcA, const float *srcB, int m, i
 	}
 } /* dst = srcA * srcB.T */
 void d_mult_rhsT(d_Matrix* dst, const d_Matrix* srcA, const d_Matrix* srcB) {
-	int m = srcA->rows();
-	int n = srcA->cols();
-	int k = srcB->rows(); //reverse for transpose
-	mult_rhsT_Kernel << <dimGrid(m, k), dimBlock() >> >
-		(dst->d_data(), srcA->d_data(), srcB->d_data(), m, n, k);
-	d_catchErr();
+	//d_Matrix trans = d_Matrix(srcB->cols(), srcB->rows());
+	float *d_trans;
+	d_check(cudaMalloc((void**)&d_trans, srcB->memSize()));
+	int m = srcB->rows();
+	int k = srcB->cols();
+	transpose_Kernel << <dimGrid(m, k), dimBlock() >> > (d_trans, srcB->d_data(), m, k);
+	mult_Kernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), srcA->d_data(), d_trans, srcA->rows(), srcB->cols(), srcB->rows());
+	cudaFree(d_trans);
 }
 __global__
 void sum_Naive_Kernel(float *dst, const float *src, int len) {

@@ -19,6 +19,7 @@ public:
 	int size() { return rowCount * colCount; }
 	int size() const { return rowCount * colCount; }
 	size_t memSize() { return size() * sizeof(float); }
+	size_t memSize() const { return size() * sizeof(float); }
 	void free() { cudaFree(device_data); }
 private:
 	int rowCount;
