@@ -96,14 +96,11 @@ void d_NetTrainer::ForwardTrain() {
 		d_transpose(&cache.d_AT[i + 1], &cache.d_A[i + 1]);
 	}
 }
-float d_NetTrainer::CalcCost() {
-	float *d_cost;
-	cudaMalloc((void**)&d_cost, sizeof(float));
-	d_calcCost(d_cost, &cache.d_dZ.back(),
+void d_NetTrainer::CalcCost() {
+	d_Matrix d_cost = d_Matrix(1, 1);
+	d_calcCost(d_cost.d_data(), &cache.d_dZ.back(),
 		&trainParams.d_W, GetRegMultipier(), GetCoeff(), (float)trainParams.trainExamplesCount); d_catchErr();
-	cudaMemcpyAsync(&cache.cost, d_cost, sizeof(float), cudaMemcpyDeviceToHost, cuda_stream); d_catchErr();
-	cudaFree(d_cost); d_catchErr();
-	return cache.cost;
+	d_check(cudaMemcpyAsync(&cache.cost, d_cost.d_data(), sizeof(float), cudaMemcpyDeviceToHost, cuda_stream)); // OPT: Slow af
 }
 void d_NetTrainer::BackwardPropagation() {
 	d_subtract_elem(&cache.d_dZ.back(), cache.d_A.back(), d_trainLabels);

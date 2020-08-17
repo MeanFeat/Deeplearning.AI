@@ -201,8 +201,6 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		vector<float> h_history;
 		vector<float> d_history;
 		int steps = 0;
-		cudaStream_t stream;
-		cudaStreamCreate(&stream);
 		d_trainer.BuildVisualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height);
 		//Main Loop
 		while (steps < 5000 && globalRunning) {

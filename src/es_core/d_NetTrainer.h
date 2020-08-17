@@ -50,6 +50,9 @@ public:
 	float GetCost() {
 		return GetCache().cost;
 	}
+	void SetCost(float c) {
+		cache.cost = c;
+	}
 	float GetCoeff() {
 		return trainParams.coefficiant;
 	}
@@ -66,7 +69,7 @@ public:
 		return trainParams.trainExamplesCount;
 	}
 private:
-	float CalcCost();
+	void CalcCost();
 	d_NetCache cache;
 	d_NetTrainParameters trainParams;
 	d_NetTrainDerivatives derivative;

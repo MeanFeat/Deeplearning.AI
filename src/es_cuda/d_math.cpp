@@ -586,24 +586,19 @@ void d_calcCost(float *dst, const d_Matrix* d_err, const vector<d_Matrix>* d_mod
 	d_sumMatrix(dst, d_diff);
 	d_mult_scalar(dst, coeff, 1, 1);
 	// Add Regularization
-	float* d_sqrSumTotal;
+	d_Matrix d_sqrSumTotal = d_Matrix(1, 1);
 	cudaMalloc((void**)&d_sqrSumTotal, sizeof(float));
-	d_set_elem(d_sqrSumTotal, 0.f);
+	d_set_elem(d_sqrSumTotal.d_data(), 0.f);
 	for (int i = 0; i < (int)d_modelWeights->size() - 1; ++i) {
 		const d_Matrix *layerWeights = &d_modelWeights->at(i);
 		int m = layerWeights->rows();
 		int k = layerWeights->cols();
 		d_Matrix d_squared(m, k);
-		float* d_sqrSum;
+		d_Matrix d_sqrSum = d_Matrix(1, 1);
 		d_check(cudaMalloc((void**)&d_sqrSum, sizeof(float)));
 		d_square(&d_squared, layerWeights); d_catchErr();
-		d_sumMatrix(d_sqrSum, d_squared.d_data(), m, k);
-		d_launch_single_thread(pfAdd, d_sqrSumTotal, d_sqrSum);
-		d_check(cudaFree(d_sqrSum));
-		d_check(cudaFree(d_squared.d_data()));
+		d_sumMatrix(d_sqrSum.d_data(), d_squared.d_data(), m, k); d_catchErr();
+		d_launch_single_thread(pfAdd, d_sqrSumTotal.d_data(), d_sqrSum.d_data()); d_catchErr();
 	}
-	finalCost_Kernel << <1, 1 >> > (dst, d_sqrSumTotal, regMult, trainLableCount); d_catchErr();
-	cudaFree(d_sqrSumTotal);
-	//cudaFree(d_diff);
-	d_catchErr();
+	finalCost_Kernel << <1, 1 >> > (dst, d_sqrSumTotal.d_data(), regMult, trainLableCount); d_catchErr();
 }

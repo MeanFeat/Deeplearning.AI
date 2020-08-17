@@ -124,7 +124,7 @@ Eigen::MatrixXf BuildDisplayCoords(Buffer buffer, float scale = 1.f) {
 	out.col(1) *= -1.f;
 	return out;
 }
-
+#if 0
 void FillScreen(Buffer buff, Color col = Color(0, 0, 0, 0)) {
 	int *pixel = (int *)buff.memory;
 	for (int i = 0; i < buff.width * buff.height; i += 4) {
@@ -138,3 +138,25 @@ void FillScreen(Buffer buff, Color col = Color(0, 0, 0, 0)) {
 void ClearScreen(Buffer buff) {
 	FillScreen(buff);
 }
+#else
+void FillScreen(Buffer buff, Color col = Color(0, 0, 0, 0)) {
+	int *pixel = (int *)buff.memory;
+	int fillCol = col.ToBit();
+	for (int i = 0; i < buff.width * buff.height; i += 4) {
+		*pixel++ = fillCol;
+		*pixel++ = fillCol;
+		*pixel++ = fillCol;
+		*pixel++ = fillCol;
+	}
+}
+
+void ClearScreen(Buffer buff) {
+	int *pixel = (int *)buff.memory;
+	for (int i = 0; i < buff.width * buff.height; i += 4) {
+		*pixel++ = 0;
+		*pixel++ = 0;
+		*pixel++ = 0;
+		*pixel++ = 0;
+	}
+}
+#endif
