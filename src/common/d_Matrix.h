@@ -12,30 +12,14 @@ public:
 	float* d_data() const {
 		return device_data;
 	}
-	int rows() {
-		return rowCount;
-	}
-	int cols() {
-		return colCount;
-	}
-	int rows() const {
-		return rowCount;
-	}
-	int cols() const {
-		return colCount;
-	}
-	int size() {
-		return rowCount * colCount;
-	}
-	int size() const {
-		return rowCount * colCount;
-	}
-	size_t memSize() {
-		return size() * sizeof(float);
-	}
-	void free() {
-		cudaFree(device_data);
-	}
+	int rows() { return rowCount; }
+	int cols() { return colCount; }
+	int rows() const { return rowCount; }
+	int cols() const { return colCount; }
+	int size() { return rowCount * colCount; }
+	int size() const { return rowCount * colCount; }
+	size_t memSize() { return size() * sizeof(float); }
+	void free() { cudaFree(device_data); }
 private:
 	int rowCount;
 	int colCount;

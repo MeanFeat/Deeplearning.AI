@@ -203,7 +203,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		while (globalRunning) {
 			Win32ProcessPendingMessages();
 			if (isTraining) {
-				trainer.UpdateSingleStep();
+				trainer.TrainSingleEpoch();
 				UpdateHistory(history, trainer.GetCache().cost);
 				//UpdateHistory(testHistory, trainer.CalcCost(&neural.ForwardPropagation(testX), &testY));
 				steps++;

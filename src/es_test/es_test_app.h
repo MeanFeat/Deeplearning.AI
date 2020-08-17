@@ -3,6 +3,7 @@
 #include "es_parser.h"
 
 enum class TestParseState {
+	category,
 	functionName,
 	header,
 	prefix,

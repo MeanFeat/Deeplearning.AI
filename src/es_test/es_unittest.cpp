@@ -14,9 +14,7 @@ void ProcessMessage(testResult rst) {
 	}
 }
 
-namespace esunittest {
 #ifndef UNITTEST_LISTS
 #define UNITTEST_LISTS
 #include GENERATED_UNIT_TESTS
 #endif
-}

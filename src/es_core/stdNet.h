@@ -46,17 +46,14 @@ public:
 	~Net();
 	NetParameters &GetParams();
 	void SetParams(std::vector<Eigen::MatrixXf> W, std::vector<Eigen::MatrixXf> b);
-	void AddLayer(int A, int B);
 	static Eigen::MatrixXf Activate(const Eigen::MatrixXf &In, Activation act);
 	Eigen::MatrixXf ForwardPropagation(const Eigen::MatrixXf &X);
-
-	int Depth() {
+	int GetDepth() {
 		return (int)GetParams().layerSizes.size() - 1;
 	}
-
 	void SaveNetwork();
 	void LoadNetwork(const std::string fName);
-
-protected:
+private:
+	void AddLayer(int A, int B);
 	NetParameters params;
 };

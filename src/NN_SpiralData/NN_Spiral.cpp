@@ -211,8 +211,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 				if (!globalRunning) {
 					break;
 				}
-				h_trainer.UpdateSingleStep();
-				d_trainer.UpdateSingleStep();
+				h_trainer.TrainSingleEpoch();
+				d_trainer.TrainSingleEpoch();
 				UpdateHistory(h_history, h_trainer.GetCache().cost);
 				UpdateHistory(d_history, d_trainer.GetCache().cost);
 				UpdateWinTitle(steps, window);

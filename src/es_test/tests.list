@@ -1,172 +1,166 @@
-header : "Multiply_Matrix" 
+category : Matrix
+header : Multiply_Matrix
 prefix : mm
 functionName : testMultipy
 arguments : {
-	1234, 98765, 653
-	4321, 9595, 9462
 	9999, 85, 11111
 	100, 100, 100
 	8, 6002, 2
 	8, 3, 2
-} 
-header : "Multiply_Transpose_Right" 
+}
+category : Matrix
+header : Multiply_Transpose_Right
 prefix : mmtr
 functionName : testTransposeRight
 arguments : {
-	1234, 98765, 653
-	4321, 9595, 9462
 	9999, 85, 11111
 	100, 100, 100
 	8, 6002, 2
 	8, 3, 2
 } 
-header : "Multiplies_Tranpose_Left" 
+category : Matrix
+header : Multiplies_Tranpose_Left 
 prefix : mmtl
 functionName : testTransposeLeft
 arguments : {
-	1234, 98765, 653
-	4321, 9595, 9461
 	9999, 85, 11111
 	100, 100, 100
 	8, 6002, 2
 	8, 3, 2
 } 
-header : "Element_Add" 
-prefix : add
-functionName : testAdd
-arguments : {
-	1234, 98765 
-	4321, 9595
-	990, 85
-	100, 100 
-	8, 60
-	1,1
-}
-header : "Element_Set" 
-prefix : set
-functionName : testSet
-arguments : {
-	4321, 9595, 0.f
-	990, 85, 0.f
-	100, 100, 0.f 
-	8, 60, 0.f
-	1,1, 0.f 
-	4321, 9595, 0.5f
-	990, 85, 0.5f
-	100, 100, 0.5f 
-	8, 60, 0.5f
-	1,1, 0.5f
-	4321, 9595, 1.f
-	990, 85, 1.f 
-	100, 100, 1.f 
-	8, 60, 1.f
-	1,1, 1.f
-}   
-header : "Element_Subtract" 
-prefix : sub
-functionName : testSubtract
-arguments : {
-	1234, 98765 
-	4321, 9595
-	990, 85
-	100, 100 
-	8, 60
-	1,1
-} 
-header : "Element_Multiply" 
-prefix : mel
-functionName : testMultElem
-arguments : {
-	1234, 98765 
-	4321, 9595
-	990, 85
-	100, 100 
-	8, 60
-	1,1
-}
-header : "Element_Square" 
-prefix : sqr
-functionName : testSquare
-arguments : {
-	1234, 98765 
-	4321, 9595
-	990, 85
-	100, 100 
-	8, 60
-	1,1
-} 
-header : "Sums_Matrix"
+category : Matrix
+header : Sums_Matrix
 prefix : sm
 functionName : testSum
 arguments : {
 	1234, 98765 
-	4321, 9595
 	990, 85
 	100, 100 
 	8, 60
 	1,1
 }
-header : "Transpose_Matrix"
+category : Matrix
+header : Transpose_Matrix
 prefix : tnsp
 functionName : testTranspose
 arguments : {
 	1234, 98765 
-	4321, 9595
 	990, 85
 	100, 100 
 	8, 60
 	1,1
 }
-header : "Activation_Sigmoid" 
+category : Matrix_Element
+header : Element_Add 
+prefix : add
+functionName : testAdd
+arguments : {
+	4321, 9595
+	100, 100 
+	8, 60
+	1,1
+}
+category : Matrix_Element
+header : Element_Set
+prefix : set
+functionName : testSet
+arguments : {
+	4321, 9595, 0.f
+	100, 100, 0.f 
+	8, 60, 0.f
+	1,1, 0.f 
+	4321, 9595, 0.5f
+	100, 100, 0.5f 
+	8, 60, 0.5f
+	1,1, 0.5f
+	4321, 9595, 1.f
+	100, 100, 1.f 
+	8, 60, 1.f
+	1,1, 1.f
+} 
+category : Matrix_Element 
+header : Element_Subtract 
+prefix : sub
+functionName : testSubtract
+arguments : {
+	1234, 98765 
+	990, 85
+	100, 100 
+	8, 60
+	1,1
+}
+category : Matrix_Element 
+header : Element_Multiply
+prefix : mel
+functionName : testMultElem
+arguments : {
+	1234, 98765 
+	990, 85
+	100, 100 
+	8, 60
+	1,1
+}
+category : Matrix_Element
+header : Element_Square
+prefix : sqr
+functionName : testSquare
+arguments : {
+	1234, 98765 
+	990, 85
+	100, 100 
+	8, 60
+	1,1
+} 
+category : Activations
+header : Activation_Sigmoid 
 prefix : sig
 functionName : testSigmoid
 arguments : {
 	1234, 98765 
-	4321, 9595
 	990, 85
 	100, 100 
 	8, 60
 	1,1
 } 
-header : "Activation_Tanh" 
+category : Activations
+header : Activation_Tanh 
 prefix : tnh
 functionName : testTanh
 arguments : {
 	1234, 98765 
-	4321, 9595
 	990, 85
 	100, 100 
 	8, 60
 	1,1
 } 
-header : "Activation_ReLU" 
+category : Activations
+header : Activation_ReLU 
 prefix : rlu
 functionName : testReLU
 arguments : {
 	1234, 98765 
-	4321, 9595
 	990, 85
 	100, 100 
 	8, 60
 	1,1
-} 	
-header : "Activation_Leaky_ReLU" 
+} 
+category : Activations
+header : Activation_Leaky_ReLU 
 prefix : lrl
 functionName : testLReLU
 arguments : {
 	1234, 98765 
-	4321, 9595
 	990, 85
 	100, 100 
 	8, 60
 	1,1
-} 	
-header : "Multiply_Scalar" 
+} 
+category : Activations
+header : Multiply_Scalar
 prefix : msc
 functionName : testMultScalar
 arguments : {
 	1234, 98765 
-	4321, 9595
 	990, 85
 	100, 100 
 	8, 60

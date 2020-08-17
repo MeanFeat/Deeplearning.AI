@@ -45,15 +45,14 @@ public:
 	void BuildVisualization(const Eigen::MatrixXf &screen, int * buffer, int m, int k);
 	void Visualization(int *buffer, int m, int k, bool discrete);
 	void RefreshHostNetwork();
-	void UpdateSingleStep();
-	float CalcCost();
+	void TrainSingleEpoch();
 	float GetCost() {
 		return GetCache().cost;
 	}
-	float Coeff() {
+	float GetCoeff() {
 		return trainParams.coefficiant;
 	}
-	float RegMultipier() {
+	float GetRegMultipier() {
 		return trainParams.regMult;
 	}
 	inline void ModifyLearningRate(float m) {
@@ -62,10 +61,11 @@ public:
 	inline void ModifyRegTerm(float m) {
 		trainParams.regMod = max(FLT_EPSILON, trainParams.regMod + m);
 	}
-	unsigned int TrainExamplesCount() {
+	unsigned int GetTrainExamplesCount() {
 		return trainParams.trainExamplesCount;
 	}
-protected:
+private:
+	float CalcCost();
 	d_NetCache cache;
 	d_NetTrainParameters trainParams;
 	d_NetTrainDerivatives derivative;
@@ -74,7 +74,6 @@ protected:
 	int *d_Buffer;
 	std::vector<d_Matrix> d_VisualA;
 	d_NetProfiler profiler;
-private:
 	void AddLayer(int A, int B);
 	void ForwardTrain();
 	void BackwardPropagation();

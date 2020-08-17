@@ -192,7 +192,7 @@ void NetTrainer::BuildDropoutMask() {
 	}
 }
 
-void NetTrainer::UpdateSingleStep() {
+void NetTrainer::TrainSingleEpoch() {
 	//BuildDropoutMask();
 	cache.cost = CalcCost(ForwardTrain(), trainLabels);
 	BackwardPropagation();

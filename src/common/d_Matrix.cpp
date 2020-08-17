@@ -1,4 +1,5 @@
 #include "d_Matrix.h"
+#include "..\es_cuda\d_math.h"
 d_Matrix::d_Matrix() {}
 d_Matrix::d_Matrix(int rows, int cols) {
 	this->rowCount = rows;

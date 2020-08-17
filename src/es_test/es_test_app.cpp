@@ -1,6 +1,7 @@
 #include "es_test_app.h"
 using namespace std;
 using namespace Eigen;
+static vector<string> categories;
 static vector<string> headers;
 static vector<string> prefixes;
 static vector<string> functionNames;
@@ -29,7 +30,12 @@ void ReadTestList(const string fName) {
 		while (iss.good()) {
 			std::getline(iss, val, ':');
 			if (state == TestParseState::none) {
-				if (strFind(lastVal, "header")) {
+				val.erase(remove(val.begin(), val.end(), ' '), val.end());
+				if (strFind(lastVal, "category")) {
+					state = TestParseState::category;
+					categories.push_back(val);
+				}
+				else if (strFind(lastVal, "header")) {
 					state = TestParseState::header;
 					headers.push_back(val);
 				}
@@ -89,10 +95,17 @@ void CreateGeneratedUnit(const string fName) {
 	ofstream file(fName.c_str());
 	file.clear();
 	file << "//GENERATED FILE" << endl;
+	string lastCategory = "";
 	for (int fn = 0; fn < functionNames.size(); fn++) {
+		string category = categories[fn];
+		if (lastCategory == "") {
+			file << "namespace " << category << " {" << endl;
+		}
+		else if (category.compare(lastCategory) != 0) {
+			file << "}" << endl;
+			file << "namespace " << category << " {" << endl;
+		}
 		string className = headers[fn];
-		className.erase(remove_if(className.begin(), className.end(),
-			[](unsigned char x) {return x == '\"'; }), className.end());
 		file << "TEST_CLASS(" << className << ") { public:" << endl;
 		for (int arg = 0; arg < arguments[fn].size(); arg++) {
 			string args;
@@ -126,7 +139,9 @@ void CreateGeneratedUnit(const string fName) {
 			file << "));" << endl;
 		}
 		file << "};" << endl;
+		lastCategory = category;
 	}
+	file << "}" << endl;
 	file.close();
 	PrintFile(fName);
 }
@@ -135,7 +150,7 @@ void CreateGeneratedCpp(const string fName) {
 	file.clear();
 	file << "//GENERATED FILE" << endl;
 	for (int fn = 0; fn < functionNames.size(); fn++) {
-		file << "PrintHeader(" << headers[fn] << ");" << endl;
+		file << "PrintHeader(\"" << headers[fn] << "\");" << endl;
 		for (int arg = 0; arg < arguments[fn].size(); arg++) {
 			file << functionNames[fn] << "(";
 			for (int a = 0; a < arguments[fn][arg].size(); a++) {

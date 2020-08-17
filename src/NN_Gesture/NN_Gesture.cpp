@@ -315,7 +315,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Win32ProcessPendingMessages();
 			if (isTraining) {
 				for (int e = 0; e < 1; e++) {
-					trainer.UpdateSingleStep();
+					trainer.TrainSingleEpoch();
 				}
 				UpdateHistory(history);
 			}
