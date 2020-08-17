@@ -177,27 +177,11 @@ void d_mult_lhsT(d_Matrix* dst, const d_Matrix* srcA, const d_Matrix* srcB) {
 		(dst->d_data(), srcA->d_data(), srcB->d_data(), m, n, k);
 	d_catchErr();
 }
-__global__
-void mult_rhsT_Kernel(float *dst, const float *srcA, const float *srcB, int m, int n, int k) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
-	float sum = 0.0f;
-	if (col < k && row < m) {
-		for (int i = 0; i < n; i++) {
-			sum += srcA[row * n + i] * srcB[col * n + i];
-		}
-		dst[row * k + col] = sum;
-	}
-} /* dst = srcA * srcB.T */
+/* dst = srcA * srcB.T */
 void d_mult_rhsT(d_Matrix* dst, const d_Matrix *srcA, const d_Matrix *srcB) {
-	//d_Matrix trans = d_Matrix(srcB->cols(), srcB->rows());
-	float *d_trans;
-	d_check(cudaMalloc((void**)&d_trans, srcB->memSize()));
-	int m = srcB->rows();
-	int k = srcB->cols();
-	transpose_Kernel << <dimGrid(m, k), dimBlock() >> > (d_trans, srcB->d_data(), m, k);
-	mult_Kernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), srcA->d_data(), d_trans, srcA->rows(), srcB->cols(), srcB->rows());
-	cudaFree(d_trans);
+	d_Matrix d_trans = d_Matrix(srcB->cols(), srcB->rows());
+	d_transpose(&d_trans, srcB);
+	d_mult(dst, srcA, &d_trans);
 }
 __global__
 void sum_Naive_Kernel(float *dst, const float *src, int len) {
