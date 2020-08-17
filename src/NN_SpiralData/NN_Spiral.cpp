@@ -189,13 +189,13 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
 			WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 			WINWIDTH * 4, WINHEIGHT * 4, 0, 0, Instance, 0);
-		neural = Net((int)X.rows(), { 18,8 }, (int)Y.rows(), {
+		neural = Net((int)X.rows(), { 8,8 }, (int)Y.rows(), {
 			Tanh,
 			Tanh,
 			Tanh });
 		d_neural = Net(neural);
-		h_trainer = NetTrainer(&neural, &X, &Y, 0.15f, 2.f, 20.f);
-		d_trainer = d_NetTrainer(&d_neural, &X, &Y, 0.15f, 2.f, 20.f);
+		h_trainer = NetTrainer(&neural, X, Y, 0.15f, 2.f, 20.f);
+		d_trainer = d_NetTrainer(&d_neural, X, Y, 0.15f, 2.f, 20.f);
 		time(&startTime);
 		HDC deviceContext = GetDC(window);
 		vector<float> h_history;

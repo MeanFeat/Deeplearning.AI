@@ -189,7 +189,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			WS_OVERLAPPED | WS_SYSMENU | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 			WINWIDTH * WINDOWSTRETCHSCALE, WINHEIGHT * WINDOWSTRETCHSCALE, 0, 0, Instance, 0);
 		neural = Net((int)X.rows(), { 32,16 }, (int)Y.rows(), { Tanh,Tanh, Tanh });
-		trainer = d_NetTrainer(&neural, &X, &Y, 0.15f, 0.5f, 1.0f);
+		trainer = d_NetTrainer(&neural, X, Y, 0.15f, 0.5f, 1.0f);
 		HDC deviceContext = GetDC(window);
 		vector<float> history;
 		vector<float> testHistory;

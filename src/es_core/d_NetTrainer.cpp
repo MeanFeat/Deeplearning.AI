@@ -35,13 +35,14 @@ void d_NetTrainer::UpdateHostNetwork() {
 d_NetProfiler d_NetTrainer::GetProfiler() {
 	return profiler;
 }
-d_NetTrainer::d_NetTrainer(Net *net, MatrixXf *data, MatrixXf *labels, float weightScale, float learnRate, float regTerm) {
+d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &labels, float weightScale, float learnRate, float regTerm) {
 	cudaEventCreate(&start);
 	cudaEventCreate(&stop);
 	cudaStreamCreate(&cuda_stream);
 	network = net;
-	d_trainLabels = to_device(*labels);
-	trainParams.trainExamplesCount = (unsigned int)data->cols();
+	cache.d_A.push_back(to_device(data));
+	d_trainLabels = to_device(labels);
+	trainParams.trainExamplesCount = (unsigned int)data.cols();
 	trainParams.coefficiant = 1.f / (float)trainParams.trainExamplesCount;
 	int nodeCount = 0;
 	for (int i = 0; i < network->Depth(); ++i) {
@@ -53,10 +54,9 @@ d_NetTrainer::d_NetTrainer(Net *net, MatrixXf *data, MatrixXf *labels, float wei
 	trainParams.learnCoeff = 1.f / (float)nodeCount;
 	trainParams.learnMult = trainParams.learnRate*trainParams.learnCoeff;
 	trainParams.regTerm = regTerm;
-	trainParams.regMod = regTerm / (float)nodeCount;
-	trainParams.regMult = float((trainParams.regTerm*trainParams.learnCoeff));
-	cache.d_A.push_back(to_device(*data));
-	for (int h = 1; h < (int)network->GetParams().layerSizes.size(); ++h) {
+	trainParams.regMod = trainParams.regTerm / (float)nodeCount;
+	trainParams.regMult = float((trainParams.regTerm * trainParams.learnCoeff));
+	for (int h = 1; h < (int)network->Depth() + 1; ++h) {
 		AddLayer((int)network->GetParams().layerSizes[h], (int)network->GetParams().layerSizes[h - 1]);
 	}
 }
@@ -70,14 +70,14 @@ void d_NetTrainer::AddLayer(int A, int B) {
 	momentumSqr.d_dW.push_back(to_device(MatrixXf::Zero(A, B)));
 	momentumSqr.d_db.push_back(to_device(MatrixXf::Zero(A, 1)));
 }
-void d_NetTrainer::BuildVisualization(MatrixXf screen, int * buffer, int m, int k) {
+void d_NetTrainer::BuildVisualization(const MatrixXf &screen, int * buffer, int m, int k) {
 	d_check(cudaMalloc((void **)&d_Buffer, m*k * sizeof(int)));
 	d_VisualA.push_back(to_device(screen));
 	for (int i = 0; i < network->Depth(); ++i) {
 		d_VisualA.push_back(to_device(MatrixXf(trainParams.d_W[i].rows(), d_VisualA[i].cols())));
 	}
 }
-void d_NetTrainer::Visualization(int * buffer, int m, int k, bool discrete) {
+void d_NetTrainer::Visualization(int *buffer, int m, int k, bool discrete) {
 	d_profile(start, stop, &profiler.visualizationTime,
 		for (int i = 0; i < network->Depth(); ++i) {
 			d_forwardLayer(&d_VisualA[i + 1], &trainParams.d_W[i], &d_VisualA[i], &trainParams.d_b[i]);

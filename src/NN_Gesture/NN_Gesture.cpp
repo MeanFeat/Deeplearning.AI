@@ -306,7 +306,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Tanh,
 			Tanh,
 			Sigmoid });
-		trainer = d_NetTrainer(&neural, &readDeltas, &readLabels, 1.f, 1.25f, 0.0001f);
+		trainer = d_NetTrainer(&neural, readDeltas, readLabels, 1.f, 1.25f, 0.0001f);
 		vector<float> history;
 		float h = 0.f;
 		int steps = 0;
