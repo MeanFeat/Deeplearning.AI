@@ -179,13 +179,6 @@ void RunAllTests() {
 }
 
 int main(int argc, char** argv) {
-	testTransposeRight(9999, 85, 11111);
-	testTransposeRight(999, 85, 11111);
-	testTransposeRight(100, 100, 100);
-	testTransposeRight(8, 6002, 2);
-	testTransposeRight(8, 3, 2);
-	return 0;
-
 	if (argc > 1) {
 		for (int i = 0; i <= argc; ++i) {
 			if (strcmp(argv[i], "-b") == 0) {
