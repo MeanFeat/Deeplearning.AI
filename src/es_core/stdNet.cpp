@@ -67,7 +67,6 @@ MatrixXf Net::ForwardPropagation(const MatrixXf &X) {
 	}
 	return lastOutput;
 }
-void Net::SaveNetwork() {}
 
 Activation ReadActivation(string str) {
 	if (strFind(str, "sigmoid")) {
@@ -85,6 +84,59 @@ Activation ReadActivation(string str) {
 	else {
 		return Activation::Linear;
 	}
+}
+string WriteActivation(Activation act) {
+	switch (act) {
+	case Sigmoid:	return "sigmoid";		break;
+	case Tanh:		return "tanh";			break;
+	case ReLU:		return "relu";			break;
+	case LReLU:		return "leaky_relu";	break;
+	case Sine:		return "sine";			break;
+	case Linear:	//fall through
+	default: return "linear"; break;
+	}
+}
+
+inline void OutputMatrix(std::ofstream &file, int tb, std::string shape, std::string vals, const Eigen::MatrixXf *m, bool transposed = false) {
+	OUT_LINE(file, tb, "\"" << shape << "\" :" << "[");
+	if (transposed) {
+		OUT_LINE(file, ++tb, m->cols() << ",");
+		OUT_LINE(file, tb, m->rows());
+	}
+	else {
+		OUT_LINE(file, ++tb, m->rows() << ",");
+		OUT_LINE(file, tb, m->cols());
+	}
+	OUT_LINE(file, --tb, "],");
+
+	OUT_LINE(file, tb, "\"" << vals << "\" : [");
+	for (int c = 0; c < m->cols(); c++) {
+		OUT_LINE(file, ++tb, (m->cols() > 1 ? "[" : ""));
+		tb++;
+		for (int r = 0; r < m->rows(); r++) {
+			char ch[100];
+			sprintf_s(ch, "%0.25f", *(m->data() + c * m->rows() + r));
+			OUT_LINE(file, tb, ch << (r == m->rows() - 1 ? "" : ","));
+		}
+		OUT_LINE(file, --tb, (m->cols() > 1 && c < m->cols() - 1 ? "]," : "]"));
+		--tb;
+	}
+}
+
+void Net::SaveNetwork(const string fName) {
+	ofstream file(fName);
+	int tb = 0;
+	NetParameters *p = &params;
+	for (int lyrIdx = 0; lyrIdx < GetDepth(); lyrIdx++) {
+		OUT_LINE(file, tb, "{");
+		OUT_LINE(file, ++tb, "\"layer\" :" << lyrIdx << ",");
+		OUT_LINE(file, tb, "\"activation\" :" << "\"" << WriteActivation(p->layerActivations[lyrIdx]) << "\",");
+		OutputMatrix(file, tb, "weightShape", "weightVals", &p->W[lyrIdx], true);
+		OUT_LINE(file, tb, "],");
+		OutputMatrix(file, tb, "biasShape", "biasVals", &p->b[lyrIdx]);
+		OUT_LINE(file, --tb, (lyrIdx < GetDepth() - 1 ? "}," : "}"));
+	}
+	file.close();
 }
 
 enum class NetParseState {
