@@ -25,6 +25,7 @@ struct d_NetCache {
 	std::vector<d_Matrix> d_AT;
 	std::vector<d_Matrix> d_dZ;
 	float cost;
+	float *d_cost;
 };
 struct d_NetProfiler {
 	float backpropTime;

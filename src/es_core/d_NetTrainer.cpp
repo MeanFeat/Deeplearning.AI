@@ -60,6 +60,8 @@ d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &label
 	for (int h = 1; h < (int)network->GetDepth() + 1; ++h) {
 		AddLayer((int)network->GetParams().layerSizes[h], (int)network->GetParams().layerSizes[h - 1]);
 	}
+	d_check(cudaMalloc((void**)&cache.d_cost, sizeof(float)));
+	d_check(cudaMallocHost((void**)&cache.cost, sizeof(float)));
 }
 void d_NetTrainer::AddLayer(int A, int B) {
 	cache.d_A.push_back(d_Matrix(A, GetTrainExamplesCount()));
@@ -97,10 +99,9 @@ void d_NetTrainer::ForwardTrain() {
 	}
 }
 void d_NetTrainer::CalcCost() {
-	d_Matrix d_cost = d_Matrix(1, 1);
-	d_calcCost(d_cost.d_data(), &cache.d_dZ.back(),
+	d_calcCost(cache.d_cost, &cache.d_dZ.back(),
 		&trainParams.d_W, GetRegMultipier(), GetCoeff(), (float)trainParams.trainExamplesCount); d_catchErr();
-	d_check(cudaMemcpyAsync(&cache.cost, d_cost.d_data(), sizeof(float), cudaMemcpyDeviceToHost, cuda_stream)); // OPT: Slow af
+	d_check(cudaMemcpyAsync(&cache.cost, cache.d_cost, sizeof(float), cudaMemcpyDeviceToHost)); // OPT: Slow af
 }
 void d_NetTrainer::BackwardPropagation() {
 	d_subtract_elem(&cache.d_dZ.back(), cache.d_A.back(), d_trainLabels);
