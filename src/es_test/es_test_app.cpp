@@ -5,7 +5,7 @@ static vector<string> categories;
 static vector<string> headers;
 static vector<string> prefixes;
 static vector<string> functionNames;
-static vector<vector<vector<float>>> arguments;
+static vector<vector<string>> arguments;
 
 void PrintFile(const string fName) {
 	std::string line;
@@ -21,12 +21,11 @@ void ReadTestList(const string fName) {
 	std::string line;
 	ifstream file(fName);
 	TestParseState state = TestParseState::none;
-	vector<float> parseArgs;
-	vector<vector<float>> currentFuncArgs;
+	vector<string> currentFuncArgs;
 	while (file.good()) {
-		std::getline(file, line);
-		std::stringstream iss(line);
-		std::string val, lastVal;
+		getline(file, line);
+		stringstream iss(line);
+		string val, lastVal;
 		while (iss.good()) {
 			std::getline(iss, val, ':');
 			if (state == TestParseState::none) {
@@ -67,17 +66,7 @@ void ReadTestList(const string fName) {
 				}
 				else {
 					if (!strFind(val, "{")) {
-						size_t pos = 0;
-						std::string token;
-						do {
-							token = val.substr(0, pos);
-							val.erase(0, pos + 1);
-							float temp;
-							strCast(&temp, val);
-							parseArgs.push_back(temp);
-						} while ((pos = val.find(',')) != std::string::npos);
-						currentFuncArgs.push_back(parseArgs);
-						parseArgs.clear();
+						currentFuncArgs.push_back(strClean(val));
 					}
 				}
 			} break;
@@ -108,36 +97,17 @@ void CreateGeneratedUnit(const string fName) {
 		string className = headers[fn];
 		file << "TEST_CLASS(" << className << ") { public:" << endl;
 		for (int arg = 0; arg < arguments[fn].size(); arg++) {
-			string args;
 			string spacer = arg <= 9 ? "0" : "";
 			file << "\tNAME_RUN(" << prefixes[fn] << spacer << arg << "_";
-			for (int a = 0; a < arguments[fn][arg].size(); a++) {
-				float thisArg = arguments[fn][arg][a];
-				if (float(int(thisArg)) == thisArg) {
-					file << to_string(int(thisArg));
-				}
-				else {
-					string str = to_string(thisArg);
-					str.replace(str.find("."), 1, "p");
-					str.erase(str.find_last_not_of('0') + 1, std::string::npos);
-					file << str << "f";
-				}
-				if (a < arguments[fn][arg].size() - 1) {
-					file << "x";
-				}
-				else {
-					file << ",";
-				}
-			}
+			string str = strClean(arguments[fn][arg]);
+			str = strReplace(str, ".", "p");
+			str = strReplace(str, ",", "x");
+			file << str << ",";
 			file << functionNames[fn] << "(";
-			for (int a = 0; a < arguments[fn][arg].size(); a++) {
-				file << arguments[fn][arg][a];
-				if (a < arguments[fn][arg].size() - 1) {
-					file << ",";
-				}
-			}
+			file << arguments[fn][arg];
 			file << "));" << endl;
 		}
+
 		file << "};" << endl;
 		lastCategory = category;
 	}
@@ -153,15 +123,8 @@ void CreateGeneratedCpp(const string fName) {
 		file << "PrintHeader(\"" << headers[fn] << "\");" << endl;
 		for (int arg = 0; arg < arguments[fn].size(); arg++) {
 			file << functionNames[fn] << "(";
-			for (int a = 0; a < arguments[fn][arg].size(); a++) {
-				file << arguments[fn][arg][a];
-				if (a < arguments[fn][arg].size() - 1) {
-					file << ", ";
-				}
-				else {
-					file << ");" << endl;
-				}
-			}
+			file << arguments[fn][arg];
+			file << ");" << endl;
 		}
 	}
 	file.close();

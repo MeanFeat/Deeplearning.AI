@@ -194,3 +194,10 @@ testResult testLReLU(int m, int k) {
 	float threshold = controlSum * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(A.device)).sum(), threshold);
 }
+testResult testFeedForwardNetwork(int inputSize, vector<int> hiddenSizes, int outputSize, vector<int> act) {
+	Net nn = Net(8, { 8,8 }, 1, {
+			Tanh,
+			Tanh,
+			Tanh });
+	return testResult(false, "Test Not Implemented");
+}

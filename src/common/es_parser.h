@@ -1,5 +1,6 @@
 #pragma once
 #include "es_core_pch.h"
+#include <regex>
 
 #define OUT_LINE(f, t, s) file << strTab(t) << s << std::endl;
 
@@ -19,4 +20,23 @@ inline std::string strTab(int num) {
 		outStr += "\t";
 	}
 	return outStr;
+}
+
+inline std::string strClean(std::string s){
+	s.erase(remove(s.begin(), s.end(), ' '), s.end());
+	s.erase(remove(s.begin(), s.end(), '\t'), s.end());
+	return s;
+}
+
+inline std::string strReplace(std::string s, std::string f, std::string r){
+	std::string out = s;
+	size_t index = 0;
+	int sl = (int)strlen(f.c_str());
+	while (true) {
+		index = out.find(f, index);
+		if (index == std::string::npos) break;
+		out.replace(index, sl, r);
+		index += sl;
+	}
+	return out;
 }
