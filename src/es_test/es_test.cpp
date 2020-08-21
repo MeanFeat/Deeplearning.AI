@@ -101,7 +101,7 @@ testResult testTranspose(int m, int k) {
 testResult testMultScalar(int m, int k) {
 	cout << "Testing Multiply Element (" << m << "," << k << ") * b" << endl;
 	testData A = testData(m, k);
-	float r = float(rand() / RAND_MAX);
+	float r = float(rand()) / float(RAND_MAX);
 	d_Matrix d_C = to_device(MatrixXf::Zero(m, k));
 	d_mult_scalar(&A.device, r);
 	float controlSum = MatrixXf(A.host * r).sum();
