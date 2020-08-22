@@ -59,14 +59,14 @@ void ReadTestList(const string fName) {
 				state = TestParseState::none;
 				break;
 			case TestParseState::args: {
-				if (strFind(val, "}")) {
+				if (strFind(val, "]")) {
 					state = TestParseState::none;
 					arguments.push_back(currentFuncArgs);
 					currentFuncArgs.clear();
 				}
 				else {
-					if (!strFind(val, "{")) {
-						currentFuncArgs.push_back(strClean(val));
+					if (!strFind(val, "[")) {
+						currentFuncArgs.push_back(strRemoveSpaces(val));
 					}
 				}
 			} break;
@@ -99,9 +99,10 @@ void CreateGeneratedUnit(const string fName) {
 		for (int arg = 0; arg < arguments[fn].size(); arg++) {
 			string spacer = arg <= 9 ? "0" : "";
 			file << "\tNAME_RUN(" << prefixes[fn] << spacer << arg << "_";
-			string str = strClean(arguments[fn][arg]);
+			string str = strRemoveSpaces(arguments[fn][arg]);
 			str = strReplace(str, ".", "p");
 			str = strReplace(str, ",", "x");
+			str = strRemove(str, { '{' ,'}' ,'(' ,')' });
 			file << str << ",";
 			file << functionNames[fn] << "(";
 			file << arguments[fn][arg];

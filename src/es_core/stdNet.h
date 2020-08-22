@@ -51,6 +51,7 @@ public:
 	int GetDepth() {
 		return (int)GetParams().layerSizes.size() - 1;
 	}
+	std::string toString();
 	void SaveNetwork(const std::string fName);
 	void LoadNetwork(const std::string fName);
 private:

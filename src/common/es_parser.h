@@ -22,12 +22,22 @@ inline std::string strTab(int num) {
 	return outStr;
 }
 
-inline std::string strClean(std::string s){
+inline std::string strRemoveSpaces(std::string s){
 	s.erase(remove(s.begin(), s.end(), ' '), s.end());
 	s.erase(remove(s.begin(), s.end(), '\t'), s.end());
 	return s;
 }
 
+inline std::string strRemove( std::string s, char r){
+	s.erase(remove(s.begin(), s.end(), r), s.end());
+	return s;
+}
+inline std::string strRemove(std::string s, std::vector<char> rs) {
+	for (int r = 0; r < rs.size(); r++) {
+		s = strRemove(s, rs[r]);
+	}
+	return s;
+}
 inline std::string strReplace(std::string s, std::string f, std::string r){
 	std::string out = s;
 	size_t index = 0;
