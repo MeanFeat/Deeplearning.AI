@@ -37,7 +37,7 @@ testResult GetOutcome(float cSum, float tSum, float thresh) {
 	result.passed = diff <= abs(thresh);
 	result.message = GetOutcomeString(cSum, tSum, diff, thresh, result.passed);
 	int passCol = diff > 0.f ? 14 : 10;
-	TEXTCOLOUR(cout << result.message << endl; , result.passed ? passCol : 12);
+	TEXTCOLOUR(cout << result.message << endl;, result.passed ? passCol : 12);
 	return result;
 }
 testResult testMultipy(int m, int n, int k) {
@@ -193,4 +193,7 @@ testResult testLReLU(int m, int k) {
 	float controlSum = MatrixXf(Net::Activate(A.host, Activation::LReLU)).sum();
 	float threshold = controlSum * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(A.device)).sum(), threshold);
+}
+testResult testFeedForwardNetwork(Net nn) {
+	return testResult(false, nn.toString());
 }

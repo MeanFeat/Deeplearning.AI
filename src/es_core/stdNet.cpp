@@ -249,3 +249,20 @@ void Net::LoadNetwork(const string fName) {
 	}
 	file.close();
 }
+
+string Net::toString() {
+	string str;
+	NetParameters *p = &params;
+	for (int i = 0; i < GetDepth(); i++) {
+		str += "[" + to_string(p->layerSizes[i]) + "]";
+	}
+	str += "{";
+	for (int j = 0; j < GetDepth(); j++) {
+		str += WriteActivation(p->layerActivations[j]);
+		if (j < GetDepth() - 1) {
+			str += ",";
+		}
+	}
+	str += "}";
+	return str;
+}

@@ -53,3 +53,4 @@ testResult testSigmoid(int m, int k);
 testResult testTanh(int m, int k);
 testResult testReLU(int m, int k);
 testResult testLReLU(int m, int k);
+testResult testFeedForwardNetwork(Net nn);
