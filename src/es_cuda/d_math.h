@@ -3,9 +3,12 @@
 #include "types.h"
 #include "color.h"
 #include "d_Matrix.h"
+#include <cublas_v2.h>
+#include <cuda_runtime.h>
 #include <vector>
 
 static bool isInitialized = false;
+static cublasHandle_t cublasHandle;
 
 #define BLOCK_SIZE 16
 #define LRELU_LEAK 0.01f
