@@ -233,7 +233,7 @@ void add_row_broad_Kernel(float *dst, const float *srcMat, const float *srcVec, 
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if (col < k && row < m) {
-		dst[col * m + row] = srcMat[col * m + row] + srcVec[col];
+		dst[col * m + row] = srcMat[col * m + row] + srcVec[row];
 	}
 }
 /* dst = d_W * d_last + d_bias */

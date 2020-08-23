@@ -1,6 +1,8 @@
 #pragma once
 #include "es_test_pch.h"
 #include "stdNet.h"
+#include "stdNetTrainer.h"
+#include "d_NetTrainer.h"
 #include "d_Matrix.h"
 #include "d_math.h"
 
@@ -53,4 +55,4 @@ testResult testSigmoid(int m, int k);
 testResult testTanh(int m, int k);
 testResult testReLU(int m, int k);
 testResult testLReLU(int m, int k);
-testResult testFeedForwardNetwork(Net nn);
+testResult testForwardTrain(Net &nn, int dataCount);

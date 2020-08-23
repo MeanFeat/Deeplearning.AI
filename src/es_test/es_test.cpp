@@ -37,7 +37,7 @@ testResult GetOutcome(float cSum, float tSum, float thresh) {
 	result.passed = diff <= abs(thresh);
 	result.message = GetOutcomeString(cSum, tSum, diff, thresh, result.passed);
 	int passCol = diff > 0.f ? 14 : 10;
-	TEXTCOLOUR(cout << result.message << endl;, result.passed ? passCol : 12);
+	TEXTCOLOUR(cout << result.message << endl; , result.passed ? passCol : 12);
 	return result;
 }
 testResult testMultipy(int m, int n, int k) {
@@ -194,6 +194,15 @@ testResult testLReLU(int m, int k) {
 	float threshold = controlSum * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(to_host(A.device)).sum(), threshold);
 }
-testResult testFeedForwardNetwork(Net nn) {
-	return testResult(false, nn.toString());
+testResult testForwardTrain(Net &nn, int dataCount) {
+	MatrixXf data = MatrixXf::Random(nn.GetInputSize(), dataCount);
+	MatrixXf labels = MatrixXf::Random(nn.GetOutputSize(), dataCount);
+	Net d_nn = Net(nn);
+	NetTrainer h_trainer = NetTrainer(&nn, data, labels, 1.f, 1.f, 0.f);
+	MatrixXf control = h_trainer.ForwardTrain();
+	d_NetTrainer d_trainer = d_NetTrainer(&d_nn, data, labels, 1.f, 1.f, 0.f);
+	d_trainer.ForwardTrain();
+	MatrixXf test = to_host(d_trainer.GetCache().d_A.back());
+	MatrixXf diff = control - test;
+	return GetOutcome(control.sum(), test.sum(), control.sum()*thresholdMultiplier);
 }

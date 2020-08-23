@@ -68,6 +68,10 @@ MatrixXf Net::ForwardPropagation(const MatrixXf &X) {
 	return lastOutput;
 }
 
+int Net::GetDepth() {
+	return (int)GetParams().layerSizes.size() - 1;
+}
+
 Activation ReadActivation(string str) {
 	if (strFind(str, "sigmoid")) {
 		return Activation::Sigmoid;
@@ -250,12 +254,20 @@ void Net::LoadNetwork(const string fName) {
 	file.close();
 }
 
+int Net::GetInputSize() {
+	return params.layerSizes[0];
+}
+int Net::GetOutputSize() {
+	return params.layerSizes.back();
+}
+
 string Net::toString() {
 	string str;
 	NetParameters *p = &params;
 	for (int i = 0; i < GetDepth(); i++) {
 		str += "[" + to_string(p->layerSizes[i]) + "]";
 	}
+	str += "[" + to_string(GetOutputSize()) + "]";
 	str += "{";
 	for (int j = 0; j < GetDepth(); j++) {
 		str += WriteActivation(p->layerActivations[j]);
