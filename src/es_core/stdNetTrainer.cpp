@@ -89,48 +89,44 @@ void NetTrainer::ModifyRegTerm(float m) {
 	trainParams.regTerm = max(FLT_EPSILON, trainParams.regTerm + m);
 }
 
-MatrixXf NetTrainer::BackSigmoid(const MatrixXf &dZ, int index) {
-	MatrixXf wT = network->GetParams().W[index + 1].transpose() * dZ;
-	return (wT).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - cache.A[index]);
+MatrixXf NetTrainer::BackSigmoid(const MatrixXf &dZ, const MatrixXf &wz, int index) {
+	return (wz).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - cache.A[index]);
 }
 
-MatrixXf NetTrainer::BackTanh(const MatrixXf &dZ, int index) {
+MatrixXf NetTrainer::BackTanh(const MatrixXf &dZ, const MatrixXf &wz, int index) {
 	MatrixXf invASqr = 1.f - cache.A[index].array().square();
-	MatrixXf product = network->GetParams().W[index + 1].transpose() * dZ;
-	return (product).cwiseProduct(invASqr);
+	return (wz).cwiseProduct(invASqr);
 }
 
-MatrixXf NetTrainer::BackReLU(const MatrixXf &dZ, int index) {
-	MatrixXf wT = network->GetParams().W[index + 1].transpose() * dZ;
-	return (wT).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.f; }));
+MatrixXf NetTrainer::BackReLU(const MatrixXf &dZ, const MatrixXf &wz, int index) {
+	return (wz).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.f; }));
 }
 
-MatrixXf NetTrainer::BackLReLU(const MatrixXf &dZ, int index) {
-	MatrixXf wT = network->GetParams().W[index + 1].transpose() * dZ;
-	return (wT).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.01f; }));
+MatrixXf NetTrainer::BackLReLU(const MatrixXf &dZ, const MatrixXf &wz, int index) {
+	return (wz).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.01f; }));
 }
 
-Eigen::MatrixXf NetTrainer::BackSine(const MatrixXf &dZ, int index) {
-	MatrixXf wT = network->GetParams().W[index + 1].transpose() * dZ;
-	return (wT).cwiseProduct(MatrixXf(cache.A[index].array().cos()));
+Eigen::MatrixXf NetTrainer::BackSine(const MatrixXf &dZ, const MatrixXf &wz, int index) {
+	return (wz).cwiseProduct(MatrixXf(cache.A[index].array().cos()));
 }
 
 MatrixXf NetTrainer::BackActivation(const MatrixXf &dZ, int layerIndex) {
+	MatrixXf wT_dZ = network->GetParams().W[layerIndex + 1].transpose() * dZ;
 	switch (network->GetParams().layerActivations[layerIndex]) {
 	case Sigmoid:
-		return BackSigmoid(dZ, layerIndex);
+		return BackSigmoid(dZ, wT_dZ, layerIndex);
 		break;
 	case Tanh:
-		return BackTanh(dZ, layerIndex);
+		return BackTanh(dZ, wT_dZ, layerIndex);
 		break;
 	case ReLU:
-		return BackReLU(dZ, layerIndex);
+		return BackReLU(dZ, wT_dZ, layerIndex);
 		break;
 	case LReLU:
-		return BackLReLU(dZ, layerIndex);
+		return BackLReLU(dZ, wT_dZ, layerIndex);
 		break;
 	case Sine:
-		return BackSine(dZ, layerIndex);
+		return BackSine(dZ, wT_dZ, layerIndex);
 		break;
 	default:
 		return dZ;

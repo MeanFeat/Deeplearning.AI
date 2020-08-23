@@ -359,7 +359,7 @@ void backSigmoid_Kernel(float *dst, const float *d_W, const float *d_dZ, const f
 		}
 		dst[col * m + row] = sum * (1 - d_A[col * m + row]);
 	}
-} /* dst = (d_W.T * d_dZ) (*) d_A^2 */
+} /* dst = (d_W.T * d_dZ) (*) d_A */
 void d_backSigmoid(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A) {
 	int m = d_W->cols(); //reverse for transpose
 	int n = d_W->rows(); //reverse for transpose
