@@ -261,6 +261,14 @@ int Net::GetOutputSize() {
 	return params.layerSizes.back();
 }
 
+int Net::GetNodeCount() {
+	int count = 0;
+	for (int i = 0; i < GetDepth(); i++) {
+		count += GetParams().layerSizes[i];
+	}
+	return count;
+}
+
 string Net::toString() {
 	string str;
 	NetParameters *p = &params;

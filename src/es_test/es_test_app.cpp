@@ -46,7 +46,7 @@ void ReadTestList(const string fName) {
 					state = TestParseState::functionName;
 					functionNames.push_back(val);
 				}
-				if (strFind(lastVal, "arguments")) {
+				else if (strFind(lastVal, "arguments")) {
 					state = TestParseState::args;
 				}
 				lastVal = val;

@@ -54,6 +54,7 @@ public:
 	void LoadNetwork(const std::string fName);
 	int GetInputSize();
 	int GetOutputSize();
+	int GetNodeCount();
 private:
 	void AddLayer(int A, int B);
 	NetParameters params;
