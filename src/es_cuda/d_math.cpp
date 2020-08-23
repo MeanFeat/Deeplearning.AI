@@ -122,9 +122,17 @@ void transpose_Kernel(float *dst, const float *src, int m, int k) {
 	}
 }/* dst = src.T */
 void d_transpose(d_Matrix *dst, const d_Matrix *src) {
-	int m = src->rows();
-	int k = src->cols();
-	transpose_Kernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), src->d_data(), m, k);
+	int c = src->cols();
+	int r = src->rows();
+	const float alpha = 1.f;
+	const float beta = 0.f;
+	cublasSgeam(cublasHandle, CUBLAS_OP_T, CUBLAS_OP_T,
+		c, r, &alpha,
+		src->d_data(), r,
+		&beta,
+		src->d_data(), r,
+		dst->d_data(), c);
+
 	d_catchErr();
 }
 /* dst = srcA * srcB */
@@ -376,9 +384,9 @@ void backTanh_Kernel(float *dst, const float *d_W, const float *d_dZ, const floa
 		for (int i = 0; i < n; ++i) {
 			sum += d_W[col + k * i] * d_dZ[i * m + row];
 		}
-		dst[col * m + row] = sum * (1 - d_A[col * m + row] * d_A[row * m + row]);
+		dst[col * m + row] = sum * (1 - d_A[col * m + row] * d_A[col * m + row]);
 	}
-} /* dst = (d_W.T * d_dZ) (*) d_A^2 */
+} /* dst = (d_W.T * d_dZ) (*) 1 - d_A^2 */
 void d_backTanh(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A) {
 	int m = d_W->cols(); //reverse for transpose
 	int n = d_W->rows(); //reverse for transpose
@@ -445,26 +453,10 @@ void d_backSine(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const 
 	backSine_Kernel << <dimGrid(m, k), dimBlock() >> >
 		(dst->d_data(), d_W->d_data(), d_dZ->d_data(), d_A->d_data(), m, n, k);
 	d_catchErr();
-}
-__global__
-void set_dW_Kernel(float *dst, const float *d_dZ, const float *d_A, float coefficient, int m, int n, int k) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
-	float sum = 0.f;
-	if (col < k && row < m) {
-		for (int i = 0; i < n; i++) {
-			sum += d_dZ[col * n + i] * d_A[row * n + i];
-		}
-		dst[col * m + row] = sum * coefficient;
-	}
 } /* dst = coeff * (d_dZ * d_A.T) */
-void d_set_dW(d_Matrix* dst, const d_Matrix* d_dZ, const d_Matrix* d_A, float coefficient) {
-	int m = d_dZ->rows();
-	int n = d_dZ->cols();
-	int k = d_A->rows();
-	set_dW_Kernel << <dimGrid(m, k), dimBlock() >> >
-		(dst->d_data(), d_dZ->d_data(), d_A->d_data(), coefficient, m, n, k);
-	d_catchErr();
+void d_set_dW(d_Matrix* dst, const d_Matrix* d_dZ, const d_Matrix* d_AT, float coefficient) {
+	d_mult(dst, d_dZ, d_AT); d_catchErr();
+	d_mult_scalar(dst, coefficient); d_catchErr();
 }
 __global__
 void set_dW_Reg_Kernel(float *dst, const float *d_W, float coefficient, float regTerm, int m, int n, int k) {

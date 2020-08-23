@@ -172,7 +172,7 @@ prefix : ffn
 functionName : testForwardTrain
 arguments : [
 	Net(555, { 555,355 }, 255, {ReLU, Tanh, Sigmoid }), 555
-	Net(55, { 55,35 }, 25, {ReLU, Tanh, Sigmoid }), 555
+	Net(55, { 65,55,35 }, 25, {Tanh,ReLU, Tanh, Sigmoid }), 555
 	Net(15, { 25,15 }, 15, {LReLU, ReLU, Tanh }), 555
 	Net(11, { 9,5 }, 2, {Tanh, Tanh, Tanh }), 555
 	Net(5, { 5,5 }, 1, {Tanh, Tanh, Tanh }), 555
