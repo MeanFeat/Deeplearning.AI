@@ -120,7 +120,7 @@ void transpose_Kernel(float *dst, const float *src, int m, int k) {
 	if (row < m && col < k) {
 		dst[col + row * k] = src[row + col * m];
 	}
-}/* dst = src.T */
+} /* dst = src.T */
 void d_transpose(d_Matrix *dst, const d_Matrix *src) {
 	int c = src->cols();
 	int r = src->rows();
@@ -132,36 +132,33 @@ void d_transpose(d_Matrix *dst, const d_Matrix *src) {
 		&beta,
 		src->d_data(), r,
 		dst->d_data(), c);
-
 	d_catchErr();
-}
-/* dst = srcA * srcB */
+} /* dst = srcA * srcB */
 void d_mult(d_Matrix* dst, const d_Matrix* srcA, const d_Matrix* srcB) {
 	const float alpha = 1.f;
 	const float beta = 0.f;
 	const int m = srcA->rows();
 	const int n = srcB->cols();
 	const int k = srcA->cols();
-	d_check(cublasSgemm(cublasHandle,
+	cublasSgemm(cublasHandle,
 		CUBLAS_OP_N, CUBLAS_OP_N,
 		m, n, k,
 		&alpha,
 		srcA->d_data(), m,
 		srcB->d_data(), k,
 		&beta,
-		dst->d_data(), m));
-}
-/*dst = srcA.T * srcB */
+		dst->d_data(), m);
+	d_catchErr();
+} /*dst = srcA.T * srcB */
 void d_mult_lhsT(d_Matrix* dst, const d_Matrix* srcA, const d_Matrix* srcB) {
 	d_Matrix d_trans = d_Matrix(srcA->cols(), srcA->rows());
-	d_transpose(&d_trans, srcA);
-	d_mult(dst, &d_trans, srcB);
-}
-/* dst = srcA * srcB.T */
+	d_transpose(&d_trans, srcA); d_catchErr();
+	d_mult(dst, &d_trans, srcB); d_catchErr();
+} /* dst = srcA * srcB.T */
 void d_mult_rhsT(d_Matrix* dst, const d_Matrix *srcA, const d_Matrix *srcB) {
 	d_Matrix d_trans = d_Matrix(srcB->cols(), srcB->rows());
-	d_transpose(&d_trans, srcB);
-	d_mult(dst, srcA, &d_trans);
+	d_transpose(&d_trans, srcB); d_catchErr();
+	d_mult(dst, srcA, &d_trans); d_catchErr();
 }
 __global__
 void sum_Naive_Kernel(float *dst, const float *src, int len) {
@@ -232,8 +229,11 @@ void d_sumMatrix(float* dst, const d_Matrix *src) {
 }
 void d_sumMatrix(float* dst, const float* src, int m, int k) {
 	int len = m * k;
-	//sumMatrix_Kernel << <dimGrid(m, k), dimBlock() >> > (dst, src->d_data(), m, k);
+	//float *temp;
+	//cudaMalloc((void **)&temp, len * sizeof(float));
+	//cudaMemcpy(temp, src, len * sizeof(float), cudaMemcpyDeviceToDevice); (dst, temp, m, k);
 	sum_Naive_Kernel << <1, 1 >> > (dst, src, len);
+	//cublasSasum(cublasHandle, len, src, 1, dst);
 	d_catchErr();
 }
 __global__
@@ -329,7 +329,7 @@ void Sine_Kernal(float *dst, int m, int k) {
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	int tid = col * m + row;
 	if (col < k && row < m) {
-		dst[tid] = sin(dst[tid]);
+		dst[tid] = __sinf(dst[tid]);
 	}
 }
 void d_activate(d_Matrix *dst, Activation act) {
@@ -357,101 +357,88 @@ void d_activate(d_Matrix *dst, Activation act) {
 	}
 }
 __global__
-void backSigmoid_Kernel(float *dst, const float *d_W, const float *d_dZ, const float *d_A, int m, int n, int k) {
+void backSigmoid_Kernel(float *dst, const float *d_A, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if (col < k && row < m) {
-		float sum = 0.f;
-		for (int i = 0; i < n; ++i) {
-			sum += d_W[col + k * i] * d_dZ[i * m + row];
-		}
-		dst[col * m + row] = sum * (1 - d_A[col * m + row]);
+		dst[col * m + row] *= (1 - d_A[col * m + row]);
 	}
 } /* dst = (d_W.T * d_dZ) (*) d_A */
 void d_backSigmoid(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A) {
+	d_mult_lhsT(dst, d_W, d_dZ);
 	int m = d_W->cols(); //reverse for transpose
 	int n = d_W->rows(); //reverse for transpose
 	int k = d_dZ->cols();
-	backSigmoid_Kernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), d_W->d_data(), d_dZ->d_data(), d_A->d_data(), m, n, k);
+	backSigmoid_Kernel << <dimGrid(m, k), dimBlock() >> >
+		(dst->d_data(), d_A->d_data(), m, n, k);
 	d_catchErr();
 }
 __global__
-void backTanh_Kernel(float *dst, const float *d_W, const float *d_dZ, const float *d_A, int m, int n, int k) {
+void backTanh_Kernel(float *dst, const float *d_A, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if (col < k && row < m) {
-		float sum = 0.f;
-		for (int i = 0; i < n; ++i) {
-			sum += d_W[col + k * i] * d_dZ[i * m + row];
-		}
-		dst[col * m + row] = sum * (1 - d_A[col * m + row] * d_A[col * m + row]);
+		dst[col * m + row] *= (1 - (d_A[col * m + row] * d_A[col * m + row]));
 	}
 } /* dst = (d_W.T * d_dZ) (*) 1 - d_A^2 */
 void d_backTanh(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A) {
+	d_mult_lhsT(dst, d_W, d_dZ);
 	int m = d_W->cols(); //reverse for transpose
 	int n = d_W->rows(); //reverse for transpose
 	int k = d_dZ->cols();
-	backTanh_Kernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), d_W->d_data(), d_dZ->d_data(), d_A->d_data(), m, n, k);
+	backTanh_Kernel << <dimGrid(m, k), dimBlock() >> >
+		(dst->d_data(), d_A->d_data(), m, n, k);
 	d_catchErr();
 }
 __global__
-void backReLU_Kernel(float *dst, const float *d_W, const float *d_dZ, const float *d_A, int m, int n, int k) {
+void backReLU_Kernel(float *dst, const float *d_A, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if (col < k && row < m) {
-		float sum = 0.f;
-		for (int i = 0; i < n; ++i) {
-			sum += d_W[row + m * i] * d_dZ[i * k + col];
-		}
-		dst[row * k + col] = sum * (d_A[row * k + col] > 0.f ? 1.f : 0.f);
+		dst[row * k + col] *= (d_A[row * k + col] > 0.f ? 1.f : 0.f);
 	}
 } /* dst = (d_W.T * d_dZ) (*) (d_A > 0 ? 1 : 0) */
 void d_backReLU(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A) {
+	d_mult_lhsT(dst, d_W, d_dZ);
 	int m = d_W->cols(); //reverse for transpose
 	int n = d_W->rows(); //reverse for transpose
 	int k = d_dZ->cols();
 	backReLU_Kernel << <dimGrid(m, k), dimBlock() >> >
-		(dst->d_data(), d_W->d_data(), d_dZ->d_data(), d_A->d_data(), m, n, k);
+		(dst->d_data(), d_A->d_data(), m, n, k);
 	d_catchErr();
 }
 __global__
-void backLReLU_Kernel(float *dst, const float *d_W, const float *d_dZ, const float *d_A, int m, int n, int k) {
+void backLReLU_Kernel(float *dst, const float *d_A, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if (col < k && row < m) {
-		float sum = 0.f;
-		for (int i = 0; i < n; ++i) {
-			sum += d_W[row + m * i] * d_dZ[i * k + col];
-		}
-		dst[row * k + col] = sum * (d_A[row * k + col] > 0.f ? 1.f : LRELU_LEAK);
+		dst[row * k + col] *= (d_A[row * k + col] > 0.f ? 1.f : LRELU_LEAK);
 	}
 } /* dst = (d_W.T * d_dZ) (*) (d_A > 0 ? 1 : 0) */
 void d_backLReLU(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A) {
+	d_mult_lhsT(dst, d_W, d_dZ);
 	int m = d_W->cols(); //reverse for transpose
 	int n = d_W->rows(); //reverse for transpose
 	int k = d_dZ->cols();
 	backLReLU_Kernel << <dimGrid(m, k), dimBlock() >> >
-		(dst->d_data(), d_W->d_data(), d_dZ->d_data(), d_A->d_data(), m, n, k);
+		(dst->d_data(), d_A->d_data(), m, n, k);
 	d_catchErr();
 }
 __global__
-void backSine_Kernel(float *dst, const float *d_W, const float *d_dZ, const float *d_A, int m, int n, int k) {
+void backSine_Kernel(float *dst, const float *d_A, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if (col < k && row < m) {
-		float sum = 0.f;
-		for (int i = 0; i < n; ++i) {
-			sum += d_W[row + m * i] * d_dZ[i * k + col];
-		}
-		dst[row * k + col] = cosf(sum);
+		dst[row * k + col] *= cos(d_A[row * k + col]);
 	}
 } /* dst = cos(d_W.T * d_dZ) */
 void d_backSine(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A) {
+	d_mult_lhsT(dst, d_W, d_dZ);
 	int m = d_W->cols(); //reverse for transpose
 	int n = d_W->rows(); //reverse for transpose
 	int k = d_dZ->cols();
 	backSine_Kernel << <dimGrid(m, k), dimBlock() >> >
-		(dst->d_data(), d_W->d_data(), d_dZ->d_data(), d_A->d_data(), m, n, k);
+		(dst->d_data(), d_A->d_data(), m, n, k);
 	d_catchErr();
 } /* dst = coeff * (d_dZ * d_A.T) */
 void d_set_dW(d_Matrix* dst, const d_Matrix* d_dZ, const d_Matrix* d_AT, float coefficient) {
