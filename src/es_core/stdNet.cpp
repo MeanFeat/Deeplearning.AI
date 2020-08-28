@@ -32,7 +32,7 @@ void Net::SetParams(vector<MatrixXf> W, vector<MatrixXf> b) {
 	params.b = b;
 }
 void Net::AddLayer(int A, int B) {
-	params.W.push_back(MatrixXf::Random(A, B));
+	params.W.push_back(MatrixXf::Zero(A, B));
 	params.b.push_back(MatrixXf::Zero(A, 1));
 }
 MatrixXf Net::Activate(const MatrixXf &In, Activation act) {
@@ -73,6 +73,29 @@ MatrixXf Net::ForwardPropagation(const MatrixXf &X) {
 
 int Net::GetDepth() {
 	return (int)GetParams().layerSizes.size() - 1;
+}
+
+void Net::RandomInit(float scale) {
+	for (int i = 0; i < GetDepth(); ++i) {
+		MatrixXf *w = &GetParams().W[i];
+		*w = MatrixXf::Random(w->rows(), w->cols()) * scale;
+	}
+}
+
+float Net::GetSumOfWeights() {
+	float result = 0.f;
+	for (int i = 0; i < GetParams().W.size(); i++) {
+		result += GetParams().W[i].sum();
+	}
+	return result;
+}
+
+int Net::GetNeuronCount() {
+	int result = 0;
+	for (int i = 0; i < GetDepth(); i++) {
+		result += GetParams().layerSizes[i];
+	}
+	return result;
 }
 
 Activation ReadActivation(string str) {

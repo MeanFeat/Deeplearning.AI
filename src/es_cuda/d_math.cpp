@@ -408,17 +408,6 @@ void d_set_dW_Reg(d_Matrix* dst, const d_Matrix* d_dZ, const d_Matrix* d_AT, con
 	d_mult_scalar(dst, coefficient);
 	d_catchErr();
 }
-__global__
-void sumRows_naive_Kernel(float *dst, const float *d_dZ, int m, int k) {
-	int tid = blockIdx.x;
-	if (tid < m) {
-		float sum = 0.f;
-		for (int ind = 0; ind < k; ++ind) {
-			sum += d_dZ[tid + m * ind];
-		}
-		dst[tid] = sum;
-	}
-}
 void d_sumRows(d_Matrix* dst, const d_Matrix* src) {
 	int m = src->rows();
 	int k = src->cols();

@@ -23,7 +23,6 @@ d_NetTrainParameters d_NetTrainer::GetTrainParams() {
 d_NetCache d_NetTrainer::GetCache() {
 	return cache;
 }
-
 void d_NetTrainer::RefreshHostNetwork() {
 	for (int i = 0; i < trainParams.d_W.size(); ++i) {
 		network->GetParams().W[i] = to_host(trainParams.d_W[i]);
@@ -34,27 +33,33 @@ d_NetProfiler d_NetTrainer::GetProfiler() {
 	return profiler;
 }
 d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &labels, float weightScale, float learnRate, float regTerm) {
+	assert(net->GetNodeCount());
+	assert(data.size());
+	assert(labels.size());
+#if _PROFILE
 	cudaEventCreate(&start);
 	cudaEventCreate(&stop);
 	cudaStreamCreate(&cuda_stream);
+#endif
 	network = net;
 	cache.d_A.push_back(to_device(data));
 	cache.d_AT.push_back(to_device(data.transpose()));
 	d_trainLabels = to_device(labels);
 	trainParams.trainExamplesCount = (unsigned int)data.cols();
 	trainParams.coefficiant = 1.f / (float)trainParams.trainExamplesCount;
-	int nodeCount = 0;
+	if (network->GetSumOfWeights() == 0.f) {
+		network->RandomInit(weightScale);
+	}
 	for (int i = 0; i < network->GetDepth(); ++i) {
-		nodeCount += network->GetParams().layerSizes[i];
-		trainParams.d_W.push_back(to_device(network->GetParams().W[i] * weightScale));
+		trainParams.d_W.push_back(to_device(network->GetParams().W[i]));
 		trainParams.d_b.push_back(to_device(network->GetParams().b[i]));
 	}
 	trainParams.learnRate = learnRate;
-	trainParams.learnCoeff = 1.f / (float)nodeCount;
+	trainParams.learnCoeff = 1.f / (float)network->GetNodeCount();
 	trainParams.learnMult = trainParams.learnRate*trainParams.learnCoeff;
 	trainParams.regTerm = regTerm;
-	trainParams.regMod = trainParams.regTerm / (float)nodeCount;
-	trainParams.regMult = float((trainParams.regTerm * trainParams.learnCoeff));
+	trainParams.regMod = trainParams.regTerm / (float)network->GetNodeCount();
+	trainParams.regMult = float(trainParams.regTerm * trainParams.learnCoeff);
 	for (int h = 1; h < (int)network->GetDepth() + 1; ++h) {
 		AddLayer((int)network->GetParams().layerSizes[h], (int)network->GetParams().layerSizes[h - 1]);
 	}

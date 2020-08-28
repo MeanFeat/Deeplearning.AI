@@ -18,19 +18,17 @@ NetTrainer::NetTrainer() {
 }
 
 NetTrainer::NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &labels, float weightScale, float learnRate, float regTerm) {
+	assert(net->GetNodeCount());
+	assert(data.size());
+	assert(labels.size());
 	network = net;
 	trainData = data;
 	trainLabels = labels;
 	coeff = float(1.f / trainLabels.cols());
-	int nodeCount = 0;
-	for (int i = 0; i < (int)network->GetParams().layerSizes.size() - 1; ++i) {
-		nodeCount += network->GetParams().layerSizes[i];
-		if (network->GetParams().W[i].sum() == 0.f) {	 //Don't initialize if we already have weights
-			MatrixXf *w = &network->GetParams().W[i];
-			*w = MatrixXf::Random(w->rows(), w->cols()) * weightScale;
-		}
+	if (network->GetSumOfWeights() == 0.f) {
+		network->RandomInit(weightScale);
 	}
-	trainParams.learningMod = 1.f / nodeCount;
+	trainParams.learningMod = 1.f / (float)network->GetNeuronCount();
 	trainParams.learningRate = learnRate;
 	trainParams.regTerm = regTerm;
 	for (int i = 1; i < (int)network->GetParams().layerSizes.size(); ++i) {

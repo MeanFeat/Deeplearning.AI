@@ -49,6 +49,9 @@ public:
 	static Eigen::MatrixXf Activate(const Eigen::MatrixXf &In, Activation act);
 	Eigen::MatrixXf ForwardPropagation(const Eigen::MatrixXf &X);
 	int GetDepth();
+	void RandomInit(float scale);
+	float GetSumOfWeights();
+	int GetNeuronCount();
 	std::string toString();
 	void SaveNetwork(const std::string fName);
 	void LoadNetwork(const std::string fName);
