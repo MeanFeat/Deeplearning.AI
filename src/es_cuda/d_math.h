@@ -23,9 +23,9 @@ inline dim3 dimGrid(int m, int k) {
 inline dim3 dimBlock() {
 	return dim3(BLOCK_SIZE, BLOCK_SIZE);
 }
-/* dst (=) a*/
+/* dst (=) a */
 void d_set_elem(float *dst, const float a);
-/* dst (=) a*/
+/* dst (=) a */
 void d_set_elem(d_Matrix *dst, const float a);
 /* dst = srcA (+) srcB */
 void d_add_elem(d_Matrix *dst, const d_Matrix &srcA, const d_Matrix &srcB);
@@ -43,10 +43,7 @@ void d_mult(d_Matrix * dst, const d_Matrix * srcA, const d_Matrix * srcB);
 void d_mult_lhsT(d_Matrix * dst, const d_Matrix * srcA, const d_Matrix * srcB);
 /* dst = srcA * srcB.T */
 void d_mult_rhsT(d_Matrix * dst, const d_Matrix * srcA, const d_Matrix * srcB);
-/* dst = src.sum() */
-void d_sum(float *dst, d_Matrix* src);
 void d_sumMatrix(float* dst, const d_Matrix* src);
-void d_sumMatrix(float* dst, const float* src, int m, int k);
 void d_square(d_Matrix* dst, const d_Matrix* src);
 void d_forwardLayer(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_last, const d_Matrix *d_bias);
 void d_activate(d_Matrix *dst, Activation act);

@@ -162,81 +162,25 @@ void d_mult_rhsT(d_Matrix* dst, const d_Matrix *srcA, const d_Matrix *srcB) {
 	d_mult(dst, srcA, &d_trans); d_catchErr();
 	d_trans.free();
 }
-__global__
-void sum_Naive_Kernel(float *dst, const float *src, int len) {
-	int tid = threadIdx.x;
-	if (tid == 0) {
-		float sum = 0.f;
-		for (int i = 0; i < len; i++) {
-			sum += src[i];
-		}
-		__syncthreads();
-		dst[0] = sum;
-	}
-}
-__global__
-void sum_Kernel(float *dst, float *src, int len) {
-	int tid = threadIdx.x;
-	int step = 2;
-	int get = 1;
-	while (get < len) {
-		if (tid * step + get < len) {
-			src[tid*step] += src[tid*step + get];
-			__syncthreads();
-		}
-		step *= 2;
-		get *= 2;
-	}
-	if (tid == 0) {
-		if (len % 2 > 0) {
-			src[0] += src[len];
-		}
-		dst[0] = src[0];
-	}
-}
-void d_sum(float *dst, const d_Matrix* src) {
-	int m = src->size();
-	sum_Kernel << < 1, m / 2 >> > (dst, src->d_data(), m);
-	d_catchErr();
-}
-__global__
-void sumMatrix_Kernel(float *dst, float *src, int m, int k) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
-	unsigned int len = m * k;
-	unsigned int step = 2;
-	unsigned int get = 1;
-	unsigned int tid = col + row * k;
-	if (col < k && row < m) {
-		while (get < len) {
-			if (tid * step + get < len) {
-				src[tid*step] += src[tid * step + get];
-				src[tid * step + get] = 0.f;
-				__syncthreads();
-			}
-			step *= 2;
-			get *= 2;
-			__syncthreads();
-		}
-	}
-	if (tid == 0) {
-		if (len % 2 > 0) {
-			src[0] += src[len];
-		}
-		dst[0] = src[0];
-	}
-}
 void d_sumMatrix(float* dst, const d_Matrix *src) {
-	d_sumMatrix(dst, src->d_data(), src->rows(), src->cols());  d_catchErr();
-}
-void d_sumMatrix(float* dst, const float* src, int m, int k) {
-	int len = m * k;
-	//float *temp;
-	//cudaMalloc((void **)&temp, len * sizeof(float));
-	//cudaMemcpy(temp, src, len * sizeof(float), cudaMemcpyDeviceToDevice); (dst, temp, m, k);
-	sum_Naive_Kernel << <1, 1 >> > (dst, src, len);
-	//cublasSasum(cublasHandle, len, src, 1, dst);
-	d_catchErr();
+	if (src->size() < 9999999) {
+		d_Matrix serial = src->serialize(); d_catchErr();
+		d_Matrix ones = d_Matrix(src->size(), 1);
+		d_set_elem(&ones, 1.f); d_catchErr();
+		d_Matrix result = d_Matrix(1, 1);
+		d_mult(&result, &serial, &ones); d_catchErr();
+		cudaMemcpy((void**)dst, result.d_data(), sizeof(float), cudaMemcpyDeviceToDevice);
+		serial.free();
+		ones.free();
+		result.free();
+	}
+	else {
+		//recursion
+		d_Matrix r = d_Matrix(src->rows(), 1);
+		d_sumRows(&r, src);
+		d_sumMatrix(dst, &r);
+		r.free();
+	}
 }
 __global__
 void add_row_broad_Kernel(float *dst, const float *srcMat, const float *srcVec, int m, int k) {
@@ -544,11 +488,9 @@ void d_calcCost(float *dst, const d_Matrix* d_err, const vector<d_Matrix>* d_mod
 	d_Matrix d_sqrSum = d_Matrix(1, 1);
 	for (int i = 0; i < (int)d_modelWeights->size() - 1; ++i) {
 		const d_Matrix *layerWeights = &d_modelWeights->at(i);
-		int m = layerWeights->rows();
-		int k = layerWeights->cols();
-		d_Matrix d_squared(m, k);
+		d_Matrix d_squared(layerWeights->rows(), layerWeights->cols());
 		d_square(&d_squared, layerWeights); d_catchErr();
-		d_sumMatrix(d_sqrSum.d_data(), d_squared.d_data(), m, k); d_catchErr();
+		d_sumMatrix(d_sqrSum.d_data(), &d_squared); d_catchErr();
 		d_launch_single_thread(pfAdd, d_sqrSumTotal.d_data(), d_sqrSum.d_data()); d_catchErr();
 	}
 	finalCost_Kernel << <1, 1 >> > (dst, d_sqrSumTotal.d_data(), regMult, trainLableCount); d_catchErr();
