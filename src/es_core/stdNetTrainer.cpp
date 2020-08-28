@@ -14,8 +14,7 @@ static const float invB2 = 1.f - b2;
 static const float invBSq1 = 1.f - b1Sqr;
 static const float invBSq2 = 1.f - b2Sqr;
 
-NetTrainer::NetTrainer() {
-}
+NetTrainer::NetTrainer() {}
 
 NetTrainer::NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &labels, float weightScale, float learnRate, float regTerm) {
 	assert(net->GetNodeCount());
@@ -87,24 +86,24 @@ void NetTrainer::ModifyRegTerm(float m) {
 	trainParams.regTerm = max(FLT_EPSILON, trainParams.regTerm + m);
 }
 
-MatrixXf NetTrainer::BackSigmoid(const MatrixXf &dZ, const MatrixXf &wz, int index) {
+Eigen::MatrixXf NetTrainer::BackSigmoid(const Eigen::MatrixXf &wz, int index) {
 	return (wz).cwiseProduct(MatrixXf::Ones(cache.A[index].rows(), cache.A[index].cols()) - cache.A[index]);
 }
 
-MatrixXf NetTrainer::BackTanh(const MatrixXf &dZ, const MatrixXf &wz, int index) {
+Eigen::MatrixXf NetTrainer::BackTanh(const Eigen::MatrixXf &wz, int index) {
 	MatrixXf invASqr = 1.f - cache.A[index].array().square();
 	return (wz).cwiseProduct(invASqr);
 }
 
-MatrixXf NetTrainer::BackReLU(const MatrixXf &dZ, const MatrixXf &wz, int index) {
+Eigen::MatrixXf NetTrainer::BackReLU(const Eigen::MatrixXf &wz, int index) {
 	return (wz).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.f; }));
 }
 
-MatrixXf NetTrainer::BackLReLU(const MatrixXf &dZ, const MatrixXf &wz, int index) {
+Eigen::MatrixXf NetTrainer::BackLReLU(const Eigen::MatrixXf &wz, int index) {
 	return (wz).cwiseProduct(cache.A[index].unaryExpr([](float elem) { return elem > 0.f ? 1.f : 0.01f; }));
 }
 
-Eigen::MatrixXf NetTrainer::BackSine(const MatrixXf &dZ, const MatrixXf &wz, int index) {
+Eigen::MatrixXf NetTrainer::BackSine(const Eigen::MatrixXf &wz, int index) {
 	return (wz).cwiseProduct(MatrixXf(cache.A[index].array().cos()));
 }
 
@@ -112,19 +111,19 @@ MatrixXf NetTrainer::BackActivation(const MatrixXf &dZ, int layerIndex) {
 	MatrixXf wT_dZ = network->GetParams().W[layerIndex + 1].transpose() * dZ;
 	switch (network->GetParams().layerActivations[layerIndex]) {
 	case Sigmoid:
-		return BackSigmoid(dZ, wT_dZ, layerIndex);
+		return BackSigmoid(wT_dZ, layerIndex);
 		break;
 	case Tanh:
-		return BackTanh(dZ, wT_dZ, layerIndex);
+		return BackTanh(wT_dZ, layerIndex);
 		break;
 	case ReLU:
-		return BackReLU(dZ, wT_dZ, layerIndex);
+		return BackReLU(wT_dZ, layerIndex);
 		break;
 	case LReLU:
-		return BackLReLU(dZ, wT_dZ, layerIndex);
+		return BackLReLU(wT_dZ, layerIndex);
 		break;
 	case Sine:
-		return BackSine(dZ, wT_dZ, layerIndex);
+		return BackSine(wT_dZ, layerIndex);
 		break;
 	default:
 		return dZ;
@@ -154,7 +153,6 @@ void NetTrainer::UpdateParameters() {
 		network->GetParams().b[i] -= learnRate * trainParams.db[i];
 	}
 }
-
 void NetTrainer::UpdateParametersADAM() {
 	float learnRate = (trainParams.learningRate*trainParams.learningMod);
 	for (int i = 0; i < (int)trainParams.dW.size(); ++i) {
@@ -172,7 +170,6 @@ void NetTrainer::UpdateParametersADAM() {
 		network->GetParams().b[i] -= learnRate * MatrixXf(vCorrected.db[i].array() / (sCorrected.db[i].array().sqrt() + FLT_EPSILON));
 	}
 }
-
 void NetTrainer::BuildDropoutMask() {
 	dropParams = network->GetParams();
 	for (int i = 0; i < (int)network->GetParams().W.size() - 1; ++i) {
@@ -185,7 +182,6 @@ void NetTrainer::BuildDropoutMask() {
 		}
 	}
 }
-
 void NetTrainer::TrainSingleEpoch() {
 	//BuildDropoutMask();
 	cache.cost = CalcCost(ForwardTrain(), trainLabels);

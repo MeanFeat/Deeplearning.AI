@@ -221,6 +221,7 @@ testResult testSine(int m, int k) {
 testResult testBackProp(Net &nn, int dataCount) {
 	MatrixXf data = MatrixXf::Random(nn.GetInputSize(), dataCount);
 	MatrixXf labels = MatrixXf::Random(nn.GetOutputSize(), dataCount);
+	nn.RandomInit(0.15f);
 	Net d_nn = (nn);
 	NetTrainer h_trainer = NetTrainer(&nn, data, labels, 1.f, 0.25f, 0.f);
 	h_trainer.ForwardTrain();
@@ -235,6 +236,7 @@ testResult testBackProp(Net &nn, int dataCount) {
 testResult testForwardTrain(Net &nn, int dataCount) {
 	MatrixXf data = MatrixXf::Random(nn.GetInputSize(), dataCount);
 	MatrixXf labels = MatrixXf::Random(nn.GetOutputSize(), dataCount);
+	nn.RandomInit(0.15f);
 	NetTrainer h_trainer = NetTrainer(&nn, data, labels, 1.f, 0.25f, 0.f);
 	MatrixXf control = h_trainer.ForwardTrain();
 	d_NetTrainer d_trainer = d_NetTrainer(&nn, data, labels, 1.f, 0.25f, 0.f);

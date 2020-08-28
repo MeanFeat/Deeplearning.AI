@@ -22,11 +22,11 @@ public:
 	~NetTrainer();
 
 	Eigen::MatrixXf BackActivation(const Eigen::MatrixXf &dZ, int layerIndex);
-	Eigen::MatrixXf BackLReLU(const Eigen::MatrixXf &dZ, const Eigen::MatrixXf &wz, int index);
-	Eigen::MatrixXf BackReLU(const Eigen::MatrixXf &dZ, const Eigen::MatrixXf &wz, int index);
-	Eigen::MatrixXf BackSigmoid(const Eigen::MatrixXf &dZ, const Eigen::MatrixXf &wz, int index);
-	Eigen::MatrixXf BackSine(const Eigen::MatrixXf &dZ, const Eigen::MatrixXf &wz, int index);
-	Eigen::MatrixXf BackTanh(const Eigen::MatrixXf &dZ, const Eigen::MatrixXf &wz, int index);
+	Eigen::MatrixXf BackLReLU(const Eigen::MatrixXf &wz, int index);
+	Eigen::MatrixXf BackReLU(const Eigen::MatrixXf &wz, int index);
+	Eigen::MatrixXf BackSigmoid(const Eigen::MatrixXf &wz, int index);
+	Eigen::MatrixXf BackSine(const Eigen::MatrixXf &wz, int index);
+	Eigen::MatrixXf BackTanh(const Eigen::MatrixXf &wz, int index);
 	Eigen::MatrixXf ForwardTrain();
 	float CalcCost(const Eigen::MatrixXf &h, const Eigen::MatrixXf &Y);
 	Net *network;

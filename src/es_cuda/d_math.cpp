@@ -463,7 +463,6 @@ __global__
 void finalCost_Kernel(float *dst, const float *sumTotal, float regMult, float trainCount) {
 	dst[0] = dst[0] + (0.5f * (regMult * (sumTotal[0] / (trainCount*2.0f))));
 }
-
 void d_calcCost(float *dst, const d_Matrix* d_err, const vector<d_Matrix>* d_modelWeights, float regMult, float coeff, float trainLableCount) {
 	d_Matrix *d_diff = new d_Matrix(d_err->rows(), d_err->cols());
 	int m = d_err->rows();
