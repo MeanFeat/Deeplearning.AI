@@ -122,6 +122,17 @@ arguments : [
 	8, 60
 	1,1
 ] 
+category : Matrix_Element
+header : Sum_Rows
+prefix : msr
+functionName : testSumRows
+arguments : [
+	1234, 98765 
+	990, 85
+	100, 100 
+	8, 60
+	1,1
+] 
 category : Activations
 header : Activation_Sigmoid 
 prefix : sig

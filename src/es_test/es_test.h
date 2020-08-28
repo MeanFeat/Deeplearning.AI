@@ -50,6 +50,7 @@ testResult testSet(int m, int k, float val);
 testResult testAdd(int m, int k);
 testResult testSubtract(int m, int k);
 testResult testMultElem(int m, int k);
+testResult testSumRows(int m, int k);
 testResult testSquare(int m, int k);
 testResult testSigmoid(int m, int k);
 testResult testTanh(int m, int k);

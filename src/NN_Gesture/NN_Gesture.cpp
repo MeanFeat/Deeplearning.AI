@@ -290,7 +290,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	}
 
 	WNDCLASSA winClass = {};
-	InitializeWindow(&winClass, Instance, Win32MainWindowCallback, &backBuffer, WINWIDTH, WINHEIGHT, "NN_PredictRadian");
+	InitializeWindow(&winClass, Instance, Win32MainWindowCallback, &backBuffer, WINWIDTH, WINHEIGHT, "NN_Gesture");
 	time(&startTime);
 	if (RegisterClassA(&winClass)) {
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
@@ -311,7 +311,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		float h = 0.f;
 		int steps = 0;
 		//Main Loop
-		while (globalRunning && steps < 500) {
+		while (globalRunning /*&& steps < 500*/) {
 			Win32ProcessPendingMessages();
 			if (isTraining) {
 				for (int e = 0; e < 1; e++) {

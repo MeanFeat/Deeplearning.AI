@@ -154,11 +154,13 @@ void d_mult_lhsT(d_Matrix* dst, const d_Matrix* srcA, const d_Matrix* srcB) {
 	d_Matrix d_trans = d_Matrix(srcA->cols(), srcA->rows());
 	d_transpose(&d_trans, srcA); d_catchErr();
 	d_mult(dst, &d_trans, srcB); d_catchErr();
+	d_trans.free();
 } /* dst = srcA * srcB.T */
 void d_mult_rhsT(d_Matrix* dst, const d_Matrix *srcA, const d_Matrix *srcB) {
 	d_Matrix d_trans = d_Matrix(srcB->cols(), srcB->rows());
 	d_transpose(&d_trans, srcB); d_catchErr();
 	d_mult(dst, srcA, &d_trans); d_catchErr();
+	d_trans.free();
 }
 __global__
 void sum_Naive_Kernel(float *dst, const float *src, int len) {
@@ -463,28 +465,39 @@ void d_set_dW_Reg(d_Matrix* dst, const d_Matrix* d_dZ, const d_Matrix* d_AT, con
 	d_catchErr();
 }
 __global__
-void set_db_Kernel(float *dst, const float *d_dZ, int r, int c) {
+void sumRows_naive_Kernel(float *dst, const float *d_dZ, int m, int k) {
 	int tid = blockIdx.x;
-	if (tid < r) {
+	if (tid < m) {
 		float sum = 0.f;
-		for (int ind = 0; ind < c; ++ind) {
-			sum += d_dZ[tid * c + ind];
+		for (int ind = 0; ind < k; ++ind) {
+			sum += d_dZ[tid + m * ind];
 		}
 		dst[tid] = sum;
 	}
-} /* dst = coeff * (srcA.SumOfRows) */
+}
+void d_sumRows(d_Matrix* dst, const d_Matrix* src) {
+	int m = src->rows();
+	int k = src->cols();
+	d_Matrix ones = d_Matrix(k, 1);
+	d_set_elem(&ones, 1.f);
+	d_mult(dst, src, &ones);
+	ones.free();
+}
+/* dst = coeff * (srcA.SumOfRows) */
 void d_set_db(d_Matrix* dst, const d_Matrix* d_dZ, float coefficient) {
 	int m = d_dZ->rows();
 	int k = d_dZ->cols();
-	set_db_Kernel << <dst->rows(), 1 >> > (dst->d_data(), d_dZ->d_data(), m, k);
-	mult_scalar_Kernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), coefficient, m, 1);
+	d_sumRows(dst, d_dZ);
+	d_mult_scalar(dst, coefficient);
 	d_catchErr();
 }
 #define BETA1 0.9f
 #define BETA2 (1.f - FLT_EPSILON)
 __global__
-void updateParameterADAM_Kernel(float *dst, int N, const float *d_derivative, float *d_momentum, float *d_momentumSqr, float learn) {
-	int tid = blockIdx.x;
+void updateParameterADAM_Kernel(float *dst, int N, const float *d_derivative, float *d_momentum, float *d_momentumSqr, float learn, int k) {
+	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int tid = row * k + col;
 	if (tid < N) {
 		d_momentum[tid] = BETA1 * (d_momentum[tid]) + (1.f - BETA1) * d_derivative[tid];
 		d_momentumSqr[tid] = (BETA2 * d_momentumSqr[tid]) + ((1.f - BETA2) * (d_derivative[tid] * d_derivative[tid]));
@@ -492,8 +505,10 @@ void updateParameterADAM_Kernel(float *dst, int N, const float *d_derivative, fl
 	}
 }
 void d_updateParameterADAM(d_Matrix* dst, const d_Matrix* d_derivative, const d_Matrix* d_momentum, const d_Matrix* d_momentumSqr, float learnRate) {
-	updateParameterADAM_Kernel << <dst->size(), 1 >> >
-		(dst->d_data(), dst->size(), d_derivative->d_data(), d_momentum->d_data(), d_momentumSqr->d_data(), learnRate);
+	int m = dst->rows();
+	int k = dst->cols();
+	updateParameterADAM_Kernel << <dimGrid(m, k), dimBlock() >> >
+		(dst->d_data(), dst->size(), d_derivative->d_data(), d_momentum->d_data(), d_momentumSqr->d_data(), learnRate, k);
 	d_catchErr();
 }
 __global__
@@ -525,18 +540,18 @@ void d_calcCost(float *dst, const d_Matrix* d_err, const vector<d_Matrix>* d_mod
 	d_mult_scalar(dst, coeff, 1, 1);
 	// Add Regularization
 	d_Matrix d_sqrSumTotal = d_Matrix(1, 1);
-	cudaMalloc((void**)&d_sqrSumTotal, sizeof(float));
 	d_set_elem(d_sqrSumTotal.d_data(), 0.f);
+	d_Matrix d_sqrSum = d_Matrix(1, 1);
 	for (int i = 0; i < (int)d_modelWeights->size() - 1; ++i) {
 		const d_Matrix *layerWeights = &d_modelWeights->at(i);
 		int m = layerWeights->rows();
 		int k = layerWeights->cols();
 		d_Matrix d_squared(m, k);
-		d_Matrix d_sqrSum = d_Matrix(1, 1);
-		d_check(cudaMalloc((void**)&d_sqrSum, sizeof(float)));
 		d_square(&d_squared, layerWeights); d_catchErr();
 		d_sumMatrix(d_sqrSum.d_data(), d_squared.d_data(), m, k); d_catchErr();
 		d_launch_single_thread(pfAdd, d_sqrSumTotal.d_data(), d_sqrSum.d_data()); d_catchErr();
 	}
 	finalCost_Kernel << <1, 1 >> > (dst, d_sqrSumTotal.d_data(), regMult, trainLableCount); d_catchErr();
+	d_sqrSumTotal.free();
+	d_sqrSum.free();
 }

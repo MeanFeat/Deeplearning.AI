@@ -37,7 +37,7 @@ testResult GetOutcome(float cSum, float tSum, float thresh) {
 	result.passed = diff <= abs(thresh);
 	result.message = GetOutcomeString(cSum, tSum, diff, thresh, result.passed);
 	int passCol = diff > 0.f ? 14 : 10;
-	TEXTCOLOUR(cout << result.message << endl;, result.passed ? passCol : 12);
+	TEXTCOLOUR(cout << result.message << endl; , result.passed ? passCol : 12);
 	return result;
 }
 testResult testMultipy(int m, int n, int k) {
@@ -135,6 +135,22 @@ testResult testMultElem(int m, int k) {
 	d_mult_elem(&d_C, A.device, B.device);
 	float threshold = float(m + k) * thresholdMultiplier;
 	return GetOutcome(MatrixXf(A.host.array() * B.host.array()).sum(), MatrixXf(to_host(d_C)).sum(), threshold);
+}
+testResult testSumRows(int m, int k) {
+	cout << "Testing SumRows " << m << "," << k << endl;
+	testData A = testData(m, k);
+	d_Matrix d_C = to_device(MatrixXf::Zero(m, 1));
+	d_sumRows(&d_C, &A.device);
+	float threshold = float(m + k) * thresholdMultiplier;
+	MatrixXf result = MatrixXf(to_host(d_C));
+	MatrixXf control = A.host.rowwise().sum();
+	string elemList = "";
+	for (int i = 0; i < result.size(); i++) {
+		float r = *(result.data() + i);
+		float c = *(control.data() + i);
+		elemList += to_string(r - c) + ",";
+	}
+	return testResult(result.isApprox(A.host.rowwise().sum()), elemList);
 }
 testResult testSet(int m, int k, float val) {
 	cout << "Testing Set " << m << "," << k << " (=) " << val << endl;
