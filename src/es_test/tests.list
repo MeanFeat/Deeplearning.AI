@@ -2,69 +2,69 @@ category : Matrix
 header : Multiply_Matrix
 prefix : mm
 functionName : testMultipy
-arguments : {
+arguments : [
 	9999, 85, 11111
 	100, 100, 100
 	8, 6002, 2
 	8, 3, 2
-}
+]
 category : Matrix
 header : Multiply_Transpose_Right
 prefix : mmtr
 functionName : testTransposeRight
-arguments : {
+arguments : [
 	9999, 85, 11111
 	100, 100, 100
 	8, 6002, 2
 	8, 3, 2
-} 
+] 
 category : Matrix
 header : Multiplies_Tranpose_Left 
 prefix : mmtl
 functionName : testTransposeLeft
-arguments : {
+arguments : [
 	9999, 85, 11111
 	100, 100, 100
 	8, 6002, 2
 	8, 3, 2
-} 
+] 
 category : Matrix
 header : Sums_Matrix
 prefix : sm
 functionName : testSum
-arguments : {
+arguments : [
 	1234, 98765 
 	990, 85
 	100, 100 
 	8, 60
 	1,1
-}
+]
 category : Matrix
 header : Transpose_Matrix
 prefix : tnsp
 functionName : testTranspose
-arguments : {
+arguments : [
 	1234, 98765 
 	990, 85
 	100, 100 
 	8, 60
 	1,1
-}
+]
 category : Matrix_Element
 header : Element_Add 
 prefix : add
 functionName : testAdd
-arguments : {
+arguments : [
 	4321, 9595
 	100, 100 
 	8, 60
 	1,1
-}
+]
 category : Matrix_Element
 header : Element_Set
 prefix : set
 functionName : testSet
-arguments : {
+arguments : [
 	4321, 9595, 0.f
 	100, 100, 0.f 
 	8, 60, 0.f
@@ -77,93 +77,139 @@ arguments : {
 	100, 100, 1.f 
 	8, 60, 1.f
 	1,1, 1.f
-} 
+] 
 category : Matrix_Element 
 header : Element_Subtract 
 prefix : sub
 functionName : testSubtract
-arguments : {
+arguments : [
 	1234, 98765 
 	990, 85
 	100, 100 
 	8, 60
 	1,1
-}
+]
 category : Matrix_Element 
 header : Element_Multiply
 prefix : mel
 functionName : testMultElem
-arguments : {
+arguments : [
 	1234, 98765 
 	990, 85
 	100, 100 
 	8, 60
 	1,1
-}
+]
 category : Matrix_Element
 header : Element_Square
 prefix : sqr
 functionName : testSquare
-arguments : {
+arguments : [
 	1234, 98765 
 	990, 85
 	100, 100 
 	8, 60
 	1,1
-} 
+] 
+category : Matrix_Element
+header : Multiply_Scalar
+prefix : msc
+functionName : testMultScalar
+arguments : [
+	1234, 98765 
+	990, 85
+	100, 100 
+	8, 60
+	1,1
+] 
+category : Matrix_Element
+header : Sum_Rows
+prefix : msr
+functionName : testSumRows
+arguments : [
+	1234, 98765 
+	990, 85
+	100, 100 
+	8, 60
+	1,1
+] 
 category : Activations
 header : Activation_Sigmoid 
 prefix : sig
 functionName : testSigmoid
-arguments : {
+arguments : [
 	1234, 98765 
 	990, 85
 	100, 100 
 	8, 60
 	1,1
-} 
+] 
 category : Activations
 header : Activation_Tanh 
 prefix : tnh
 functionName : testTanh
-arguments : {
+arguments : [
 	1234, 98765 
 	990, 85
 	100, 100 
 	8, 60
 	1,1
-} 
+] 
 category : Activations
 header : Activation_ReLU 
 prefix : rlu
 functionName : testReLU
-arguments : {
+arguments : [
 	1234, 98765 
 	990, 85
 	100, 100 
 	8, 60
 	1,1
-} 
+] 
 category : Activations
 header : Activation_Leaky_ReLU 
 prefix : lrl
 functionName : testLReLU
-arguments : {
+arguments : [
 	1234, 98765 
 	990, 85
 	100, 100 
 	8, 60
 	1,1
-} 
+]
 category : Activations
-header : Multiply_Scalar
-prefix : msc
-functionName : testMultScalar
-arguments : {
+header : Activation_Sine
+prefix : sin
+functionName : testSine
+arguments : [
 	1234, 98765 
 	990, 85
 	100, 100 
 	8, 60
 	1,1
-} 
+] 
+category : NeuralNet
+header : Back_Prop
+prefix : bpn
+functionName : testBackProp
+arguments : [
+	Net(555, { 555,355 }, 255, {ReLU, Tanh, Sigmoid }), 555
+	Net(55, { 65,55,35 }, 25, {Tanh,ReLU, Tanh, Sigmoid }), 555
+	Net(15, { 25,15 }, 15, {LReLU, ReLU, Tanh }), 555
+	Net(11, { 19,5 }, 2, {Tanh, Tanh, Tanh }), 555
+	Net(11, { 9,5 }, 2, {Sine, Tanh, Sigmoid }), 555
+	Net(5, { 5,5 }, 1, {Tanh, Tanh, Tanh }), 555
+]
+category : NeuralNet
+header : Feed_Forward
+prefix : ffn
+functionName : testForwardTrain
+arguments : [
+	Net(555, { 555,355 }, 255, {ReLU, Tanh, Sigmoid }), 555
+	Net(55, { 65,55,35 }, 25, {Tanh,ReLU, Tanh, Sigmoid }), 555
+	Net(15, { 25,15 }, 15, {LReLU, ReLU, Tanh }), 555
+	Net(11, { 19,5 }, 2, {Tanh, Tanh, Tanh }), 555
+	Net(11, { 9,5 }, 2, {Sine, Tanh, Sigmoid }), 555
+	Net(5, { 5,5 }, 1, {Tanh, Tanh, Tanh }), 555
+]
 	

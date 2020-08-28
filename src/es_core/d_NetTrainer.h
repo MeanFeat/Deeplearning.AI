@@ -69,8 +69,13 @@ public:
 	unsigned int GetTrainExamplesCount() {
 		return trainParams.trainExamplesCount;
 	}
-private:
+	d_NetTrainDerivatives GetDerivatives() {
+		return derivative;
+	}
+	void BackwardPropagation();
 	void CalcCost();
+	void ForwardTrain();
+private:
 	d_NetCache cache;
 	d_NetTrainParameters trainParams;
 	d_NetTrainDerivatives derivative;
@@ -80,8 +85,6 @@ private:
 	std::vector<d_Matrix> d_VisualA;
 	d_NetProfiler profiler;
 	void AddLayer(int A, int B);
-	void ForwardTrain();
-	void BackwardPropagation();
 	void UpdateParameters();
 	void UpdateParametersADAM();
 };

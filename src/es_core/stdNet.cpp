@@ -52,6 +52,9 @@ MatrixXf Net::Activate(const MatrixXf &In, Activation act) {
 	case LReLU:
 		return CalcLReLU(In);
 		break;
+	case Sine:
+		return CalcSine(In);
+		break;
 	default:
 		return In;
 		break;
@@ -66,6 +69,10 @@ MatrixXf Net::ForwardPropagation(const MatrixXf &X) {
 		lastOutput = Net::Activate(weighed, params.layerActivations[i]);
 	}
 	return lastOutput;
+}
+
+int Net::GetDepth() {
+	return (int)GetParams().layerSizes.size() - 1;
 }
 
 Activation ReadActivation(string str) {
@@ -248,4 +255,37 @@ void Net::LoadNetwork(const string fName) {
 		}
 	}
 	file.close();
+}
+
+int Net::GetInputSize() {
+	return params.layerSizes[0];
+}
+int Net::GetOutputSize() {
+	return params.layerSizes.back();
+}
+
+int Net::GetNodeCount() {
+	int count = 0;
+	for (int i = 0; i < GetDepth(); i++) {
+		count += GetParams().layerSizes[i];
+	}
+	return count;
+}
+
+string Net::toString() {
+	string str;
+	NetParameters *p = &params;
+	for (int i = 0; i < GetDepth(); i++) {
+		str += "[" + to_string(p->layerSizes[i]) + "]";
+	}
+	str += "[" + to_string(GetOutputSize()) + "]";
+	str += "{";
+	for (int j = 0; j < GetDepth(); j++) {
+		str += WriteActivation(p->layerActivations[j]);
+		if (j < GetDepth() - 1) {
+			str += ",";
+		}
+	}
+	str += "}";
+	return str;
 }

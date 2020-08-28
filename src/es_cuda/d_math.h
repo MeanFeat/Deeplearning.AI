@@ -3,9 +3,12 @@
 #include "types.h"
 #include "color.h"
 #include "d_Matrix.h"
+#include <cublas_v2.h>
+#include <cuda_runtime.h>
 #include <vector>
 
 static bool isInitialized = false;
+static cublasHandle_t cublasHandle;
 
 #define BLOCK_SIZE 16
 #define LRELU_LEAK 0.01f
@@ -20,9 +23,9 @@ inline dim3 dimGrid(int m, int k) {
 inline dim3 dimBlock() {
 	return dim3(BLOCK_SIZE, BLOCK_SIZE);
 }
-/* dst (=) a*/
+/* dst (=) a */
 void d_set_elem(float *dst, const float a);
-/* dst (=) a*/
+/* dst (=) a */
 void d_set_elem(d_Matrix *dst, const float a);
 /* dst = srcA (+) srcB */
 void d_add_elem(d_Matrix *dst, const d_Matrix &srcA, const d_Matrix &srcB);
@@ -40,10 +43,7 @@ void d_mult(d_Matrix * dst, const d_Matrix * srcA, const d_Matrix * srcB);
 void d_mult_lhsT(d_Matrix * dst, const d_Matrix * srcA, const d_Matrix * srcB);
 /* dst = srcA * srcB.T */
 void d_mult_rhsT(d_Matrix * dst, const d_Matrix * srcA, const d_Matrix * srcB);
-/* dst = src.sum() */
-void d_sum(float *dst, d_Matrix* src);
 void d_sumMatrix(float* dst, const d_Matrix* src);
-void d_sumMatrix(float* dst, const float* src, int m, int k);
 void d_square(d_Matrix* dst, const d_Matrix* src);
 void d_forwardLayer(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_last, const d_Matrix *d_bias);
 void d_activate(d_Matrix *dst, Activation act);
@@ -54,6 +54,7 @@ void d_backLReLU(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const
 void d_backSine(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A);
 void d_set_dW(d_Matrix *dst, const d_Matrix *d_dZ, const d_Matrix *d_A, float coefficient);
 void d_set_dW_Reg(d_Matrix *dst, const d_Matrix *d_dZ, const  d_Matrix *d_AT, const  d_Matrix *d_W, float coefficient, float regTerm);
+void d_sumRows(d_Matrix* dst, const d_Matrix* src);
 void d_set_db(d_Matrix *dst, const d_Matrix *d_dZ, float coefficient);
 void d_updateParameterADAM(d_Matrix * dst, const d_Matrix *d_derivative, const d_Matrix *d_momentum, const d_Matrix *d_momentumSqr, float learnRate);
 void d_updateParameter(d_Matrix * dst, const d_Matrix * d_derivative, float learnRate);

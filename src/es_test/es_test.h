@@ -1,6 +1,8 @@
 #pragma once
 #include "es_test_pch.h"
 #include "stdNet.h"
+#include "stdNetTrainer.h"
+#include "d_NetTrainer.h"
 #include "d_Matrix.h"
 #include "d_math.h"
 
@@ -48,8 +50,12 @@ testResult testSet(int m, int k, float val);
 testResult testAdd(int m, int k);
 testResult testSubtract(int m, int k);
 testResult testMultElem(int m, int k);
+testResult testSumRows(int m, int k);
 testResult testSquare(int m, int k);
 testResult testSigmoid(int m, int k);
 testResult testTanh(int m, int k);
 testResult testReLU(int m, int k);
 testResult testLReLU(int m, int k);
+testResult testSine(int m, int k);
+testResult testBackProp(Net &nn, int dataCount);
+testResult testForwardTrain(Net &nn, int dataCount);
