@@ -484,4 +484,5 @@ void d_calcCost(float *dst, const d_Matrix* d_err, const vector<d_Matrix>* d_mod
 	finalCost_Kernel << <1, 1 >> > (dst, d_sqrSumTotal.d_data(), regMult, trainLableCount); d_catchErr();
 	d_sqrSumTotal.free();
 	d_sqrSum.free();
+	d_diff->free();
 }
