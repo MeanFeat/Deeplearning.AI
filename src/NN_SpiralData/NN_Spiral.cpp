@@ -193,8 +193,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Tanh,
 			Tanh,
 			Tanh });
-		d_neural = Net(neural);
 		h_trainer = NetTrainer(&neural, X, Y, 1.f, 2.f, 20.f);
+		d_neural = Net(neural);
 		d_trainer = d_NetTrainer(&d_neural, X, Y, 1.f, 2.f, 20.f);
 		time(&startTime);
 		HDC deviceContext = GetDC(window);

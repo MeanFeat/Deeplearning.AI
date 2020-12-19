@@ -19,6 +19,7 @@ void d_mathInit() {
 		setFunctionPointer(pfSub, d_pfSub);
 		setFunctionPointer(pfMult, d_pfMult);
 		setFunctionPointer(pfSet, d_pfSet);
+		isInitialized = true;
 	}
 }
 __global__
