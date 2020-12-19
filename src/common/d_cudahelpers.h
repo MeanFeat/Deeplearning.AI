@@ -4,16 +4,22 @@
 #include "device_launch_parameters.h"
 #include "windows.h"
 #include <iostream>
-#define CUDA_ERROR_CHECK
+
 #ifdef _DEBUG
+#define CUDA_ERROR_CHECK
 #define d_check( err ) checkErr( err, __FILE__, __LINE__ )
 #define d_catchErr()    catchErr( __FILE__, __LINE__ )
-#define d_profile(start,stop,output, args ) cudaEventRecord(start); args; profileStop(start,stop,output)
 #else // _RELEASE
 #define d_check( err ) err
 #define d_catchErr()
+#endif
+
+#ifdef _PROFILE
+#define d_profile(start,stop,output, args ) cudaEventRecord(start); args; profileStop(start,stop,output)
+#else
 #define d_profile(start,stop,output, args ) args;
 #endif
+
 inline void profileStop(cudaEvent_t start, cudaEvent_t stop, float *output) {
 	cudaEventRecord(stop);
 	cudaEventSynchronize(stop);
