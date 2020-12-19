@@ -188,7 +188,8 @@ void add_row_broad_Kernel(float *dst, const float *srcMat, const float *srcVec, 
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if (col < k && row < m) {
-		dst[col * m + row] = srcMat[col * m + row] + srcVec[row];
+		int index = col * m + row;
+		dst[index] = __fadd_rd(srcMat[index], srcVec[row]);
 	}
 }
 /* dst = d_W * d_last + d_bias */
@@ -243,7 +244,11 @@ void Sigmoid_Kernal(float *dst, int m, int k) {
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	int tid = col * m + row;
 	if (col < k && row < m) {
+#if FASTER
+		dst[tid] = __fdividef(1.f, (__fadd_rd(1.f, __expf(-dst[tid]))));
+#else
 		dst[tid] = 1.f / (1.f + exp(-dst[tid]));
+#endif
 	}
 }
 __global__
@@ -251,8 +256,9 @@ void Tanh_Kernal(float *dst, int m, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	int tid = col * m + row;
-	if (col < k && row < m)
+	if (col < k && row < m) {
 		dst[tid] = tanhf(dst[tid]);
+	}
 }
 __global__
 void ReLU_Kernal(float *dst, int m, int k) {
@@ -308,7 +314,9 @@ void backSigmoid_Kernel(float *dst, const float *d_A, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if (col < k && row < m) {
-		dst[col * m + row] *= (1 - d_A[col * m + row]);
+		int index = col * m + row;
+		float x = dst[index];
+		dst[index] = __fmul_rd(x, __fsub_rd(1.f, x));
 	}
 } /* dst = (d_W.T * d_dZ) (*) d_A */
 void d_backSigmoid(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A) {
@@ -325,7 +333,9 @@ void backTanh_Kernel(float *dst, const float *d_A, int m, int n, int k) {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
 	if (col < k && row < m) {
-		dst[col * m + row] *= (1 - (d_A[col * m + row] * d_A[col * m + row]));
+		int index = col * m + row;
+		float x = d_A[index];
+		dst[index] = __fmul_rd(dst[index], __fsub_rd(1.f, __fmul_rd(x, x)));
 	}
 } /* dst = (d_W.T * d_dZ) (*) 1 - d_A^2 */
 void d_backTanh(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A) {
