@@ -12,6 +12,16 @@ static ptrFunc pfSet;
 
 #define setFunctionPointer( h_ptr, d_ptr ) cudaMemcpyFromSymbol(&h_ptr, d_ptr, sizeof(ptrFunc));
 
+__device__
+int GetRow(){
+	return blockIdx.y * blockDim.y + threadIdx.y;
+}
+
+__device__
+int GetCol() {
+	return blockIdx.x * blockDim.x + threadIdx.x;
+}
+
 void d_mathInit() {
 	if (!isInitialized) {
 		cublasCreate(&cublasHandle); d_catchErr();
@@ -24,8 +34,8 @@ void d_mathInit() {
 }
 __global__
 void launch2D_elem_Kernel(ptrFunc op, float *c, const float *a, const float *b, int m, int k) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int row = GetRow();
+	int col = GetCol();
 	int tid = col * m + row;
 	if (col < k && row < m) {
 		c[tid] = (*op)(a[tid], b[tid]);
@@ -33,8 +43,8 @@ void launch2D_elem_Kernel(ptrFunc op, float *c, const float *a, const float *b, 
 }
 __global__
 void launch_elem_broad_Kernel(ptrFunc op, float *c, const float *a, const float b, int m, int k) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int row = GetRow();
+	int col = GetCol();
 	int tid = col * m + row;
 	if (col < k && row < m) {
 		c[tid] = (*op)(a[tid], b);
@@ -97,8 +107,8 @@ void d_mult_elem(d_Matrix *dst, const d_Matrix &srcA, const d_Matrix &srcB) {
 }
 __global__
 void mult_scalar_Kernel(float *dst, const float b, int m, int k) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int row = GetRow();
+	int col = GetCol();
 	int tid = col * m + row;
 	if (col < k && row < m) {
 		dst[tid] = dst[tid] * b;
@@ -116,8 +126,8 @@ void d_mult_scalar(d_Matrix *dst, const float b) {
 }
 __global__
 void transpose_Kernel(float *dst, const float *src, int m, int k) {
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
+	int row = GetRow();
+	int col = GetCol();
 	if (row < m && col < k) {
 		dst[col + row * k] = src[row + col * m];
 	}
@@ -185,10 +195,11 @@ void d_sumMatrix(float* dst, const d_Matrix *src) {
 }
 __global__
 void add_row_broad_Kernel(float *dst, const float *srcMat, const float *srcVec, int m, int k) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int row = GetRow();
+	int col = GetCol();
 	if (col < k && row < m) {
-		dst[col * m + row] = srcMat[col * m + row] + srcVec[row];
+		int index = col * m + row;
+		dst[index] = __fadd_rd(srcMat[index], srcVec[row]);
 	}
 }
 /* dst = d_W * d_last + d_bias */
@@ -202,8 +213,8 @@ void d_forwardLayer(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_last, 
 }
 __global__
 void drawPixels_Kernel(int *buffer, int m, const float* vals, bool discrete, const Color neg, const Color pos) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int row = GetRow();
+	int col = GetCol();
 	float percent = vals[col * m + row];
 	if (discrete) {
 		if (percent > 0.f) {
@@ -239,41 +250,42 @@ void d_drawPixels(int * buffer, int m, int k, const float* vals, bool discrete) 
 }
 __global__
 void Sigmoid_Kernal(float *dst, int m, int k) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int row = GetRow();
+	int col = GetCol();
 	int tid = col * m + row;
 	if (col < k && row < m) {
-		dst[tid] = 1.f / (1.f + exp(-dst[tid]));
+		dst[tid] = __fdividef(1.f, (__fadd_rd(1.f, __expf(-dst[tid]))));
 	}
 }
 __global__
 void Tanh_Kernal(float *dst, int m, int k) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int row = GetRow();
+	int col = GetCol();
 	int tid = col * m + row;
-	if (col < k && row < m)
+	if (col < k && row < m) {
 		dst[tid] = tanhf(dst[tid]);
+	}
 }
 __global__
 void ReLU_Kernal(float *dst, int m, int k) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int row = GetRow();
+	int col = GetCol();
 	int tid = col * m + row;
 	if (col < k && row < m)
 		dst[tid] = fmaxf(0.f, dst[tid]);
 }
 __global__
 void LReLU_Kernal(float *dst, int m, int k) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int row = GetRow();
+	int col = GetCol();
 	int tid = col * m + row;
 	if (col < k && row < m)
 		dst[tid] = fmaxf(dst[tid] * LRELU_LEAK, dst[tid]);
 }
 __global__
 void Sine_Kernal(float *dst, int m, int k) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int row = GetRow();
+	int col = GetCol();
 	int tid = col * m + row;
 	if (col < k && row < m) {
 		dst[tid] = __sinf(dst[tid]);
@@ -305,10 +317,12 @@ void d_activate(d_Matrix *dst, Activation act) {
 }
 __global__
 void backSigmoid_Kernel(float *dst, const float *d_A, int m, int n, int k) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int row = GetRow();
+	int col = GetCol();
 	if (col < k && row < m) {
-		dst[col * m + row] *= (1 - d_A[col * m + row]);
+		int index = col * m + row;
+		float x = dst[index];
+		dst[index] = __fmul_rd(x, __fsub_rd(1.f, x));
 	}
 } /* dst = (d_W.T * d_dZ) (*) d_A */
 void d_backSigmoid(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A) {
@@ -322,10 +336,12 @@ void d_backSigmoid(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, con
 }
 __global__
 void backTanh_Kernel(float *dst, const float *d_A, int m, int n, int k) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int row = GetRow();
+	int col = GetCol();
 	if (col < k && row < m) {
-		dst[col * m + row] *= (1 - (d_A[col * m + row] * d_A[col * m + row]));
+		int index = col * m + row;
+		float x = d_A[index];
+		dst[index] = __fmul_rd(dst[index], __fsub_rd(1.f, __fmul_rd(x, x)));
 	}
 } /* dst = (d_W.T * d_dZ) (*) 1 - d_A^2 */
 void d_backTanh(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A) {
@@ -339,8 +355,8 @@ void d_backTanh(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const 
 }
 __global__
 void backReLU_Kernel(float *dst, const float *d_A, int m, int n, int k) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int row = GetRow();
+	int col = GetCol();
 	if (col < k && row < m) {
 		dst[row * k + col] *= (d_A[row * k + col] > 0.f ? 1.f : 0.f);
 	}
@@ -356,8 +372,8 @@ void d_backReLU(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const 
 }
 __global__
 void backLReLU_Kernel(float *dst, const float *d_A, int m, int n, int k) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int row = GetRow();
+	int col = GetCol();
 	if (col < k && row < m) {
 		dst[row * k + col] *= (d_A[row * k + col] > 0.f ? 1.f : LRELU_LEAK);
 	}
@@ -373,8 +389,8 @@ void d_backLReLU(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const
 }
 __global__
 void backSine_Kernel(float *dst, const float *d_A, int m, int n, int k) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int row = GetRow();
+	int col = GetCol();
 	if (col < k && row < m) {
 		dst[row * k + col] *= cos(d_A[row * k + col]);
 	}
@@ -394,8 +410,8 @@ void d_set_dW(d_Matrix* dst, const d_Matrix* d_dZ, const d_Matrix* d_AT, float c
 }
 __global__
 void set_dW_Reg_Kernel(float *dst, const float *d_W, float coefficient, float regTerm, int m, int n, int k) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int row = GetRow();
+	int col = GetCol();
 	if (col < k && row < m) {
 		dst[col * m + row] += (regTerm * d_W[col * m + row]);
 	}
@@ -429,8 +445,8 @@ void d_set_db(d_Matrix* dst, const d_Matrix* d_dZ, float coefficient) {
 #define BETA2 (1.f - FLT_EPSILON)
 __global__
 void updateParameterADAM_Kernel(float *dst, int N, const float *d_derivative, float *d_momentum, float *d_momentumSqr, float learn, int k) {
-	int row = blockIdx.y * blockDim.y + threadIdx.y;
-	int col = blockIdx.x * blockDim.x + threadIdx.x;
+	int row = GetRow();
+	int col = GetCol();
 	int tid = row * k + col;
 	if (tid < N) {
 		d_momentum[tid] = BETA1 * (d_momentum[tid]) + (1.f - BETA1) * d_derivative[tid];

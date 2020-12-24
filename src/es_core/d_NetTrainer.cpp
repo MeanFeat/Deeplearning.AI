@@ -39,8 +39,8 @@ d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &label
 #if _PROFILE
 	cudaEventCreate(&start);
 	cudaEventCreate(&stop);
-	cudaStreamCreate(&cuda_stream);
 #endif
+	cudaStreamCreate(&cuda_stream);
 	network = net;
 	cache.d_A.push_back(to_device(data));
 	cache.d_AT.push_back(to_device(data.transpose()));
@@ -92,7 +92,7 @@ void d_NetTrainer::Visualization(int *buffer, int m, int k, bool discrete) {
 		}
 	d_drawPixels(d_Buffer, m, k, d_VisualA.back().d_data(), discrete);
 	cudaMemcpyAsync(buffer, d_Buffer, m*k * sizeof(int), cudaMemcpyDeviceToHost, cuda_stream);
-	);
+	); //d_profile
 }
 void d_NetTrainer::ForwardTrain() {
 	for (int i = 0; i < network->GetDepth(); ++i) {
@@ -104,7 +104,9 @@ void d_NetTrainer::ForwardTrain() {
 void d_NetTrainer::CalcCost() {
 	d_calcCost(cache.d_cost, &cache.d_dZ.back(),
 		&trainParams.d_W, GetRegMultipier(), GetCoeff(), (float)trainParams.trainExamplesCount); d_catchErr();
-	d_check(cudaMemcpyAsync(&cache.cost, cache.d_cost, sizeof(float), cudaMemcpyDeviceToHost)); // OPT: Slow af
+	// OPT : Slow af 
+	// TODO: Set this to copy in batches
+	d_check(cudaMemcpyAsync(&cache.cost, cache.d_cost, sizeof(float), cudaMemcpyDeviceToHost)); 
 }
 void d_NetTrainer::BackwardPropagation() {
 	d_subtract_elem(&cache.d_dZ.back(), cache.d_A.back(), d_trainLabels);
@@ -148,8 +150,8 @@ void d_NetTrainer::UpdateParametersADAM() {
 	}
 }
 void d_NetTrainer::TrainSingleEpoch() {
-	d_profile(start, stop, &profiler.forwardTime, ForwardTrain()); d_catchErr();
-	d_profile(start, stop, &profiler.backpropTime, BackwardPropagation()); d_catchErr();
-	d_profile(start, stop, &profiler.updateTime, UpdateParametersADAM()); d_catchErr();
-	d_profile(start, stop, &profiler.calcCostTime, CalcCost()); d_catchErr();
+	d_profile(start, stop, &profiler.forwardTime,	ForwardTrain());			d_catchErr();
+	d_profile(start, stop, &profiler.backpropTime,	BackwardPropagation());		d_catchErr();
+	d_profile(start, stop, &profiler.updateTime,	UpdateParametersADAM());	d_catchErr();
+	d_profile(start, stop, &profiler.calcCostTime,	CalcCost());				d_catchErr();
 }

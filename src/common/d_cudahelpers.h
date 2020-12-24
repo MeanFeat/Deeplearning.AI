@@ -29,7 +29,7 @@ inline void checkErr(cudaError err, const char *file, const int line) {
 #ifdef CUDA_ERROR_CHECK
 	if (cudaSuccess != err) {
 		char txt[256] = { 0 };
-		_snprintf_s(txt, 256, "#CUDA ERROR::checkErr() failed at %s (%i) : %s\n", file, line, cudaGetErrorString(err));
+		_snprintf_s(txt, 256, "error : #CUDA ERROR::checkErr() failed at %s (%i) : %s\n", file, line, cudaGetErrorString(err));
 		OutputDebugStringA(txt);
 		exit(-1);
 	}
@@ -41,7 +41,7 @@ inline void catchErr(const char *file, const int line) {
 	cudaError err = cudaGetLastError();
 	if (cudaSuccess != err) {
 		char txt[256] = { 0 };
-		_snprintf_s(txt, 256, "#CUDA ERROR::catchErr() failed at %s (%i) : %s\n", file, line, cudaGetErrorString(err));
+		_snprintf_s(txt, 256, "error : #CUDA ERROR::catchErr() failed at %s (%i) : %s\n", file, line, cudaGetErrorString(err));
 		OutputDebugStringA(txt);
 		exit(-1);
 	}
