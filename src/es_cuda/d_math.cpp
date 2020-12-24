@@ -254,7 +254,15 @@ void Sigmoid_Kernal(float *dst, int m, int k) {
 	int col = GetCol();
 	int tid = col * m + row;
 	if (col < k && row < m) {
+<<<<<<< HEAD
 		dst[tid] = __fdividef(1.f, (__fadd_rd(1.f, __expf(-dst[tid]))));
+=======
+#if FASTER
+		dst[tid] = __fdividef(1.f, (__fadd_rd(1.f, __expf(-dst[tid]))));
+#else
+		dst[tid] = 1.f / (1.f + exp(-dst[tid]));
+#endif
+>>>>>>> master
 	}
 }
 __global__
