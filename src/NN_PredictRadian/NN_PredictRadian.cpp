@@ -122,7 +122,9 @@ void UpdateWinTitle(int &steps, HWND window) {
 	time(&currentTime);
 	char s[255];
 	sprintf_s(s, "%d|T:%0.f|C:%0.10f|LR:%0.2f|RT:%0.2f|"
-		, steps, difftime(currentTime, startTime), trainer.GetCache().cost, trainer.GetTrainParams().learnRate, trainer.GetTrainParams().regTerm);
+		, steps, difftime(currentTime, startTime), 
+		trainer.GetCache().cost, trainer.GetTrainParams().learnMult/trainer.GetTrainParams().learnCoeff, 
+		trainer.GetTrainParams().regMod / trainer.GetTrainParams().learnCoeff);
 	char r[255];
 	sprintf_s(r, " |%0.2f|%0.2f| ", atan2((mouseX - WINHALFWIDTH), (mouseY - WINHALFHEIGHT)), predictions[0] * Pi32);
 	strcat_s(s, r);
@@ -188,7 +190,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
 			WS_OVERLAPPED | WS_SYSMENU | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 			WINWIDTH * WINDOWSTRETCHSCALE, WINHEIGHT * WINDOWSTRETCHSCALE, 0, 0, Instance, 0);
-		neural = Net((int)X.rows(), { 32,16 }, (int)Y.rows(), { Tanh,Tanh, Tanh });
+		neural = Net((int)X.rows(), { 32,16 }, (int)Y.rows(), { Tanh,Tanh,Tanh });
 		trainer = d_NetTrainer(&neural, X, Y, 0.15f, 0.5f, 1.0f);
 		HDC deviceContext = GetDC(window);
 		vector<float> history;

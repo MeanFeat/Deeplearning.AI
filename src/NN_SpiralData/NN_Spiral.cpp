@@ -189,11 +189,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
 			WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 			WINWIDTH * 4, WINHEIGHT * 4, 0, 0, Instance, 0);
-		neural = Net((int)X.rows(), { 8,8 }, (int)Y.rows(), {
+		neural = Net((int)X.rows(), { 33,33 }, (int)Y.rows(), {
 			Tanh,
 			Tanh,
 			Tanh });
-		h_trainer = NetTrainer(&neural, X, Y, 1.f, 2.f, 20.f);
+		//h_trainer = NetTrainer(&neural, X, Y, 1.f, 2.f, 20.f);
 		d_neural = Net(neural);
 		d_trainer = d_NetTrainer(&d_neural, X, Y, 1.f, 2.f, 20.f);
 		time(&startTime);
@@ -203,15 +203,15 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		int steps = 0;
 		d_trainer.BuildVisualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height);
 		//Main Loop
-		while (steps < 5000 && globalRunning) {
-			for (int epoch = 0; epoch < 1; ++epoch) {
+		while (steps < 1500 && globalRunning) {
+			for (int epoch = 0; epoch < 10; ++epoch) {
 				Win32ProcessPendingMessages();
 				if (!globalRunning) {
 					break;
 				}
-				h_trainer.TrainSingleEpoch();
+				//h_trainer.TrainSingleEpoch();
 				d_trainer.TrainSingleEpoch();
-				UpdateHistory(h_history, h_trainer.GetCache().cost);
+				//UpdateHistory(h_history, h_trainer.GetCache().cost);
 				UpdateHistory(d_history, d_trainer.GetCache().cost);
 				UpdateWinTitle(steps, window);
 			}

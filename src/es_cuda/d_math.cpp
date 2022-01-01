@@ -174,7 +174,7 @@ void d_mult_rhsT(d_Matrix* dst, const d_Matrix *srcA, const d_Matrix *srcB) {
 	d_trans.free();
 }
 void d_sumMatrix(float* dst, const d_Matrix *src) {
-	if (src->size() < 9999999) {
+	if (src->size() < 99999999) {
 		d_Matrix serial = src->serialize(); d_catchErr();
 		d_Matrix ones = d_Matrix(src->size(), 1);
 		d_set_elem(&ones, 1.f); d_catchErr();

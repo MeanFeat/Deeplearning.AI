@@ -37,6 +37,10 @@ void d_Matrix::serializeInPlace() {
 	rowCount = 1;
 }
 
+void d_Matrix::free() {
+	d_check(cudaFree(device_data));
+}
+
 d_Matrix d_Matrix::getClone() {
 	d_Matrix result = d_Matrix(rowCount, colCount);
 	cudaMemcpy((void**)result.d_data(), device_data, memSize(), cudaMemcpyDeviceToDevice);

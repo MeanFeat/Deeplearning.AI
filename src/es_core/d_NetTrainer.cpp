@@ -104,7 +104,6 @@ void d_NetTrainer::ForwardTrain() {
 void d_NetTrainer::CalcCost() {
 	d_calcCost(cache.d_cost, &cache.d_dZ.back(),
 		&trainParams.d_W, GetRegMultipier(), GetCoeff(), (float)trainParams.trainExamplesCount); d_catchErr();
-	// OPT : Slow af 
 	// TODO: Set this to copy in batches
 	d_check(cudaMemcpyAsync(&cache.cost, cache.d_cost, sizeof(float), cudaMemcpyDeviceToHost)); 
 }

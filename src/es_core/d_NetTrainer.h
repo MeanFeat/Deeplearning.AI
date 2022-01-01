@@ -61,10 +61,10 @@ public:
 		return trainParams.regMult;
 	}
 	inline void ModifyLearningRate(float m) {
-		trainParams.learnCoeff = max(FLT_EPSILON, trainParams.learnCoeff + m);
+		trainParams.learnMult = max(FLT_EPSILON, trainParams.learnMult + (m * trainParams.learnCoeff));
 	}
 	inline void ModifyRegTerm(float m) {
-		trainParams.regMod = max(FLT_EPSILON, trainParams.regMod + m);
+		trainParams.regMod = max(FLT_EPSILON, trainParams.regMod + (m * trainParams.learnCoeff));
 	}
 	unsigned int GetTrainExamplesCount() {
 		return trainParams.trainExamplesCount;

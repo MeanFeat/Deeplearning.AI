@@ -21,7 +21,7 @@ public:
 	void serializeInPlace();
 	size_t memSize() { return size() * sizeof(float); }
 	size_t memSize() const { return size() * sizeof(float); }
-	void free() { cudaFree(device_data); }
+	void free();
 private:
 	int rowCount;
 	int colCount;
