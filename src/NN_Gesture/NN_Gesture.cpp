@@ -32,8 +32,7 @@ global_variable bool isCapturingEight = false;
 global_variable float *verify;
 global_variable float *verifyLabel;
 
-static time_t startTime;
-static time_t currentTime;
+static clock_t startTime;
 static float trainingTime;
 
 float mouseX = WINHALFWIDTH;
@@ -229,9 +228,8 @@ void UpdateDisplay(vector<Vector2f> &i8, vector<Vector2f> &mTrail, vector<Vector
 void UpdateWinTitle(int &steps, float &prediciton, HWND window) {
 	char s[255];
 	if (isTraining) {
-		time(&currentTime);
-		trainingTime = float(difftime(currentTime, startTime));
-		sprintf_s(s, "Epoch %d || Time: %0.1f || Eps %0.2f || Cost: %0.10f || ", steps, trainingTime, float(steps) / trainingTime, trainer.GetCache().cost);
+		trainingTime = ((float)(clock() - startTime)) / CLOCKS_PER_SEC;
+		sprintf_s(s, "Epoch %d || Time: %0.2f || Eps %0.2f || Cost: %0.10f || ", steps, trainingTime, float(steps) / trainingTime, trainer.GetCache().cost);
 	}
 	else {
 		sprintf_s(s, "TrainingTime: %0.1f || Cost: %0.10f || Prediction: %0.10f || ", trainingTime, trainer.GetCache().cost, prediciton);
@@ -291,7 +289,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 
 	WNDCLASSA winClass = {};
 	InitializeWindow(&winClass, Instance, Win32MainWindowCallback, &backBuffer, WINWIDTH, WINHEIGHT, "NN_Gesture");
-	time(&startTime);
+	startTime = clock();
 	if (RegisterClassA(&winClass)) {
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
 			WS_OVERLAPPED | WS_SYSMENU | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
@@ -311,7 +309,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		float h = 0.f;
 		int steps = 0;
 		//Main Loop
-		while (globalRunning && steps < 500) {
+		while (globalRunning) {
 			Win32ProcessPendingMessages();
 			if (isTraining) {
 				for (int e = 0; e < 1; e++) {

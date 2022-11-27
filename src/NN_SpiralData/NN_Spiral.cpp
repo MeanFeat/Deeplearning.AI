@@ -12,8 +12,7 @@ global_variable bool discreteOutput = false;
 global_variable bool plotData = false;
 global_variable bool profile = false;
 global_variable int winTitleHeight = 10;
-static time_t startTime;
-static time_t currentTime;
+static clock_t startTime;
 Buffer backBuffer;
 Net neural;
 Net d_neural;
@@ -139,28 +138,28 @@ void DrawOutputToScreen(MatrixXf screenCoords) {
 void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> &h_history, vector<float> &d_history) {
 	if (globalRunning) {
 		d_trainer.Visualization((int *)backBuffer.memory, backBuffer.width, backBuffer.height, discreteOutput);
+		//DrawOutputToScreen(screenCoords);
 		if (plotData) {
 			PlotData(X, Y);
 		}
-		DrawHistory(backBuffer, h_history, Color(200, 100, 100, 255));
+		//DrawHistory(backBuffer, h_history, Color(200, 100, 100, 255));
 		DrawHistory(backBuffer, d_history, Color(100, 100, 200, 255));
 	}
 }
 float totalTime;
 void UpdateWinTitle(int &steps, HWND window) {
-	time(&currentTime);
 	d_NetProfiler *profiler = &d_trainer.GetProfiler();
-	float time = profiler->forwardTime + profiler->backpropTime + profiler->updateTime + profiler->calcCostTime;// +profiler->visualizationTime;
-	totalTime += time;
+	float d_time = profiler->forwardTime + profiler->backpropTime + profiler->updateTime + profiler->calcCostTime;// +profiler->visualizationTime;
+	totalTime += d_time;
 	float avgTime = totalTime / float(steps);
 	char s[255];
 	if (profile) {
 		sprintf_s(s, "Total %0.5f | F %0.5f | B %0.5f | U %0.5f | C %0.5f | V %0.5f |"
-			, time, profiler->forwardTime, profiler->backpropTime, profiler->updateTime, profiler->calcCostTime, profiler->visualizationTime);
+			, d_time, profiler->forwardTime, profiler->backpropTime, profiler->updateTime, profiler->calcCostTime, profiler->visualizationTime);
 	}
 	else {
-		sprintf_s(s, "SpiralData || Epoch %d | Time: %0.1f | milliseconds %0.10f | d_Cost %0.10f  "
-			, steps++, difftime(currentTime, startTime), avgTime, d_trainer.GetCache().cost);
+		sprintf_s(s, "SpiralData || Epoch %d | Time: %0.2f | milliseconds %0.10f | d_Cost %0.10f  "
+			, steps++, ((float)(clock() - startTime)) / CLOCKS_PER_SEC, avgTime, d_trainer.GetCache().cost);
 	}
 	SetWindowText(window, LPCSTR(s));
 }
@@ -189,22 +188,22 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
 			WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 			WINWIDTH * 4, WINHEIGHT * 4, 0, 0, Instance, 0);
-		neural = Net((int)X.rows(), { 33,33 }, (int)Y.rows(), {
+		neural = Net((int)X.rows(), { 8, 8 }, (int)Y.rows(), {
 			Tanh,
 			Tanh,
 			Tanh });
-		//h_trainer = NetTrainer(&neural, X, Y, 1.f, 2.f, 20.f);
+		//h_trainer = NetTrainer(&neural, X, Y, 1.f, 1.f, 20.f);
 		d_neural = Net(neural);
 		d_trainer = d_NetTrainer(&d_neural, X, Y, 1.f, 2.f, 20.f);
-		time(&startTime);
+		startTime = clock();
 		HDC deviceContext = GetDC(window);
 		vector<float> h_history;
 		vector<float> d_history;
 		int steps = 0;
 		d_trainer.BuildVisualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height);
 		//Main Loop
-		while (steps < 1500 && globalRunning) {
-			for (int epoch = 0; epoch < 10; ++epoch) {
+		while ( /*steps < 1500 &&*/ globalRunning) {
+			for (int epoch = 0; epoch < 1; ++epoch) {
 				Win32ProcessPendingMessages();
 				if (!globalRunning) {
 					break;

@@ -13,8 +13,7 @@ global_variable bool isTraining = true;
 global_variable bool drawOutput = true;
 global_variable bool plotData = false;
 global_variable vector<float> predictions;
-static time_t startTime;
-static time_t currentTime;
+static clock_t startTime;
 float mouseX = WINHALFWIDTH;
 float mouseY = WINHALFHEIGHT + 100;
 Buffer backBuffer;
@@ -119,10 +118,9 @@ void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> 
 	}
 }
 void UpdateWinTitle(int &steps, HWND window) {
-	time(&currentTime);
 	char s[255];
-	sprintf_s(s, "%d|T:%0.f|C:%0.10f|LR:%0.2f|RT:%0.2f|"
-		, steps, difftime(currentTime, startTime), 
+	sprintf_s(s, "%d|T:%0.2f|C:%0.10f|LR:%0.2f|RT:%0.2f|"
+		, steps, ((float)(clock() - startTime)) / CLOCKS_PER_SEC,
 		trainer.GetCache().cost, trainer.GetTrainParams().learnMult/trainer.GetTrainParams().learnCoeff, 
 		trainer.GetTrainParams().regMod / trainer.GetTrainParams().learnCoeff);
 	char r[255];
@@ -162,7 +160,6 @@ MatrixXf CreateSparseData(int pointCount) {
 	}
 	return out;
 }
-
 void UpdateHistory(vector<float> &hist, float cost) {
 	float scale = (1.f - exp(-cost));
 	hist.push_back(min((WINHEIGHT *  scale - cost) + backBuffer.titleOffset + 15, WINHEIGHT));
@@ -185,7 +182,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	X = NormalizeData(CreateSparseData(35));
 	//X = NormalizeData(CreateRandomData(15));
 	Y = BuildRadians(X);
-	time(&startTime);
+	startTime = clock();
 	if (RegisterClassA(&winClass)) {
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
 			WS_OVERLAPPED | WS_SYSMENU | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,

@@ -263,7 +263,28 @@ void Tanh_Kernal(float *dst, int m, int k) {
 	int col = GetCol();
 	int tid = col * m + row;
 	if (col < k && row < m) {
+#if 0
+		/*const float a = __expf(dst[tid]);
+		const float b = __expf(-dst[tid]);
+		dst[tid] = __fdividef(__fsub_rd(a, b), (__fadd_rd(a, b)));*/
+
+		//2 / (1 + exp(-2 * x)) - 1
+		//dst[tid] = __fsub_rd(__fdividef(2.f, __fadd_rd(1.f, __expf(__fmul_rd(-2.f, dst[tid])))), 1.f);
+		//(exp(2*x)-1)/(exp(2*x)+1)
+		if (dst[tid] > 3.f) {
+			dst[tid] = 1.f;
+		}
+		else if (dst[tid] < -3.f) {
+			dst[tid] = -1.f;
+		}
+		else {
+			const float exp_x = __expf(__fmul_rd(2.f, dst[tid]));
+			dst[tid] = __fdividef(__fsub_rd(exp_x, 1.f), __fadd_rd(exp_x, 1.f));
+		}
+
+#else
 		dst[tid] = tanhf(dst[tid]);
+#endif
 	}
 }
 __global__
@@ -340,7 +361,7 @@ void backTanh_Kernel(float *dst, const float *d_A, int m, int n, int k) {
 	int col = GetCol();
 	if (col < k && row < m) {
 		int index = col * m + row;
-		float x = d_A[index];
+		const float x = d_A[index];
 		dst[index] = __fmul_rd(dst[index], __fsub_rd(1.f, __fmul_rd(x, x)));
 	}
 } /* dst = (d_W.T * d_dZ) (*) 1 - d_A^2 */

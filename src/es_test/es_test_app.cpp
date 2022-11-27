@@ -108,7 +108,6 @@ void CreateGeneratedUnit(const string fName) {
 			file << arguments[fn][arg];
 			file << "));" << endl;
 		}
-
 		file << "};" << endl;
 		lastCategory = category;
 	}

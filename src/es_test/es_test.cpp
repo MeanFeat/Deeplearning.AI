@@ -18,7 +18,7 @@ string GetOutcomeString(float cSum, float tSum, float diff, float thresh, bool p
 	string out;
 	if (verbosity >= 2) {
 		out += "Eigen: " + to_string(cSum) + " Device: " + to_string(tSum) + "\n";
-		out += "Error " + to_string(diff) + " : " + to_string(thresh) + "\n";
+		out += "Error " + to_string(diff) + " : Threshold " + to_string(thresh) + "\n";
 	}
 	if (verbosity >= 1) {
 		out += "======================================================>> ";
