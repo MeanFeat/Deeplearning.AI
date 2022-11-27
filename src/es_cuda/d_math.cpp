@@ -33,50 +33,50 @@ void d_mathInit() {
 	}
 }
 __global__
-void launch2D_elem_Kernel(ptrFunc op, float *c, const float *a, const float *b, int m, int k) {
-	int row = GetRow();
-	int col = GetCol();
-	int tid = col * m + row;
+void launch2D_elem_Kernel(const ptrFunc op, float * dst, const float *a, const float *b, const int m, const int k) {
+	const int row = GetRow();
+	const int col = GetCol();
+	const int tid = col * m + row;
 	if (col < k && row < m) {
-		c[tid] = (*op)(a[tid], b[tid]);
+		dst[tid] = (*op)(a[tid], b[tid]);
 	}
 }
 __global__
-void launch_elem_broad_Kernel(ptrFunc op, float *c, const float *a, const float b, int m, int k) {
-	int row = GetRow();
-	int col = GetCol();
-	int tid = col * m + row;
+void launch_elem_broad_Kernel(const ptrFunc op, float * dst, const float *a, const float b, const int m, const int k) {
+	const int row = GetRow();
+	const int col = GetCol();
+	const int tid = col * m + row;
 	if (col < k && row < m) {
-		c[tid] = (*op)(a[tid], b);
+		dst[tid] = (*op)(a[tid], b);
 	}
 }
 /* dst (op)= a */
-void d_launch_single_thread(ptrFunc op, float *dst, const float a) {
+void d_launch_single_thread(const ptrFunc op, float *dst, const float a) {
 	launch_elem_broad_Kernel << <1, 1 >> > (op, dst, dst, a, 1, 1);
 }
 /* dst (op)= srcA */
-void d_launch_single_thread(ptrFunc op, float *dst, const float *srcA) {
+void d_launch_single_thread(const ptrFunc op, float *dst, const float *srcA) {
 	launch2D_elem_Kernel << <1, 1 >> > (op, dst, dst, srcA, 1, 1);
 }
 /* dst = srcA (op) b */
-void d_launch_single_thread(ptrFunc op, float *dst, const float *srcA, const float b) {
+void d_launch_single_thread(const ptrFunc op, float *dst, const float *srcA, const float b) {
 	launch_elem_broad_Kernel << <1, 1 >> > (op, dst, srcA, b, 1, 1);
 }
 /* dst = srcA (op) srcB */
-void d_launch_single_thread(ptrFunc op, float *dst, const float *srcA, const float *srcB) {
+void d_launch_single_thread(const ptrFunc op, float *dst, const float *srcA, const float *srcB) {
 	launch2D_elem_Kernel << <1, 1 >> > (op, dst, srcA, srcB, 1, 1);
 }
 /* dst = srcA (op) srcB */
-void d_launch2D_elem(ptrFunc func, d_Matrix *dst, const float *srcA, const float *srcB) {
-	int m = dst->rows();
-	int k = dst->cols();
+void d_launch2D_elem(const ptrFunc func, d_Matrix *dst, const float *srcA, const float *srcB) {
+	const int m = dst->rows();
+	const int k = dst->cols();
 	launch2D_elem_Kernel << <dimGrid(m, k), dimBlock() >> > (func, dst->d_data(), srcA, srcB, m, k);
 	d_catchErr();
 }
 /* dst = srcA (op) b */
 void d_launch2D_elem(ptrFunc func, d_Matrix *dst, const float * srcA, const float b) {
-	int m = dst->rows();
-	int k = dst->cols();
+	const int m = dst->rows();
+	const int k = dst->cols();
 	launch_elem_broad_Kernel << <dimGrid(m, k), dimBlock() >> > (func, dst->d_data(), srcA, b, m, k);
 	d_catchErr();
 }
@@ -86,8 +86,8 @@ void d_set_elem(float *dst, const float a) {
 }
 /* dst = a */
 void d_set_elem(d_Matrix *dst, const float a) {
-	int m = dst->rows();
-	int k = dst->cols();
+	const int m = dst->rows();
+	const int k = dst->cols();
 	launch_elem_broad_Kernel << <dimGrid(m, k), dimBlock() >> > (pfSet, dst->d_data(), dst->d_data(), a, m, k);
 }
 /* dst = srcA (+) srcB */
@@ -106,35 +106,35 @@ void d_mult_elem(d_Matrix *dst, const d_Matrix &srcA, const d_Matrix &srcB) {
 	d_catchErr();
 }
 __global__
-void mult_scalar_Kernel(float *dst, const float b, int m, int k) {
-	int row = GetRow();
-	int col = GetCol();
-	int tid = col * m + row;
+void mult_scalar_Kernel(float *dst, const float b, const int m, const int k) {
+	const int row = GetRow();
+	const int col = GetCol();
+	const int tid = col * m + row;
 	if (col < k && row < m) {
 		dst[tid] = dst[tid] * b;
 	}
 }
-void d_mult_scalar(float *dst, const float b, int m, int k) {
+void d_mult_scalar(float *dst, const float b, const int m, const int k) {
 	mult_scalar_Kernel << <dimGrid(m, k), dimBlock() >> > (dst, b, m, k);
 	d_catchErr();
 }
 void d_mult_scalar(d_Matrix *dst, const float b) {
-	int m = dst->rows();
-	int k = dst->cols();
+	const int m = dst->rows();
+	const int k = dst->cols();
 	d_mult_scalar(dst->d_data(), b, m, k);
 	d_catchErr();
 }
 __global__
-void transpose_Kernel(float *dst, const float *src, int m, int k) {
-	int row = GetRow();
-	int col = GetCol();
+void transpose_Kernel(float *dst, const float *src, const int m, const int k) {
+	const int row = GetRow();
+	const int col = GetCol();
 	if (row < m && col < k) {
 		dst[col + row * k] = src[row + col * m];
 	}
 } /* dst = src.T */
 void d_transpose(d_Matrix *dst, const d_Matrix *src) {
-	int c = src->cols();
-	int r = src->rows();
+	const int c = src->cols();
+	const int r = src->rows();
 	const float alpha = 1.f;
 	const float beta = 0.f;
 	cublasSgeam(cublasHandle, CUBLAS_OP_T, CUBLAS_OP_T,
@@ -195,8 +195,8 @@ void d_sumMatrix(float* dst, const d_Matrix *src) {
 }
 __global__
 void add_row_broad_Kernel(float *dst, const float *srcMat, const float *srcVec, int m, int k) {
-	int row = GetRow();
-	int col = GetCol();
+	const int row = GetRow();
+	const int col = GetCol();
 	if (col < k && row < m) {
 		int index = col * m + row;
 		dst[index] = __fadd_rd(srcMat[index], srcVec[row]);
@@ -204,17 +204,17 @@ void add_row_broad_Kernel(float *dst, const float *srcMat, const float *srcVec, 
 }
 /* dst = d_W * d_last + d_bias */
 void d_forwardLayer(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_last, const d_Matrix *d_bias) {
-	int m = d_W->rows();
-	int n = d_W->cols();
-	int k = d_last->cols();
+	const int m = d_W->rows();
+	const int n = d_W->cols();
+	const int k = d_last->cols();
 	d_mult(dst, d_W, d_last);
 	add_row_broad_Kernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), dst->d_data(), d_bias->d_data(), m, k);
 	d_catchErr();
 }
 __global__
-void drawPixels_Kernel(int *buffer, int m, const float* vals, bool discrete, const Color neg, const Color pos) {
-	int row = GetRow();
-	int col = GetCol();
+void drawPixels_Kernel(int *buffer, const int m, const float* vals, const bool discrete, const Color neg, const Color pos) {
+	const int row = GetRow();
+	const int col = GetCol();
 	float percent = vals[col * m + row];
 	if (discrete) {
 		if (percent > 0.f) {
@@ -226,95 +226,74 @@ void drawPixels_Kernel(int *buffer, int m, const float* vals, bool discrete, con
 	}
 	else {
 		if (percent > 0.) {
-			unsigned char r = unsigned char(float(255) + (percent*(float(pos.r) - float(255))));
-			unsigned char g = unsigned char(float(255) + (percent*(float(pos.g) - float(255))));
-			unsigned char b = unsigned char(float(255) + (percent*(float(pos.b) - float(255))));
+			const unsigned char r = unsigned char(float(255) + (percent*(float(pos.r) - float(255))));
+			const unsigned char g = unsigned char(float(255) + (percent*(float(pos.g) - float(255))));
+			const unsigned char b = unsigned char(float(255) + (percent*(float(pos.b) - float(255))));
 			//unsigned char a = unsigned char(float(255) + (percent*(float(pos.a) - float(255))));
 			buffer[col * m + row] = ((r << 16) | ((g << 8) | b));
 		}
 		else {
-			unsigned char r = unsigned char(float(255) + (-percent * (float(neg.r) - float(255))));
-			unsigned char g = unsigned char(float(255) + (-percent * (float(neg.g) - float(255))));
-			unsigned char b = unsigned char(float(255) + (-percent * (float(neg.b) - float(255))));
+			const unsigned char r = unsigned char(float(255) + (-percent * (float(neg.r) - float(255))));
+			const unsigned char g = unsigned char(float(255) + (-percent * (float(neg.g) - float(255))));
+			const unsigned char b = unsigned char(float(255) + (-percent * (float(neg.b) - float(255))));
 			//unsigned char a = unsigned char(float(255) + (-percent*(float(neg.a) - float(255))));
 			buffer[col * m + row] = ((r << 16) | ((g << 8) | b));
 		}
 	}
 }
-void d_drawPixels(int * buffer, int m, int k, const float* vals, bool discrete) {
-	Color pos = Color(100, 167, 211, 255);
-	Color neg = Color(255, 184, 113, 255);
+void d_drawPixels(int * buffer, const int m, const int k, const float* vals, const bool discrete) {
+	const Color pos = Color(100, 167, 211, 255);
+	const Color neg = Color(255, 184, 113, 255);
 	drawPixels_Kernel << <dimGrid(m, k), dimBlock() >> >
 		(buffer, m, vals, discrete, neg, pos);
 	d_catchErr();
 }
 __global__
-void Sigmoid_Kernal(float *dst, int m, int k) {
-	int row = GetRow();
-	int col = GetCol();
-	int tid = col * m + row;
+void Sigmoid_Kernal(float *dst, const int m, const int k) {
+	const int row = GetRow();
+	const int col = GetCol();
+	const int tid = col * m + row;
 	if (col < k && row < m) {
 		dst[tid] = __fdividef(1.f, (__fadd_rd(1.f, __expf(-dst[tid]))));
 	}
 }
 __global__
-void Tanh_Kernal(float *dst, int m, int k) {
-	int row = GetRow();
-	int col = GetCol();
-	int tid = col * m + row;
+void Tanh_Kernal(float *dst, const int m, const int k) {
+	const int row = GetRow();
+	const int col = GetCol();
+	const int tid = col * m + row;
 	if (col < k && row < m) {
-#if 0
-		/*const float a = __expf(dst[tid]);
-		const float b = __expf(-dst[tid]);
-		dst[tid] = __fdividef(__fsub_rd(a, b), (__fadd_rd(a, b)));*/
-
-		//2 / (1 + exp(-2 * x)) - 1
-		//dst[tid] = __fsub_rd(__fdividef(2.f, __fadd_rd(1.f, __expf(__fmul_rd(-2.f, dst[tid])))), 1.f);
-		//(exp(2*x)-1)/(exp(2*x)+1)
-		if (dst[tid] > 3.f) {
-			dst[tid] = 1.f;
-		}
-		else if (dst[tid] < -3.f) {
-			dst[tid] = -1.f;
-		}
-		else {
-			const float exp_x = __expf(__fmul_rd(2.f, dst[tid]));
-			dst[tid] = __fdividef(__fsub_rd(exp_x, 1.f), __fadd_rd(exp_x, 1.f));
-		}
-
-#else
 		dst[tid] = tanhf(dst[tid]);
-#endif
 	}
 }
 __global__
-void ReLU_Kernal(float *dst, int m, int k) {
-	int row = GetRow();
-	int col = GetCol();
-	int tid = col * m + row;
+void ReLU_Kernal(float *dst, const int m, const int k) {
+	const int row = GetRow();
+	const int col = GetCol();
+	const int tid = col * m + row;
 	if (col < k && row < m)
 		dst[tid] = fmaxf(0.f, dst[tid]);
 }
 __global__
-void LReLU_Kernal(float *dst, int m, int k) {
-	int row = GetRow();
-	int col = GetCol();
-	int tid = col * m + row;
+void LReLU_Kernal(float *dst, const int m, const int k) {
+	const int row = GetRow();
+	const int col = GetCol();
+	const int tid = col * m + row;
 	if (col < k && row < m)
 		dst[tid] = fmaxf(dst[tid] * LRELU_LEAK, dst[tid]);
 }
 __global__
-void Sine_Kernal(float *dst, int m, int k) {
-	int row = GetRow();
-	int col = GetCol();
-	int tid = col * m + row;
+void Sine_Kernal(float *dst, const int m, const int k) {
+	const int row = GetRow();
+	const int col = GetCol();
+	const int tid = col * m + row;
 	if (col < k && row < m) {
 		dst[tid] = __sinf(dst[tid]);
 	}
 }
-void d_activate(d_Matrix *dst, Activation act) {
-	int m = dst->rows();
-	int k = dst->cols();
+void d_activate(d_Matrix *dst, const Activation act) {
+	const int m = dst->rows();
+	const int k = dst->cols();
 	switch (act) {
 	case Sigmoid:
 		Sigmoid_Kernal << < dimGrid(m, k), dimBlock() >> > (dst->d_data(), m, k);
@@ -337,56 +316,56 @@ void d_activate(d_Matrix *dst, Activation act) {
 	}
 }
 __global__
-void backSigmoid_Kernel(float *dst, const float *d_A, int m, int n, int k) {
-	int row = GetRow();
-	int col = GetCol();
+void backSigmoid_Kernel(float *dst, const float *d_A, const int m, const int n, const int k) {
+	const int row = GetRow();
+	const int col = GetCol();
 	if (col < k && row < m) {
-		int index = col * m + row;
-		float x = dst[index];
+		const int index = col * m + row;
+		const float x = dst[index];
 		dst[index] = __fmul_rd(x, __fsub_rd(1.f, x));
 	}
 } /* dst = (d_W.T * d_dZ) (*) d_A */
 void d_backSigmoid(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A) {
 	d_mult_lhsT(dst, d_W, d_dZ);
-	int m = d_W->cols(); //reverse for transpose
-	int n = d_W->rows(); //reverse for transpose
-	int k = d_dZ->cols();
+	const int m = d_W->cols(); //reverse for transpose
+	const int n = d_W->rows(); //reverse for transpose
+	const int k = d_dZ->cols();
 	backSigmoid_Kernel << <dimGrid(m, k), dimBlock() >> >
 		(dst->d_data(), d_A->d_data(), m, n, k);
 	d_catchErr();
 }
 __global__
-void backTanh_Kernel(float *dst, const float *d_A, int m, int n, int k) {
-	int row = GetRow();
-	int col = GetCol();
+void backTanh_Kernel(float *dst, const float *d_A, const int m, const int n, const int k) {
+	const int row = GetRow();
+	const int col = GetCol();
 	if (col < k && row < m) {
-		int index = col * m + row;
+		const int index = col * m + row;
 		const float x = d_A[index];
 		dst[index] = __fmul_rd(dst[index], __fsub_rd(1.f, __fmul_rd(x, x)));
 	}
 } /* dst = (d_W.T * d_dZ) (*) 1 - d_A^2 */
 void d_backTanh(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A) {
 	d_mult_lhsT(dst, d_W, d_dZ);
-	int m = d_W->cols(); //reverse for transpose
-	int n = d_W->rows(); //reverse for transpose
-	int k = d_dZ->cols();
+	const int m = d_W->cols(); //reverse for transpose
+	const int n = d_W->rows(); //reverse for transpose
+	const int k = d_dZ->cols();
 	backTanh_Kernel << <dimGrid(m, k), dimBlock() >> >
 		(dst->d_data(), d_A->d_data(), m, n, k);
 	d_catchErr();
 }
 __global__
 void backReLU_Kernel(float *dst, const float *d_A, int m, int n, int k) {
-	int row = GetRow();
-	int col = GetCol();
+	const int row = GetRow();
+	const int col = GetCol();
 	if (col < k && row < m) {
 		dst[row * k + col] *= (d_A[row * k + col] > 0.f ? 1.f : 0.f);
 	}
 } /* dst = (d_W.T * d_dZ) (*) (d_A > 0 ? 1 : 0) */
 void d_backReLU(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A) {
 	d_mult_lhsT(dst, d_W, d_dZ);
-	int m = d_W->cols(); //reverse for transpose
-	int n = d_W->rows(); //reverse for transpose
-	int k = d_dZ->cols();
+	const int m = d_W->cols(); //reverse for transpose
+	const int n = d_W->rows(); //reverse for transpose
+	const int k = d_dZ->cols();
 	backReLU_Kernel << <dimGrid(m, k), dimBlock() >> >
 		(dst->d_data(), d_A->d_data(), m, n, k);
 	d_catchErr();
@@ -401,26 +380,26 @@ void backLReLU_Kernel(float *dst, const float *d_A, int m, int n, int k) {
 } /* dst = (d_W.T * d_dZ) (*) (d_A > 0 ? 1 : 0) */
 void d_backLReLU(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A) {
 	d_mult_lhsT(dst, d_W, d_dZ);
-	int m = d_W->cols(); //reverse for transpose
-	int n = d_W->rows(); //reverse for transpose
-	int k = d_dZ->cols();
+	const int m = d_W->cols(); //reverse for transpose
+	const int n = d_W->rows(); //reverse for transpose
+	const int k = d_dZ->cols();
 	backLReLU_Kernel << <dimGrid(m, k), dimBlock() >> >
 		(dst->d_data(), d_A->d_data(), m, n, k);
 	d_catchErr();
 }
 __global__
 void backSine_Kernel(float *dst, const float *d_A, int m, int n, int k) {
-	int row = GetRow();
-	int col = GetCol();
+	const int row = GetRow();
+	const int col = GetCol();
 	if (col < k && row < m) {
 		dst[row * k + col] *= cos(d_A[row * k + col]);
 	}
 } /* dst = cos(d_W.T * d_dZ) */
 void d_backSine(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A) {
 	d_mult_lhsT(dst, d_W, d_dZ);
-	int m = d_W->cols(); //reverse for transpose
-	int n = d_W->rows(); //reverse for transpose
-	int k = d_dZ->cols();
+	const int m = d_W->cols(); //reverse for transpose
+	const int n = d_W->rows(); //reverse for transpose
+	const int k = d_dZ->cols();
 	backSine_Kernel << <dimGrid(m, k), dimBlock() >> >
 		(dst->d_data(), d_A->d_data(), m, n, k);
 	d_catchErr();
@@ -431,24 +410,24 @@ void d_set_dW(d_Matrix* dst, const d_Matrix* d_dZ, const d_Matrix* d_AT, float c
 }
 __global__
 void set_dW_Reg_Kernel(float *dst, const float *d_W, float coefficient, float regTerm, int m, int n, int k) {
-	int row = GetRow();
-	int col = GetCol();
+	const int row = GetRow();
+	const int col = GetCol();
 	if (col < k && row < m) {
 		dst[col * m + row] += (regTerm * d_W[col * m + row]);
 	}
 } /* dst = coeff * (d_dZ * d_A.T) (+) (0.5f * learn * d_W) */
 void d_set_dW_Reg(d_Matrix* dst, const d_Matrix* d_dZ, const d_Matrix* d_AT, const d_Matrix *d_W, float coefficient, float regTerm) {
-	int m = d_dZ->rows();
-	int n = d_dZ->cols();
-	int k = d_AT->cols();
+	const int m = d_dZ->rows();
+	const int n = d_dZ->cols();
+	const int k = d_AT->cols();
 	d_mult(dst, d_dZ, d_AT);
 	set_dW_Reg_Kernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), d_W->d_data(), coefficient, regTerm, m, n, k);
 	d_mult_scalar(dst, coefficient);
 	d_catchErr();
 }
 void d_sumRows(d_Matrix* dst, const d_Matrix* src) {
-	int m = src->rows();
-	int k = src->cols();
+	const int m = src->rows();
+	const int k = src->cols();
 	d_Matrix ones = d_Matrix(k, 1);
 	d_set_elem(&ones, 1.f);
 	d_mult(dst, src, &ones);
@@ -456,8 +435,8 @@ void d_sumRows(d_Matrix* dst, const d_Matrix* src) {
 }
 /* dst = coeff * (srcA.SumOfRows) */
 void d_set_db(d_Matrix* dst, const d_Matrix* d_dZ, float coefficient) {
-	int m = d_dZ->rows();
-	int k = d_dZ->cols();
+	const int m = d_dZ->rows();
+	const int k = d_dZ->cols();
 	d_sumRows(dst, d_dZ);
 	d_mult_scalar(dst, coefficient);
 	d_catchErr();
@@ -466,9 +445,9 @@ void d_set_db(d_Matrix* dst, const d_Matrix* d_dZ, float coefficient) {
 #define BETA2 (1.f - FLT_EPSILON)
 __global__
 void updateParameterADAM_Kernel(float *dst, int N, const float *d_derivative, float *d_momentum, float *d_momentumSqr, float learn, int k) {
-	int row = GetRow();
-	int col = GetCol();
-	int tid = row * k + col;
+	const int row = GetRow();
+	const int col = GetCol();
+	const int tid = row * k + col;
 	if (tid < N) {
 		d_momentum[tid] = BETA1 * (d_momentum[tid]) + (1.f - BETA1) * d_derivative[tid];
 		d_momentumSqr[tid] = (BETA2 * d_momentumSqr[tid]) + ((1.f - BETA2) * (d_derivative[tid] * d_derivative[tid]));
@@ -476,15 +455,15 @@ void updateParameterADAM_Kernel(float *dst, int N, const float *d_derivative, fl
 	}
 }
 void d_updateParameterADAM(d_Matrix* dst, const d_Matrix* d_derivative, const d_Matrix* d_momentum, const d_Matrix* d_momentumSqr, float learnRate) {
-	int m = dst->rows();
-	int k = dst->cols();
+	const int m = dst->rows();
+	const int k = dst->cols();
 	updateParameterADAM_Kernel << <dimGrid(m, k), dimBlock() >> >
 		(dst->d_data(), dst->size(), d_derivative->d_data(), d_momentum->d_data(), d_momentumSqr->d_data(), learnRate, k);
 	d_catchErr();
 }
 __global__
 void updateParameter_Kernel(float *dst, int N, const float *d_derivative, float learn) {
-	int tid = blockIdx.x;
+	const int tid = blockIdx.x;
 	if (tid < N) {
 		dst[tid] -= learn * d_derivative[tid];
 	}
@@ -503,8 +482,8 @@ void finalCost_Kernel(float *dst, const float *sumTotal, float regMult, float tr
 }
 void d_calcCost(float *dst, const d_Matrix* d_err, const vector<d_Matrix>* d_modelWeights, float regMult, float coeff, float trainLableCount) {
 	d_Matrix *d_diff = new d_Matrix(d_err->rows(), d_err->cols());
-	int m = d_err->rows();
-	int k = d_err->cols();
+	const int m = d_err->rows();
+	const int k = d_err->cols();
 	d_square(d_diff, d_err);
 	d_sumMatrix(dst, d_diff);
 	d_mult_scalar(dst, coeff, 1, 1);
@@ -518,6 +497,7 @@ void d_calcCost(float *dst, const d_Matrix* d_err, const vector<d_Matrix>* d_mod
 		d_square(&d_squared, layerWeights); d_catchErr();
 		d_sumMatrix(d_sqrSum.d_data(), &d_squared); d_catchErr();
 		d_launch_single_thread(pfAdd, d_sqrSumTotal.d_data(), d_sqrSum.d_data()); d_catchErr();
+		d_squared.free();
 	}
 	finalCost_Kernel << <1, 1 >> > (dst, d_sqrSumTotal.d_data(), regMult, trainLableCount); d_catchErr();
 	d_sqrSumTotal.free();
