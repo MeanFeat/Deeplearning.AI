@@ -67,15 +67,15 @@ d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &label
 	d_check(cudaMallocHost((void**)&cache.cost, sizeof(float)));
 }
 void d_NetTrainer::AddLayer(int A, int B) {
-	cache.d_A.push_back(d_Matrix(A, GetTrainExamplesCount()));
-	cache.d_AT.push_back(d_Matrix(GetTrainExamplesCount(), A));
-	cache.d_dZ.push_back(d_Matrix(A, GetTrainExamplesCount()));
-	derivative.d_dW.push_back(d_Matrix(A, B));
-	derivative.d_db.push_back(d_Matrix(A, 1));
-	momentum.d_dW.push_back(d_Matrix(A, B));
-	momentum.d_db.push_back(d_Matrix(A, 1));
-	momentumSqr.d_dW.push_back(d_Matrix(A, B));
-	momentumSqr.d_db.push_back(d_Matrix(A, 1));
+	cache.d_A.emplace_back(A, GetTrainExamplesCount());
+	cache.d_AT.emplace_back(GetTrainExamplesCount(), A);
+	cache.d_dZ.emplace_back(A, GetTrainExamplesCount());
+	derivative.d_dW.emplace_back(A, B);
+	derivative.d_db.emplace_back(A, 1);
+	momentum.d_dW.emplace_back(A, B);
+	momentum.d_db.emplace_back(A, 1);
+	momentumSqr.d_dW.emplace_back(A, B);
+	momentumSqr.d_db.emplace_back(A, 1);
 }
 void d_NetTrainer::BuildVisualization(const MatrixXf &screen, int * buffer, int m, int k) {
 	d_check(cudaMalloc((void **)&d_Buffer, m*k * sizeof(int)));

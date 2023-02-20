@@ -249,7 +249,7 @@ void d_drawPixels(int * buffer, const int m, const int k, const float* vals, con
 	d_catchErr();
 }
 __global__
-void Sigmoid_Kernal(float *dst, const int m, const int k) {
+void Sigmoid_Kernel(float *dst, const int m, const int k) {
 	const int row = GetRow();
 	const int col = GetCol();
 	const int tid = col * m + row;
@@ -258,7 +258,7 @@ void Sigmoid_Kernal(float *dst, const int m, const int k) {
 	}
 }
 __global__
-void Tanh_Kernal(float *dst, const int m, const int k) {
+void Tanh_Kernel(float *dst, const int m, const int k) {
 	const int row = GetRow();
 	const int col = GetCol();
 	const int tid = col * m + row;
@@ -267,7 +267,7 @@ void Tanh_Kernal(float *dst, const int m, const int k) {
 	}
 }
 __global__
-void ReLU_Kernal(float *dst, const int m, const int k) {
+void ReLU_Kernel(float *dst, const int m, const int k) {
 	const int row = GetRow();
 	const int col = GetCol();
 	const int tid = col * m + row;
@@ -275,7 +275,7 @@ void ReLU_Kernal(float *dst, const int m, const int k) {
 		dst[tid] = fmaxf(0.f, dst[tid]);
 }
 __global__
-void LReLU_Kernal(float *dst, const int m, const int k) {
+void LReLU_Kernel(float *dst, const int m, const int k) {
 	const int row = GetRow();
 	const int col = GetCol();
 	const int tid = col * m + row;
@@ -283,7 +283,7 @@ void LReLU_Kernal(float *dst, const int m, const int k) {
 		dst[tid] = fmaxf(dst[tid] * LRELU_LEAK, dst[tid]);
 }
 __global__
-void Sine_Kernal(float *dst, const int m, const int k) {
+void Sine_Kernel(float *dst, const int m, const int k) {
 	const int row = GetRow();
 	const int col = GetCol();
 	const int tid = col * m + row;
@@ -296,19 +296,19 @@ void d_activate(d_Matrix *dst, const Activation act) {
 	const int k = dst->cols();
 	switch (act) {
 	case Sigmoid:
-		Sigmoid_Kernal << < dimGrid(m, k), dimBlock() >> > (dst->d_data(), m, k);
+		Sigmoid_Kernel << < dimGrid(m, k), dimBlock() >> > (dst->d_data(), m, k);
 		break;
 	case Tanh:
-		Tanh_Kernal << < dimGrid(m, k), dimBlock() >> > (dst->d_data(), m, k);
+		Tanh_Kernel << < dimGrid(m, k), dimBlock() >> > (dst->d_data(), m, k);
 		break;
 	case ReLU:
-		ReLU_Kernal << < dimGrid(m, k), dimBlock() >> > (dst->d_data(), m, k);
+		ReLU_Kernel << < dimGrid(m, k), dimBlock() >> > (dst->d_data(), m, k);
 		break;
 	case LReLU:
-		LReLU_Kernal << < dimGrid(m, k), dimBlock() >> > (dst->d_data(), m, k);
+		LReLU_Kernel << < dimGrid(m, k), dimBlock() >> > (dst->d_data(), m, k);
 		break;
 	case Sine:
-		Sine_Kernal << < dimGrid(m, k), dimBlock() >> > (dst->d_data(), m, k);
+		Sine_Kernel << < dimGrid(m, k), dimBlock() >> > (dst->d_data(), m, k);
 		break;
 	case Linear: //fall through
 	default:
