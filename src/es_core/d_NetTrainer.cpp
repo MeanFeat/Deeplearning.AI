@@ -23,7 +23,7 @@ d_NetTrainParameters d_NetTrainer::GetTrainParams() {
 d_NetCache d_NetTrainer::GetCache() {
 	return cache;
 }
-void d_NetTrainer::RefreshHostNetwork() {
+void d_NetTrainer::RefreshHostNetwork() const {
 	for (int i = 0; i < trainParams.d_W.size(); ++i) {
 		network->GetParams().W[i] = to_host(trainParams.d_W[i]);
 		network->GetParams().b[i] = to_host(trainParams.d_b[i]);
@@ -46,7 +46,7 @@ d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &label
 	cache.d_AT.push_back(to_device(data.transpose()));
 	d_trainLabels = to_device(labels);
 	trainParams.trainExamplesCount = (unsigned int)data.cols();
-	trainParams.coefficiant = 1.f / (float)trainParams.trainExamplesCount;
+	trainParams.coefficient = 1.f / (float)trainParams.trainExamplesCount;
 	if (network->GetSumOfWeights() == 0.f) {
 		network->RandomInit(weightScale);
 	}

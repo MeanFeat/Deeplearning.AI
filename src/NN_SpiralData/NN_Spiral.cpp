@@ -2,11 +2,11 @@
 
 using namespace Eigen;
 using namespace std;
-#define WINWIDTH 200
-#define WINHEIGHT 200
+#define WINWIDTH 400
+#define WINHEIGHT 400
 #define WINHALFWIDTH int(WINWIDTH * 0.5f)
 #define WINHALFHEIGHT int(WINHEIGHT * 0.5f)
-#define SCALE 50
+#define SCALE 100
 global_variable bool globalRunning = true;
 global_variable bool discreteOutput = false;
 global_variable bool plotData = false;
@@ -107,7 +107,7 @@ MatrixXf BuildPolynomials(MatrixXf m) {
 	temp << m, MatrixXf(m.array().pow(2)), MatrixXf(m.array().pow(2)).colwise().sum();
 	return temp;
 }
-void DrawOutputToScreen(MatrixXf screenCoords) {
+void DrawOutputToScreen(const MatrixXf &screenCoords) {
 	MatrixXf h = neural.ForwardPropagation(screenCoords);
 	int *pixel = (int *)backBuffer.memory;
 	for (int i = 0; i < h.cols(); ++i) {
@@ -135,7 +135,7 @@ void DrawOutputToScreen(MatrixXf screenCoords) {
 		*pixel++ = blended.ToBit();
 	}
 }
-void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> &h_history, vector<float> &d_history) {
+void UpdateDisplay(MatrixXf X, MatrixXf Y, vector<float> &h_history, vector<float> &d_history) {
 	if (globalRunning) {
 		d_trainer.Visualization((int *)backBuffer.memory, backBuffer.width, backBuffer.height, discreteOutput);
 		//DrawOutputToScreen(screenCoords);
@@ -183,11 +183,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 	//Y.conservativeResize(int(Y.rows()), int(Y.cols()*0.25f));
 	WNDCLASSA winClass = {};
 	InitializeWindow(&winClass, Instance, Win32MainWindowCallback, &backBuffer, WINWIDTH, WINHEIGHT, "NN_Spiral");
-	MatrixXf screenCoords = BuildPolynomials(BuildDisplayCoords(backBuffer, SCALE).transpose());
+	const MatrixXf screenCoords = BuildPolynomials(BuildDisplayCoords(backBuffer, SCALE).transpose());
 	if (RegisterClassA(&winClass)) {
-		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
-			WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
-			WINWIDTH * 4, WINHEIGHT * 4, 0, 0, Instance, 0);
+		const HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
+		                                    WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
+		                                    WINWIDTH * 2, WINHEIGHT * 2, 0, 0, Instance, 0);
 		neural = Net((int)X.rows(), { 8, 8 }, (int)Y.rows(), {
 			Tanh,
 			Tanh,
@@ -196,7 +196,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		d_neural = Net(neural);
 		d_trainer = d_NetTrainer(&d_neural, X, Y, 1.f, 2.f, 20.f);
 		startTime = clock();
-		HDC deviceContext = GetDC(window);
+		const HDC deviceContext = GetDC(window);
 		vector<float> h_history;
 		vector<float> d_history;
 		int steps = 0;
@@ -214,7 +214,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 				UpdateHistory(d_history, d_trainer.GetCache().cost);
 				UpdateWinTitle(steps, window);
 			}
-			UpdateDisplay(screenCoords, X, Y, h_history, d_history);
+			UpdateDisplay(X, Y, h_history, d_history);
 			Win32DisplayBufferInWindow(deviceContext, window, backBuffer);
 		}
 		DeleteDC(deviceContext);

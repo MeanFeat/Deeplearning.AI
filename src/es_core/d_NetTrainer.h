@@ -5,7 +5,7 @@
 #include "d_Math.h"
 
 struct d_NetTrainParameters {
-	float coefficiant;
+	float coefficient;
 	float learnCoeff;
 	float learnMult;
 	float learnRate;
@@ -44,9 +44,9 @@ public:
 	d_NetProfiler GetProfiler();
 	Net *network;
 	d_Matrix d_trainLabels;
-	void BuildVisualization(const Eigen::MatrixXf &screen, int * buffer, int m, int k);
+	void BuildVisualization(const Eigen::MatrixXf &screen, int *buffer, int m, int k);
 	void Visualization(int *buffer, int m, int k, bool discrete);
-	void RefreshHostNetwork();
+	void RefreshHostNetwork() const;
 	void TrainSingleEpoch();
 	float GetCost() {
 		return GetCache().cost;
@@ -55,7 +55,7 @@ public:
 		cache.cost = c;
 	}
 	float GetCoeff() {
-		return trainParams.coefficiant;
+		return trainParams.coefficient;
 	}
 	float GetRegMultipier() {
 		return trainParams.regMult;

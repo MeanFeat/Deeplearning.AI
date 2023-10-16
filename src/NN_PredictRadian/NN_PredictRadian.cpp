@@ -93,10 +93,10 @@ void PlotData(MatrixXf X, MatrixXf Y) {
 		DrawFilledCircle(backBuffer, int(WINHALFWIDTH + X(0, i)), int(WINHALFHEIGHT + -X(1, i)), 6.f, GetColorBlend(Y(0, i)));
 	}
 }
-void DrawOutputToScreen(MatrixXf normScreen) {
+void DrawOutputToScreen(const MatrixXf &normScreen) {
 	trainer.Visualization((int*)backBuffer.memory, backBuffer.width, backBuffer.height, false);
 }
-void UpdateDisplay(MatrixXf screenCoords, MatrixXf X, MatrixXf Y, vector<float> &history, vector<float> &testHistory) {
+void UpdateDisplay(MatrixXf X, MatrixXf Y, vector<float> &history, vector<float> &testHistory) {
 	if (globalRunning) {
 		if (drawOutput) {
 			DrawOutputToScreen(screenCoords);
@@ -209,7 +209,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			}
 			else {
 			}
-			UpdateDisplay(screenCoords, X, Y, history, testHistory);
+			UpdateDisplay(X, Y, history, testHistory);
 			UpdatePrediction();
 			Win32DisplayBufferInWindow(deviceContext, window, backBuffer);
 			UpdateWinTitle(steps, window);
