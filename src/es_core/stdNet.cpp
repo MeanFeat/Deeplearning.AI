@@ -4,22 +4,22 @@
 
 using namespace Eigen;
 using namespace std;
-Net::Net() {}
-Net::Net(int inputSize, std::vector<int> hiddenSizes, int outputSize, vector<Activation> activations) {
+Net::Net() = default;
+Net::Net(const int inputSize, const std::vector<int> &hiddenSizes, const int outputSize, const vector<Activation> &activations) {
 	params.layerActivations = activations;
 	params.layerSizes.push_back(inputSize);
-	for (int l = 0; l < (int)hiddenSizes.size(); ++l) {
+	for (int l = 0; l < int(hiddenSizes.size()); ++l) {
 		params.layerSizes.push_back(hiddenSizes[l]);
 	}
 	params.layerSizes.push_back(outputSize);
 	AddLayer(hiddenSizes[0], inputSize);
-	for (int h = 1; h < (int)hiddenSizes.size(); ++h) {
+	for (int h = 1; h < int(hiddenSizes.size()); ++h) {
 		AddLayer(hiddenSizes[h], hiddenSizes[h - 1]);
 	}
 	AddLayer(outputSize, hiddenSizes.back());
 }
 
-Net::Net(const string fName) {
+Net::Net(const string &fName) {
 	LoadNetwork(fName);
 }
 
@@ -31,9 +31,9 @@ void Net::SetParams(vector<MatrixXf> W, vector<MatrixXf> b) {
 	params.W = W;
 	params.b = b;
 }
-void Net::AddLayer(int A, int B) {
-	params.W.push_back(MatrixXf::Zero(A, B));
-	params.b.push_back(MatrixXf::Zero(A, 1));
+void Net::AddLayer(int a, int b) {
+	params.W.push_back(MatrixXf::Zero(a, b));
+	params.b.push_back(MatrixXf::Zero(a, 1));
 }
 MatrixXf Net::Activate(const MatrixXf &In, Activation act) {
 	switch (act) {
@@ -295,7 +295,7 @@ int Net::GetNodeCount() {
 	return count;
 }
 
-string Net::toString() {
+string Net::ToString() {
 	string str;
 	NetParameters *p = &params;
 	for (int i = 0; i < GetDepth(); i++) {

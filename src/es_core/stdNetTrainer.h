@@ -22,24 +22,24 @@ public:
 	~NetTrainer();
 
 	Eigen::MatrixXf BackActivation(const Eigen::MatrixXf &dZ, int layerIndex);
-	Eigen::MatrixXf BackLReLU(const Eigen::MatrixXf &wz, int index);
-	Eigen::MatrixXf BackReLU(const Eigen::MatrixXf &wz, int index);
-	Eigen::MatrixXf BackSigmoid(const Eigen::MatrixXf &wz, int index);
-	Eigen::MatrixXf BackSine(const Eigen::MatrixXf &wz, int index);
-	Eigen::MatrixXf BackTanh(const Eigen::MatrixXf &wz, int index);
+	Eigen::MatrixXf BackLReLu(const Eigen::MatrixXf &wZ, int index) const;
+	Eigen::MatrixXf BackReLu(const Eigen::MatrixXf &wZ, int index) const;
+	Eigen::MatrixXf BackSigmoid(const Eigen::MatrixXf &wZ, int index) const;
+	Eigen::MatrixXf BackSine(const Eigen::MatrixXf &wZ, int index);
+	Eigen::MatrixXf BackTanh(const Eigen::MatrixXf &wZ, int index);
 	Eigen::MatrixXf ForwardTrain();
-	float CalcCost(const Eigen::MatrixXf &h, const Eigen::MatrixXf &Y);
+	float CalcCost(const Eigen::MatrixXf &h, const Eigen::MatrixXf &Y) const;
 	Net *network;
 	NetCache &GetCache();
 	NetTrainParameters &GetTrainParams();
-	void AddLayer(int A, int B);
-	void BackLayer(Eigen::MatrixXf &dZ, const Eigen::MatrixXf &LowerA, int layerIndex);
+	void AddLayer(const int A, const int B);
+	void BackLayer(Eigen::MatrixXf &dZ, const Eigen::MatrixXf &lowerA, int layerIndex);
 	void BackwardPropagation();
 	void BuildDropoutMask();
 	void ModifyLearningRate(float m);
 	void ModifyRegTerm(float m);
-	void UpdateParameters();
-	void UpdateParametersADAM();
+	void UpdateParameters() const;
+	void UpdateParametersAdam();
 	void TrainSingleEpoch();
 
 private:

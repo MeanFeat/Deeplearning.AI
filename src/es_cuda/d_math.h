@@ -1,7 +1,6 @@
 #pragma once
 #include "d_cudahelpers.h"
 #include "types.h"
-#include "color.h"
 #include "d_Matrix.h"
 #include <cublas_v2.h>
 #include <cuda_runtime.h>

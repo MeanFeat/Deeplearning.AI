@@ -13,10 +13,8 @@ MatrixXf to_host(d_Matrix d_matrix) {
 	d_check(cudaMemcpy(out.data(), d_matrix.d_data(), d_matrix.memSize(), cudaMemcpyDeviceToHost));
 	return out;
 }
-
 d_NetTrainer::d_NetTrainer() {}
 d_NetTrainer::~d_NetTrainer() {}
-
 d_NetTrainParameters d_NetTrainer::GetTrainParams() {
 	return trainParams;
 }
@@ -29,7 +27,7 @@ void d_NetTrainer::RefreshHostNetwork() const {
 		network->GetParams().b[i] = to_host(trainParams.d_b[i]);
 	}
 }
-d_NetProfiler d_NetTrainer::GetProfiler() {
+d_NetProfiler d_NetTrainer::GetProfiler() const {
 	return profiler;
 }
 d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &labels, float weightScale, float learnRate, float regTerm) {
@@ -77,11 +75,12 @@ void d_NetTrainer::AddLayer(int A, int B) {
 	momentumSqr.d_dW.emplace_back(A, B);
 	momentumSqr.d_db.emplace_back(A, 1);
 }
-void d_NetTrainer::BuildVisualization(const MatrixXf &screen, int * buffer, int m, int k) {
-	d_check(cudaMalloc((void **)&d_Buffer, m*k * sizeof(int)));
+void d_NetTrainer::BuildVisualization(const MatrixXf &screen, int * buffer, const int m, const int k) {
+	const int size = m*k;
+	d_check(cudaMalloc((void **)&d_Buffer, size * sizeof(int)));
 	d_VisualA.push_back(to_device(screen));
 	for (int i = 0; i < network->GetDepth(); ++i) {
-		d_VisualA.push_back(d_Matrix(trainParams.d_W[i].rows(), d_VisualA[i].cols()));
+		d_VisualA.emplace_back(trainParams.d_W[i].rows(), d_VisualA[i].cols());
 	}
 }
 void d_NetTrainer::Visualization(int *buffer, int m, int k, bool discrete) {
@@ -92,7 +91,7 @@ void d_NetTrainer::Visualization(int *buffer, int m, int k, bool discrete) {
 		}
 	d_drawPixels(d_Buffer, m, k, d_VisualA.back().d_data(), discrete);
 	cudaMemcpyAsync(buffer, d_Buffer, m*k * sizeof(int), cudaMemcpyDeviceToHost, cuda_stream);
-	); //d_profile
+	) //d_profile
 }
 void d_NetTrainer::ForwardTrain() {
 	for (int i = 0; i < network->GetDepth(); ++i) {
@@ -103,7 +102,7 @@ void d_NetTrainer::ForwardTrain() {
 }
 void d_NetTrainer::CalcCost() {
 	d_calcCost(cache.d_cost, &cache.d_dZ.back(),
-		&trainParams.d_W, GetRegMultipier(), GetCoeff(), (float)trainParams.trainExamplesCount); d_catchErr();
+		&trainParams.d_W, GetRegMultiplier(), GetCoeff(), (float)trainParams.trainExamplesCount); d_catchErr();
 	// TODO: Set this to copy in batches
 	d_check(cudaMemcpyAsync(&cache.cost, cache.d_cost, sizeof(float), cudaMemcpyDeviceToHost)); 
 }

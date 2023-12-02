@@ -41,7 +41,7 @@ public:
 	~d_NetTrainer();
 	d_NetTrainParameters GetTrainParams();
 	d_NetCache GetCache();
-	d_NetProfiler GetProfiler();
+	d_NetProfiler GetProfiler() const;
 	Net *network;
 	d_Matrix d_trainLabels;
 	void BuildVisualization(const Eigen::MatrixXf &screen, int *buffer, int m, int k);
@@ -51,22 +51,22 @@ public:
 	float GetCost() {
 		return GetCache().cost;
 	}
-	void SetCost(float c) {
+	void SetCost(const float c) {
 		cache.cost = c;
 	}
-	float GetCoeff() {
+	float GetCoeff() const {
 		return trainParams.coefficient;
 	}
-	float GetRegMultipier() {
+	float GetRegMultiplier() const {
 		return trainParams.regMult;
 	}
-	inline void ModifyLearningRate(float m) {
+	inline void ModifyLearningRate(const float m) {
 		trainParams.learnMult = max(FLT_EPSILON, trainParams.learnMult + (m * trainParams.learnCoeff));
 	}
-	inline void ModifyRegTerm(float m) {
+	inline void ModifyRegTerm(const float m) {
 		trainParams.regMod = max(FLT_EPSILON, trainParams.regMod + (m * trainParams.learnCoeff));
 	}
-	unsigned int GetTrainExamplesCount() {
+	unsigned int GetTrainExamplesCount() const {
 		return trainParams.trainExamplesCount;
 	}
 	d_NetTrainDerivatives GetDerivatives() {

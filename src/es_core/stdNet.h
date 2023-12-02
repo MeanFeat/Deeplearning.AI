@@ -41,8 +41,8 @@ struct NetParameters {
 class Net {
 public:
 	Net();
-	Net(int inputSize, std::vector<int> hiddenSizes, int outputSize, std::vector<Activation> activations);
-	Net(const std::string fName);
+	Net(int inputSize, const std::vector<int> &hiddenSizes, int outputSize, const std::vector<Activation> &activations);
+	Net(const std::string &fName);
 	~Net();
 	NetParameters &GetParams();
 	void SetParams(std::vector<Eigen::MatrixXf> W, std::vector<Eigen::MatrixXf> b);
@@ -52,13 +52,13 @@ public:
 	void RandomInit(float scale);
 	float GetSumOfWeights();
 	int GetNeuronCount();
-	std::string toString();
+	std::string ToString();
 	void SaveNetwork(const std::string fName);
 	void LoadNetwork(const std::string fName);
 	int GetInputSize();
 	int GetOutputSize();
 	int GetNodeCount();
 private:
-	void AddLayer(int A, int B);
+	void AddLayer(int a, int b);
 	NetParameters params;
 };
