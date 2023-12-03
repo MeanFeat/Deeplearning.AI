@@ -93,13 +93,13 @@ void PlotData(MatrixXf X, MatrixXf Y) {
 		DrawFilledCircle(backBuffer, int(WINHALFWIDTH + X(0, i)), int(WINHALFHEIGHT + -X(1, i)), 6.f, GetColorBlend(Y(0, i)));
 	}
 }
-void DrawOutputToScreen(const MatrixXf &normScreen) {
+void DrawOutputToScreen() {
 	trainer.Visualization((int*)backBuffer.memory, backBuffer.width, backBuffer.height, false);
 }
 void UpdateDisplay(MatrixXf X, MatrixXf Y, vector<float> &history, vector<float> &testHistory) {
 	if (globalRunning) {
 		if (drawOutput) {
-			DrawOutputToScreen(screenCoords);
+			DrawOutputToScreen();
 		}
 		else {
 			ClearScreen(backBuffer);

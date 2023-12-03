@@ -91,7 +91,7 @@ void d_NetTrainer::Visualization(int *buffer, int m, int k, bool discrete) {
 		}
 	d_drawPixels(d_Buffer, m, k, d_VisualA.back().d_data(), discrete);
 	cudaMemcpyAsync(buffer, d_Buffer, m*k * sizeof(int), cudaMemcpyDeviceToHost, cuda_stream);
-	) //d_profile
+	); //d_profile
 }
 void d_NetTrainer::ForwardTrain() {
 	for (int i = 0; i < network->GetDepth(); ++i) {
