@@ -23,7 +23,7 @@ if %var1% LSS %var2% goto Message
 echo Generating Files
 type nul > tests_cpp.generated 
 type nul > tests_unit.generated
-start D:\Gamedev\ExpertSystems.AI\x64\Release\es_test_app.exe "-b" "D:\Gamedev\ExpertSystems.AI\src\es_test\tests.list" "D:\Gamedev\ExpertSystems.AI\src\es_test\tests_cpp.generated" "D:\Gamedev\ExpertSystems.AI\src\es_test\tests_unit.generated"
+start C:\GameDev\ExpertSystems.AI\x64\Release\es_test_app.exe "-b" "C:\GameDev\ExpertSystems.AI\src\es_test\tests.list" "C:\GameDev\ExpertSystems.AI\src\es_test\tests_cpp.generated" "C:\GameDev\ExpertSystems.AI\src\es_test\tests_unit.generated"
 
 :Message
 echo The list has not been modified.

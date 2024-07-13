@@ -83,17 +83,17 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>D:\GameDev\eigen;$(IncludePath);</IncludePath>
+    <IncludePath>C:\GameDev\eigen;$(IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>D:\GameDev\eigen;$(IncludePath);</IncludePath>
+    <IncludePath>C:\GameDev\eigen;$(IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>D:\Gamedev\CUDA\common\inc;..\es_cuda;..\common;D:\GameDev\eigen;$(IncludePath);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include</IncludePath>
+    <IncludePath>C:\GameDev\CUDA\common\inc;..\es_cuda;..\common;C:\GameDev\eigen;$(IncludePath);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.5\include</IncludePath>
     <LibraryPath>..\..\x64\Debug\$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>D:\Gamedev\CUDA\common\inc;..\es_cuda;..\common;D:\GameDev\eigen;$(IncludePath);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include</IncludePath>
+    <IncludePath>C:\GameDev\CUDA\common\inc;..\es_cuda;..\common;C:\GameDev\eigen;$(IncludePath);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.5\include</IncludePath>
     <LibraryPath>..\..\x64\Release\$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -116,7 +116,7 @@
       <AdditionalDependencies>cudart.lib;es_cuda.lib;</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>..\..\x64\Debug\;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\x64\Debug\;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.5\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
