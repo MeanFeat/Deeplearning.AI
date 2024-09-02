@@ -6,14 +6,14 @@ static cudaStream_t cuda_stream;
 cudaEvent_t start, stop;
 d_Matrix to_device(MatrixXf matrix) {
 	d_mathInit();
-	return d_Matrix(matrix.data(), (int)matrix.rows(), (int)matrix.cols());
+	return d_Matrix(matrix.data(), int(matrix.rows()), int(matrix.cols()));
 }
 MatrixXf to_host(d_Matrix d_matrix) {
 	MatrixXf out = MatrixXf(d_matrix.rows(), d_matrix.cols());
-	d_check(cudaMemcpy(out.data(), d_matrix.d_data(), d_matrix.memSize(), cudaMemcpyDeviceToHost));
+	d_check(cudaMemcpyAsync(out.data(), d_matrix.d_data(), d_matrix.memSize(), cudaMemcpyDeviceToHost));
 	return out;
 }
-d_NetTrainer::d_NetTrainer() {}
+d_NetTrainer::d_NetTrainer(): network(nullptr), cache(), trainParams(), d_Buffer(nullptr), profiler() {}
 d_NetTrainer::~d_NetTrainer() {}
 d_NetTrainParameters d_NetTrainer::GetTrainParams() {
 	return trainParams;
@@ -43,8 +43,8 @@ d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &label
 	cache.d_A.push_back(to_device(data));
 	cache.d_AT.push_back(to_device(data.transpose()));
 	d_trainLabels = to_device(labels);
-	trainParams.trainExamplesCount = (unsigned int)data.cols();
-	trainParams.coefficient = 1.f / (float)trainParams.trainExamplesCount;
+	trainParams.trainExamplesCount =  uint(data.cols());
+	trainParams.coefficient = 1.f / float(trainParams.trainExamplesCount);
 	if (network->GetSumOfWeights() == 0.f) {
 		network->RandomInit(weightScale);
 	}
@@ -53,16 +53,16 @@ d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &label
 		trainParams.d_b.push_back(to_device(network->GetParams().b[i]));
 	}
 	trainParams.learnRate = learnRate;
-	trainParams.learnCoeff = 1.f / (float)network->GetNodeCount();
+	trainParams.learnCoeff = 1.f / float(network->GetNodeCount());
 	trainParams.learnMult = trainParams.learnRate*trainParams.learnCoeff;
 	trainParams.regTerm = regTerm;
-	trainParams.regMod = trainParams.regTerm / (float)network->GetNodeCount();
+	trainParams.regMod = trainParams.regTerm / float(network->GetNodeCount());
 	trainParams.regMult = float(trainParams.regTerm * trainParams.learnCoeff);
 	for (int h = 1; h < (int)network->GetDepth() + 1; ++h) {
 		AddLayer((int)network->GetParams().layerSizes[h], (int)network->GetParams().layerSizes[h - 1]);
 	}
-	d_check(cudaMalloc((void**)&cache.d_cost, sizeof(float)));
-	d_check(cudaMallocHost((void**)&cache.cost, sizeof(float)));
+	d_check(cudaMalloc(&cache.d_cost, sizeof(float)));
+	d_check(cudaMallocHost(reinterpret_cast<void**>(&cache.cost), sizeof(float)));
 }
 void d_NetTrainer::AddLayer(int A, int B) {
 	cache.d_A.emplace_back(A, GetTrainExamplesCount());
@@ -77,20 +77,20 @@ void d_NetTrainer::AddLayer(int A, int B) {
 }
 void d_NetTrainer::BuildVisualization(const MatrixXf &screen, int * buffer, const int m, const int k) {
 	const int size = m*k;
-	d_check(cudaMalloc((void **)&d_Buffer, size * sizeof(int)));
+	d_check(cudaMalloc(&d_Buffer, size * sizeof(int)));
 	d_VisualA.push_back(to_device(screen));
 	for (int i = 0; i < network->GetDepth(); ++i) {
 		d_VisualA.emplace_back(trainParams.d_W[i].rows(), d_VisualA[i].cols());
 	}
 }
-void d_NetTrainer::Visualization(int *buffer, int m, int k, bool discrete) {
+void d_NetTrainer::Visualization(int *buffer, const int m, const int k, const bool discrete) {
 	d_profile(start, stop, &profiler.visualizationTime,
 		for (int i = 0; i < network->GetDepth(); ++i) {
 			d_forwardLayer(&d_VisualA[i + 1], &trainParams.d_W[i], &d_VisualA[i], &trainParams.d_b[i]);
 			d_activate(&d_VisualA[i + 1], network->GetParams().layerActivations[i]);
 		}
 	d_drawPixels(d_Buffer, m, k, d_VisualA.back().d_data(), discrete);
-	cudaMemcpyAsync(buffer, d_Buffer, m*k * sizeof(int), cudaMemcpyDeviceToHost, cuda_stream);
+	d_check(cudaMemcpyAsync(buffer, d_Buffer, m*k * sizeof(int), cudaMemcpyDeviceToHost, cuda_stream));
 	); //d_profile
 }
 void d_NetTrainer::ForwardTrain() {
@@ -102,7 +102,7 @@ void d_NetTrainer::ForwardTrain() {
 }
 void d_NetTrainer::CalcCost() {
 	d_calcCost(cache.d_cost, &cache.d_dZ.back(),
-		&trainParams.d_W, GetRegMultiplier(), GetCoeff(), (float)trainParams.trainExamplesCount); d_catchErr();
+		&trainParams.d_W, GetRegMultiplier(), GetCoeff(), float(trainParams.trainExamplesCount)); d_catchErr();
 	// TODO: Set this to copy in batches
 	d_check(cudaMemcpyAsync(&cache.cost, cache.d_cost, sizeof(float), cudaMemcpyDeviceToHost)); 
 }
@@ -110,7 +110,7 @@ void d_NetTrainer::BackwardPropagation() {
 	d_subtract_elem(&cache.d_dZ.back(), cache.d_A.back(), d_trainLabels);
 	d_set_dW(&derivative.d_dW.back(), &cache.d_dZ.back(), &cache.d_AT[cache.d_A.size() - 2], GetCoeff());
 	d_set_db(&derivative.d_db.back(), &cache.d_dZ.back(), GetCoeff());
-	for (int l = (int)network->GetParams().layerActivations.size() - 2; l >= 0; --l) {
+	for (int l = int(network->GetParams().layerActivations.size() - 2); l >= 0; --l) {
 		switch (network->GetParams().layerActivations[l]) {
 		case Sigmoid:
 			d_backSigmoid(&cache.d_dZ[l], &trainParams.d_W[l + 1], &cache.d_dZ[l + 1], &cache.d_A[l + 1]);
@@ -136,13 +136,13 @@ void d_NetTrainer::BackwardPropagation() {
 	}
 }
 void d_NetTrainer::UpdateParameters() {
-	for (int i = 0; i < (int)derivative.d_dW.size(); ++i) {
+	for (int i = 0; i < int(derivative.d_dW.size()); ++i) {
 		d_updateParameter(&trainParams.d_W[i], &derivative.d_dW[i], trainParams.learnMult);
 		d_updateParameter(&trainParams.d_b[i], &derivative.d_db[i], trainParams.learnMult);
 	}
 }
 void d_NetTrainer::UpdateParametersADAM() {
-	for (int i = 0; i < (int)derivative.d_dW.size(); ++i) {
+	for (int i = 0; i < int(derivative.d_dW.size()); ++i) {
 		d_updateParameterADAM(&trainParams.d_W[i], &derivative.d_dW[i], &momentum.d_dW[i], &momentumSqr.d_dW[i], trainParams.learnMult);
 		d_updateParameterADAM(&trainParams.d_b[i], &derivative.d_db[i], &momentum.d_db[i], &momentumSqr.d_db[i], trainParams.learnMult);
 	}

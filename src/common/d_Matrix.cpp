@@ -10,7 +10,7 @@ d_Matrix::d_Matrix(float *host_data, int rows, int cols) {
 	this->rowCount = rows;
 	this->colCount = cols;
 	d_check(cudaMalloc((void**)&device_data, memSize()));
-	d_check(cudaMemcpy(device_data, host_data, memSize(), cudaMemcpyHostToDevice));
+	d_check(cudaMemcpyAsync(device_data, host_data, memSize(), cudaMemcpyHostToDevice));
 }
 d_Matrix::~d_Matrix() {
 	/*cudaPointerAttributes attr = {};
@@ -43,11 +43,11 @@ void d_Matrix::free() {
 
 d_Matrix d_Matrix::getClone() {
 	d_Matrix result = d_Matrix(rowCount, colCount);
-	cudaMemcpy((void**)result.d_data(), device_data, memSize(), cudaMemcpyDeviceToDevice);
+	cudaMemcpyAsync((void**)result.d_data(), device_data, memSize(), cudaMemcpyDeviceToDevice);
 	return result;
 }
 d_Matrix d_Matrix::getClone() const {
 	d_Matrix const& result = d_Matrix(rowCount, colCount);
-	cudaMemcpy((void**)result.d_data(), device_data, memSize(), cudaMemcpyDeviceToDevice);
+	cudaMemcpyAsync((void**)result.d_data(), device_data, memSize(), cudaMemcpyDeviceToDevice);
 	return result;
 }

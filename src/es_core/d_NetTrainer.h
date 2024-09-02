@@ -2,7 +2,7 @@
 
 #include "stdNet.h"
 #include "d_Matrix.h"
-#include "d_Math.h"
+#include "d_math.h"
 
 struct d_NetTrainParameters {
 	float coefficient;

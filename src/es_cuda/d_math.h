@@ -9,6 +9,8 @@
 static bool isInitialized = false;
 static cublasHandle_t cublasHandle;
 
+typedef unsigned int uint;
+
 #define BLOCK_SIZE 16
 #define LRELU_LEAK 0.01f
 
@@ -16,7 +18,7 @@ using ptrFunc = float(*)(float, float);
 
 void d_mathInit();
 
-inline dim3 dimGrid(int m, int k) {
+inline dim3 dimGrid(uint m, uint k) {
 	return dim3((k + BLOCK_SIZE - 1) / BLOCK_SIZE, (m + BLOCK_SIZE - 1) / BLOCK_SIZE);
 }
 inline dim3 dimBlock() {
@@ -57,8 +59,8 @@ void d_sumRows(d_Matrix* dst, const d_Matrix* src);
 void d_set_db(d_Matrix *dst, const d_Matrix *d_dZ, float coefficient);
 void d_updateParameterADAM(d_Matrix * dst, const d_Matrix *d_derivative, const d_Matrix *d_momentum, const d_Matrix *d_momentumSqr, float learnRate);
 void d_updateParameter(d_Matrix * dst, const d_Matrix * d_derivative, float learnRate);
-void d_calcCost(float *dst, const d_Matrix* d_modelErr, const std::vector<d_Matrix>* d_modelWeights, const  float regMult, const  float coeff, const  float trainLabelCount);
-void d_drawPixels(int * buffer, int m, int k, const float *vals, bool discrete);
+void d_calcCost(float *dst, const d_Matrix* d_err, const std::vector<d_Matrix>* d_modelWeights, const  float regMult, const  float coeff, const  float trainLabelCount);
+void d_drawPixels(int * buffer, uint m, uint k, const float *vals, bool discrete);
 
 inline __device__ float _set_elem(float a, const float b) {
 	return b;

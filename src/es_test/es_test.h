@@ -12,7 +12,7 @@
 #define TEXTCOLOUR(token, c) HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE); SetConsoleTextAttribute(h, c); token; SetConsoleTextAttribute(h, DEFAULTTEXTCOLOUR);
 
 static int verbosity = 3;
-static const float thresholdMultiplier = (FLT_EPSILON) * 2.f;
+static const float thresholdMultiplier = FLT_EPSILON * 2.f;
 
 struct testResult {
 	bool passed;

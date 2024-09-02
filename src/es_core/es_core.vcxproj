@@ -182,13 +182,13 @@
     <ClInclude Include="..\common\color.h" />
     <ClInclude Include="..\common\es_parser.h" />
     <ClInclude Include="..\common\types.h" />
+    <ClInclude Include="..\common\win32_ExpertSystems.h" />
     <ClInclude Include="d_NetTrainer.h" />
     <ClInclude Include="es_core_pch.h" />
     <ClInclude Include="stdDraw.h" />
     <ClInclude Include="stdMatrix.h" />
     <ClInclude Include="stdNet.h" />
     <ClInclude Include="stdNetTrainer.h" />
-    <ClInclude Include="win32_ExpertSystems.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\common\color.cpp" />
