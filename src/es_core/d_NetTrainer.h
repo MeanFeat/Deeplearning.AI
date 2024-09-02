@@ -41,7 +41,7 @@ public:
 	~d_NetTrainer();
 	d_NetTrainParameters GetTrainParams();
 	d_NetCache GetCache();
-	d_NetProfiler GetProfiler() const;
+	const d_NetProfiler *GetProfiler() const;
 	Net *network;
 	d_Matrix d_trainLabels;
 	void BuildVisualization(const Eigen::MatrixXf &screen, int *buffer, int m, int k);

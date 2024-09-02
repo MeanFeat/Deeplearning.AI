@@ -201,6 +201,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='CUDA_Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='CUDA_Debug|x64'">es_core_pch.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="stdDraw.cpp" />
+    <ClCompile Include="stdMatrix.cpp" />
     <ClCompile Include="stdNet.cpp" />
     <ClCompile Include="stdNetTrainer.cpp" />
   </ItemGroup>

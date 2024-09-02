@@ -135,7 +135,7 @@ void DrawOutputToScreen(const MatrixXf &screenCoords) {
 		*pixel++ = blended.ToBit();
 	}
 }
-void UpdateDisplay(MatrixXf X, MatrixXf Y, vector<float> &h_history, vector<float> &d_history) {
+void UpdateDisplay(MatrixXf X, MatrixXf Y, vector<float> &h_history, vector<float> &d_history, const MatrixXf& screenCoords) {
 	if (globalRunning) {
 		d_trainer.Visualization((int *)backBuffer.memory, backBuffer.width, backBuffer.height, discreteOutput);
 		//DrawOutputToScreen(screenCoords);
@@ -148,7 +148,7 @@ void UpdateDisplay(MatrixXf X, MatrixXf Y, vector<float> &h_history, vector<floa
 }
 float totalTime;
 void UpdateWinTitle(int &steps, HWND window) {
-	d_NetProfiler *profiler = &d_trainer.GetProfiler();
+	const d_NetProfiler *profiler = d_trainer.GetProfiler();
 	float d_time = profiler->forwardTime + profiler->backpropTime + profiler->updateTime + profiler->calcCostTime;// +profiler->visualizationTime;
 	totalTime += d_time;
 	float avgTime = totalTime / float(steps);
@@ -192,7 +192,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Tanh,
 			Tanh,
 			Tanh });
-		//h_trainer = NetTrainer(&neural, X, Y, 1.f, 1.f, 20.f);
+		//h_trainer = NetTrainer(&neural, X, Y, 1.f, 2.f, 20.f);
 		d_neural = Net(neural);
 		d_trainer = d_NetTrainer(&d_neural, X, Y, 1.f, 2.f, 20.f);
 		startTime = clock();
@@ -214,7 +214,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 				UpdateHistory(d_history, d_trainer.GetCache().cost);
 				UpdateWinTitle(steps, window);
 			}
-			UpdateDisplay(X, Y, h_history, d_history);
+			UpdateDisplay(X, Y, h_history, d_history, screenCoords);
 			Win32DisplayBufferInWindow(deviceContext, window, backBuffer);
 		}
 		DeleteDC(deviceContext);

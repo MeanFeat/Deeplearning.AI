@@ -1,3 +1,4 @@
+#pragma once
 #ifndef ES_PCH_H
 #include "windowsx.h"
 #include <Eigen/dense>

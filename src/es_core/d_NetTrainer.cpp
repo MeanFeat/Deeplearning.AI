@@ -27,8 +27,8 @@ void d_NetTrainer::RefreshHostNetwork() const {
 		network->GetParams().b[i] = to_host(trainParams.d_b[i]);
 	}
 }
-d_NetProfiler d_NetTrainer::GetProfiler() const {
-	return profiler;
+const d_NetProfiler *d_NetTrainer::GetProfiler() const {
+	return &profiler;
 }
 d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &labels, float weightScale, float learnRate, float regTerm) {
 	assert(net->GetNodeCount());

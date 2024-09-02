@@ -96,7 +96,7 @@ void PlotData(MatrixXf X, MatrixXf Y) {
 void DrawOutputToScreen() {
 	trainer.Visualization((int*)backBuffer.memory, backBuffer.width, backBuffer.height, false);
 }
-void UpdateDisplay(MatrixXf X, MatrixXf Y, vector<float> &history, vector<float> &testHistory) {
+void UpdateDisplay(MatrixXf X, MatrixXf Y, vector<float> &history, vector<float> &testHistory, const MatrixXf& screenCoords) {
 	if (globalRunning) {
 		if (drawOutput) {
 			DrawOutputToScreen();
@@ -209,7 +209,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			}
 			else {
 			}
-			UpdateDisplay(X, Y, history, testHistory);
+			UpdateDisplay(X, Y, history, testHistory, screenCoords);
 			UpdatePrediction();
 			Win32DisplayBufferInWindow(deviceContext, window, backBuffer);
 			UpdateWinTitle(steps, window);
