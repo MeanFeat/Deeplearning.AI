@@ -60,7 +60,6 @@ void d_set_db(d_Matrix *dst, const d_Matrix *d_dZ, float coefficient);
 void d_updateParameterADAM(d_Matrix * dst, const d_Matrix *d_derivative, const d_Matrix *d_momentum, const d_Matrix *d_momentumSqr, float learnRate);
 void d_updateParameter(d_Matrix * dst, const d_Matrix * d_derivative, float learnRate);
 void d_calcCost(float *dst, const d_Matrix* d_err, const std::vector<d_Matrix>* d_modelWeights, const  float regMult, const  float coeff, const  float trainLabelCount);
-void d_drawPixels(int * buffer, uint m, uint k, const float *vals, bool discrete);
 
 inline __device__ float _set_elem(float a, const float b) {
 	return b;

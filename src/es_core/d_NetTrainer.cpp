@@ -83,16 +83,6 @@ void d_NetTrainer::BuildVisualization(const MatrixXf &screen, int * buffer, cons
 		d_VisualA.emplace_back(trainParams.d_W[i].rows(), d_VisualA[i].cols());
 	}
 }
-void d_NetTrainer::Visualization(int *buffer, const int m, const int k, const bool discrete) {
-	d_profile(start, stop, &profiler.visualizationTime,
-		for (int i = 0; i < network->GetDepth(); ++i) {
-			d_forwardLayer(&d_VisualA[i + 1], &trainParams.d_W[i], &d_VisualA[i], &trainParams.d_b[i]);
-			d_activate(&d_VisualA[i + 1], network->GetParams().layerActivations[i]);
-		}
-	d_drawPixels(d_Buffer, m, k, d_VisualA.back().d_data(), discrete);
-	d_check(cudaMemcpyAsync(buffer, d_Buffer, m*k * sizeof(int), cudaMemcpyDeviceToHost, cuda_stream));
-	); //d_profile
-}
 void d_NetTrainer::ForwardTrain() {
 	for (int i = 0; i < network->GetDepth(); ++i) {
 		d_forwardLayer(&cache.d_A[i + 1], &trainParams.d_W[i], &cache.d_A[i], &trainParams.d_b[i]);

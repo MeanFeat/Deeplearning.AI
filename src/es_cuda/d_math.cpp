@@ -1,5 +1,4 @@
 #include "d_math.h"
-#include "color.h"
 
 using namespace std;
 __device__ ptrFunc d_pfAdd = __fadd_rn;
@@ -211,43 +210,6 @@ void d_forwardLayer(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_last, 
 	const uint k = d_last->cols();
 	d_mult(dst, d_W, d_last);
 	add_row_broad_Kernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), dst->d_data(), d_bias->d_data(), m, k);
-	d_catchErr();
-}
-__global__
-void drawPixels_Kernel(int *buffer, const uint m, const float* vals, const bool discrete, const Color neg, const Color pos) {
-	const uint row = GetRow();
-	const uint col = GetCol();
-	const float percent = vals[col * m + row];
-	if (discrete) {
-		if (percent > 0.f) {
-			buffer[col * m + row] = ((pos.r << 16) | ((pos.g << 8) | pos.b));
-		}
-		else {
-			buffer[col * m + row] = ((neg.r << 16) | ((neg.g << 8) | neg.b));
-		}
-	}
-	else {
-		if (percent > 0.) {
-			const unsigned char r = unsigned char(float(255) + (percent*(float(pos.r) - float(255))));
-			const unsigned char g = unsigned char(float(255) + (percent*(float(pos.g) - float(255))));
-			const unsigned char b = unsigned char(float(255) + (percent*(float(pos.b) - float(255))));
-			//unsigned char a = unsigned char(float(255) + (percent*(float(pos.a) - float(255))));
-			buffer[col * m + row] = ((r << 16) | ((g << 8) | b));
-		}
-		else {
-			const unsigned char r = unsigned char(float(255) + (-percent * (float(neg.r) - float(255))));
-			const unsigned char g = unsigned char(float(255) + (-percent * (float(neg.g) - float(255))));
-			const unsigned char b = unsigned char(float(255) + (-percent * (float(neg.b) - float(255))));
-			//unsigned char a = unsigned char(float(255) + (-percent*(float(neg.a) - float(255))));
-			buffer[col * m + row] = ((r << 16) | ((g << 8) | b));
-		}
-	}
-}
-void d_drawPixels(int *buffer, const uint m, const uint k, const float* vals, const bool discrete) {
-	const Color pos = Color(100, 167, 211, 255);
-	const Color neg = Color(255, 184, 113, 255);
-	drawPixels_Kernel << <dimGrid(m, k), dimBlock() >> >
-		(buffer, m, vals, discrete, neg, pos);
 	d_catchErr();
 }
 __global__
