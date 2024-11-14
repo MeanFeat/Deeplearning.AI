@@ -45,7 +45,6 @@ public:
 	Net *network;
 	d_Matrix d_trainLabels;
 	void BuildVisualization(const Eigen::MatrixXf &screen, int *buffer, int m, int k);
-	void Visualization(int *buffer, int m, int k, bool discrete);
 	void RefreshHostNetwork() const;
 	void TrainSingleEpoch();
 	float GetCost() {
@@ -63,9 +62,17 @@ public:
 	inline void ModifyLearningRate(const float m) {
 		trainParams.learnMult = max(FLT_EPSILON, trainParams.learnMult + (m * trainParams.learnCoeff));
 	}
+	inline void SetLearningRate(const float rate)
+	{
+		trainParams.learnRate = rate;
+	}
 	inline void ModifyRegTerm(const float m) {
 		trainParams.regMod = max(FLT_EPSILON, trainParams.regMod + (m * trainParams.learnCoeff));
 	}
+	inline void SetRegTerm(const float term)
+    {
+        trainParams.regTerm = term;
+    }
 	unsigned int GetTrainExamplesCount() const {
 		return trainParams.trainExamplesCount;
 	}

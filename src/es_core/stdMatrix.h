@@ -1,6 +1,6 @@
 #pragma once
 #include "es_core_pch.h"
-
+using namespace std;
 typedef Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic > MatrixDynamic;
 namespace Eigen {
 	template<class Matrix>

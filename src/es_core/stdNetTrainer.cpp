@@ -88,8 +88,18 @@ void NetTrainer::ModifyLearningRate(const float m) {
 	trainParams.learningRate = max(0.001f, trainParams.learningRate + m);
 }
 
+void NetTrainer::SetLearningRate(const float rate)
+{
+	trainParams.learningRate = rate;
+}
+
 void NetTrainer::ModifyRegTerm(const float m) {
 	trainParams.regTerm = max(FLT_EPSILON, trainParams.regTerm + m);
+}
+
+void NetTrainer::SetRegTerm(const float term)
+{
+	trainParams.regTerm = term;
 }
 
 Eigen::MatrixXf NetTrainer::BackSigmoid(const Eigen::MatrixXf &wZ, const int index) const {

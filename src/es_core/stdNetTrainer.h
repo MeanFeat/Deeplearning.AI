@@ -37,7 +37,9 @@ public:
 	void BackwardPropagation();
 	void BuildDropoutMask();
 	void ModifyLearningRate(float m);
+	void SetLearningRate(float rate);
 	void ModifyRegTerm(float m);
+	void SetRegTerm(float term);
 	void UpdateParameters() const;
 	void UpdateParametersAdam();
 	void TrainSingleEpoch();
