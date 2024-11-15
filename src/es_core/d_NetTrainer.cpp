@@ -56,7 +56,7 @@ d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &label
 	trainParams.learnCoeff = 1.f / float(network->GetNodeCount());
 	trainParams.learnMult = trainParams.learnRate*trainParams.learnCoeff;
 	trainParams.regTerm = regTerm;
-	trainParams.regMod = 1.f;//trainParams.regTerm / float(network->GetNodeCount());
+	trainParams.regMod = trainParams.regTerm / float(network->GetNodeCount());
 	trainParams.regMult = float(trainParams.regTerm * trainParams.learnCoeff);
 	for (int h = 1; h < (int)network->GetDepth() + 1; ++h) {
 		AddLayer((int)network->GetParams().layerSizes[h], (int)network->GetParams().layerSizes[h - 1]);
