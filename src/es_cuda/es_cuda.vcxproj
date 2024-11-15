@@ -53,12 +53,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>..\common;..\es_core;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\..\..\eigen;</IncludePath>
-    <IntDir>$(SolutionDir)\intermediate\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)\intermediate\$(Configuration)\$(ProjectName)\</IntDir>
     <OutDir>$(SolutionDir)\bin\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>..\common;..\es_core;$(VC_IncludePath);$(WindowsSDK_IncludePath);..\..\..\eigen;</IncludePath>
-    <IntDir>$(SolutionDir)\intermediate\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)\intermediate\$(Configuration)\$(ProjectName)\</IntDir>
     <OutDir>$(SolutionDir)\bin\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

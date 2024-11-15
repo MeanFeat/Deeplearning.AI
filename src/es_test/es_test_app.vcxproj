@@ -60,7 +60,7 @@
     <ReferencePath>$(ReferencePath)</ReferencePath>
     <IncludePath>C:\GameDev\CUDA\common\inc;..\..\..\eigen;..\es_core;..\es_cuda;..\common;$(IncludePath);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.5\include</IncludePath>
     <LibraryPath>..\..\x64\Debug\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
-    <IntDir>$(SolutionDir)\intermediate\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)\intermediate\$(Configuration)\$(ProjectName)\</IntDir>
     <OutDir>$(SolutionDir)\bin\$(Configuration)\</OutDir>
     <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
@@ -68,7 +68,7 @@
     <ReferencePath>$(ReferencePath)</ReferencePath>
     <IncludePath>C:\GameDev\CUDA\common\inc;..\..\..\eigen;..\es_core;..\es_cuda;..\common;$(IncludePath);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.5\include</IncludePath>
     <LibraryPath>..\..\x64\Release\;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64</LibraryPath>
-    <IntDir>$(SolutionDir)\intermediate\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)\intermediate\$(Configuration)\$(ProjectName)\</IntDir>
     <OutDir>$(SolutionDir)\bin\$(Configuration)\</OutDir>
     <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
