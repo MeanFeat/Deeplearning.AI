@@ -402,6 +402,44 @@ void d_set_db(d_Matrix* dst, const d_Matrix* d_dZ, const float coefficient) {
 }
 #define BETA1 0.9f
 #define BETA2 (1.f - FLT_EPSILON)
+#if 1
+__global__
+void updateParameterADAM_Kernel(float *dst, const uint N, const float *d_derivative, float *d_momentum, float *d_momentumSqr, const float learn, const uint k) {
+	extern __shared__ float s_data[];
+	float *s_derivative = s_data;
+	float *s_momentum = s_derivative + (blockDim.x * blockDim.y);
+	float *s_momentumSqr = s_momentum + (blockDim.x * blockDim.y);
+
+	const uint row = GetRow();
+	const uint col = GetCol();
+	const uint tid = row * k + col;
+	
+	const uint local_tid = threadIdx.y * blockDim.x + threadIdx.x;
+
+	if (tid < N) {
+		s_derivative[local_tid] = d_derivative[tid];
+		s_momentum[local_tid] = d_momentum[tid];
+		s_momentumSqr[local_tid] = d_momentumSqr[tid];
+
+		__syncthreads(); 
+
+		s_momentum[local_tid] = BETA1 * s_momentum[local_tid] + (1.f - BETA1) * s_derivative[local_tid];
+		s_momentumSqr[local_tid] = BETA2 * s_momentumSqr[local_tid] + (1.f - BETA2) * (s_derivative[local_tid] * s_derivative[local_tid]) ;
+		dst[tid] -= learn * (s_momentum[local_tid] / (1.f - (BETA1 * BETA1)) / (sqrtf(s_momentumSqr[local_tid] / (1.f - (BETA2 * BETA2))) + FLT_EPSILON));
+	
+		d_momentum[tid] = s_momentum[local_tid];
+		d_momentumSqr[tid] = s_momentumSqr[local_tid];
+	}
+}
+void d_updateParameterADAM(d_Matrix* dst, const d_Matrix* d_derivative, const d_Matrix* d_momentum, const d_Matrix* d_momentumSqr, const float learnRate) {
+	const uint m = dst->rows();
+	const uint k = dst->cols();
+	size_t sharedMemSize = (dimBlock().x * dimBlock().y * sizeof(float)) * 3;
+	updateParameterADAM_Kernel << <dimGrid(m, k), dimBlock(), sharedMemSize>> >
+		(dst->d_data(), dst->size(), d_derivative->d_data(), d_momentum->d_data(), d_momentumSqr->d_data(), learnRate, k);
+	d_catchErr();
+}
+#else
 __global__
 void updateParameterADAM_Kernel(float *dst, const uint N, const float *d_derivative, float *d_momentum, float *d_momentumSqr, const float learn, const uint k) {
 	const uint row = GetRow();
@@ -420,6 +458,7 @@ void d_updateParameterADAM(d_Matrix* dst, const d_Matrix* d_derivative, const d_
 		(dst->d_data(), dst->size(), d_derivative->d_data(), d_momentum->d_data(), d_momentumSqr->d_data(), learnRate, k);
 	d_catchErr();
 }
+#endif
 __global__
 void updateParameter_Kernel(float *dst, const uint N, const float *d_derivative, const float learn) {
 	const uint tid = blockIdx.x;
