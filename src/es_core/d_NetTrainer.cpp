@@ -4,11 +4,11 @@ using namespace Eigen;
 using namespace std;
 static cudaStream_t cuda_stream;
 cudaEvent_t start, stop;
-d_Matrix to_device(MatrixXf matrix) {
+d_Matrix d_NetTrainer::to_device(MatrixXf matrix) {
 	d_mathInit();
 	return d_Matrix(matrix.data(), int(matrix.rows()), int(matrix.cols()));
 }
-MatrixXf to_host(d_Matrix d_matrix) {
+MatrixXf d_NetTrainer::to_host(d_Matrix d_matrix) {
 	MatrixXf out = MatrixXf(d_matrix.rows(), d_matrix.cols());
 	d_check(cudaMemcpyAsync(out.data(), d_matrix.d_data(), d_matrix.memSize(), cudaMemcpyDeviceToHost));
 	return out;
@@ -82,11 +82,13 @@ void d_NetTrainer::ForwardTrain() {
 		d_transpose(&cache.d_AT[i + 1], &cache.d_A[i + 1]);
 	}
 }
-float d_NetTrainer::CalcCost(const d_Matrix& Input) const {
+float d_NetTrainer::CalcCost(const d_Matrix& Test, const d_Matrix& Source) const {
 	float *d_cost;
 	float cost;
 	d_check(cudaMalloc(&d_cost, sizeof(float)));
-	d_calcCost(d_cost, &Input, &trainParams.d_W, GetRegMultiplier(), GetCoeff(), float(trainParams.trainExamplesCount)); d_catchErr();
+	d_Matrix Error = Test;
+	d_subtract_elem(&Error, Source, d_trainLabels);
+	d_calcCost(d_cost, &Error, &trainParams.d_W, GetRegMultiplier(), GetCoeff(), float(trainParams.trainExamplesCount)); d_catchErr();
 	d_check(cudaMemcpyAsync(&cost, d_cost, sizeof(float), cudaMemcpyDeviceToHost));
 	return cost;
 }
