@@ -87,7 +87,7 @@ float d_NetTrainer::CalcCost(const d_Matrix& Test, const d_Matrix& Source) const
 	float cost;
 	d_check(cudaMalloc(&d_cost, sizeof(float)));
 	d_Matrix Error = Test;
-	d_subtract_elem(&Error, Source, d_trainLabels);
+	d_subtract_elem(&Error, Test, Source);
 	d_calcCost(d_cost, &Error, &trainParams.d_W, GetRegMultiplier(), GetCoeff(), float(trainParams.trainExamplesCount)); d_catchErr();
 	d_check(cudaMemcpyAsync(&cost, d_cost, sizeof(float), cudaMemcpyDeviceToHost));
 	return cost;
