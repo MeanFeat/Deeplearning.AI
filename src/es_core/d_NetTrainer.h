@@ -88,8 +88,6 @@ private:
 	d_NetTrainDerivatives derivative;
 	d_NetTrainDerivatives momentum;
 	d_NetTrainDerivatives momentumSqr;
-	int *d_Buffer;
-	std::vector<d_Matrix> d_VisualA;
 	d_NetProfiler profiler;
 	void AddLayer(int A, int B);
 	void UpdateParameters();

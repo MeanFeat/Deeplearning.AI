@@ -13,7 +13,7 @@ MatrixXf to_host(d_Matrix d_matrix) {
 	d_check(cudaMemcpyAsync(out.data(), d_matrix.d_data(), d_matrix.memSize(), cudaMemcpyDeviceToHost));
 	return out;
 }
-d_NetTrainer::d_NetTrainer(): network(nullptr), cache(), trainParams(), d_Buffer(nullptr), profiler() {}
+d_NetTrainer::d_NetTrainer(): network(nullptr), cache(), trainParams(), profiler() {}
 d_NetTrainer::~d_NetTrainer() {}
 d_NetTrainParameters d_NetTrainer::GetTrainParams() {
 	return trainParams;
@@ -74,14 +74,6 @@ void d_NetTrainer::AddLayer(int A, int B) {
 	momentum.d_db.emplace_back(A, 1);
 	momentumSqr.d_dW.emplace_back(A, B);
 	momentumSqr.d_db.emplace_back(A, 1);
-}
-void d_NetTrainer::BuildVisualization(const MatrixXf &screen, int * buffer, const int m, const int k) {
-	const int size = m*k;
-	d_check(cudaMalloc(&d_Buffer, size * sizeof(int)));
-	d_VisualA.push_back(to_device(screen));
-	for (int i = 0; i < network->GetDepth(); ++i) {
-		d_VisualA.emplace_back(trainParams.d_W[i].rows(), d_VisualA[i].cols());
-	}
 }
 void d_NetTrainer::ForwardTrain() {
 	for (int i = 0; i < network->GetDepth(); ++i) {
