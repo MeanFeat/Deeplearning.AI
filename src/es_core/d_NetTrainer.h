@@ -3,7 +3,7 @@
 #include "stdNet.h"
 #include "d_Matrix.h"
 #include "d_math.h"
-
+using namespace Eigen;
 struct d_NetTrainParameters {
 	float coefficient;
 	float learnCoeff;
@@ -39,6 +39,8 @@ public:
 	d_NetTrainer();
 	d_NetTrainer(Net *net, const Eigen::MatrixXf &data, const Eigen::MatrixXf &labels, float weightScale, float learnRate, float regTerm);
 	~d_NetTrainer();
+	static d_Matrix to_device(MatrixXf matrix);
+	static MatrixXf to_host(d_Matrix d_matrix);
 	d_NetTrainParameters GetTrainParams();
 	d_NetCache GetCache();
 	const d_NetProfiler *GetProfiler() const;
@@ -48,7 +50,7 @@ public:
 	void Visualization(int *buffer, int m, int k, bool discrete);
 	void RefreshHostNetwork() const;
 	void TrainSingleEpoch();
-	float CalcCost(const d_Matrix& Input) const;
+	float CalcCost(const d_Matrix& Test, const d_Matrix& Source) const;
 	d_Matrix Forward(d_Matrix Input) const;
 	float GetCost() {
 		return GetCache().cost;
