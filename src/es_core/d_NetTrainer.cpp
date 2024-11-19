@@ -92,6 +92,14 @@ float d_NetTrainer::CalcCost(const d_Matrix& Test, const d_Matrix& Source) const
 	d_check(cudaMemcpyAsync(&cost, d_cost, sizeof(float), cudaMemcpyDeviceToHost));
 	return cost;
 }
+d_Matrix d_NetTrainer::Forward(d_Matrix Input) const
+{
+	for (int i = 0; i < network->GetDepth(); ++i) {
+		d_forwardLayer(&Input, &trainParams.d_W[i], &Input, &trainParams.d_b[i]);
+		d_activate(&Input, network->GetParams().layerActivations[i]);
+	}
+	return Input;
+}
 void d_NetTrainer::CalcCost() {
 	d_calcCost(cache.d_cost, &cache.d_dZ.back(),
 		&trainParams.d_W, GetRegMultiplier(), GetCoeff(), float(trainParams.trainExamplesCount)); d_catchErr();

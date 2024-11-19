@@ -46,7 +46,6 @@ public:
 	const d_NetProfiler *GetProfiler() const;
 	Net *network;
 	d_Matrix d_trainLabels;
-	void BuildVisualization(const Eigen::MatrixXf &screen, int *buffer, int m, int k);
 	void RefreshHostNetwork() const;
 	void TrainSingleEpoch();
 	float CalcCost(const d_Matrix& Test, const d_Matrix& Source) const;
