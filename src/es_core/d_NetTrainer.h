@@ -47,11 +47,10 @@ public:
 	void BuildVisualization(const Eigen::MatrixXf &screen, int *buffer, int m, int k);
 	void RefreshHostNetwork() const;
 	void TrainSingleEpoch();
+	float CalcCost(const d_Matrix& Input) const;
+	d_Matrix Forward(d_Matrix Input) const;
 	float GetCost() {
 		return GetCache().cost;
-	}
-	void SetCost(const float c) {
-		cache.cost = c;
 	}
 	float GetCoeff() const {
 		return trainParams.coefficient;
@@ -79,10 +78,10 @@ public:
 	d_NetTrainDerivatives GetDerivatives() {
 		return derivative;
 	}
-	void BackwardPropagation();
-	void CalcCost();
 	void ForwardTrain();
+	void BackwardPropagation();
 private:
+	void CalcCost();
 	d_NetCache cache;
 	d_NetTrainParameters trainParams;
 	d_NetTrainDerivatives derivative;

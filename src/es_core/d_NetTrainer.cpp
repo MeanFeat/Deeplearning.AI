@@ -82,6 +82,14 @@ void d_NetTrainer::ForwardTrain() {
 		d_transpose(&cache.d_AT[i + 1], &cache.d_A[i + 1]);
 	}
 }
+float d_NetTrainer::CalcCost(const d_Matrix& Input) const {
+	float *d_cost;
+	float cost;
+	d_check(cudaMalloc(&d_cost, sizeof(float)));
+	d_calcCost(d_cost, &Input, &trainParams.d_W, GetRegMultiplier(), GetCoeff(), float(trainParams.trainExamplesCount)); d_catchErr();
+	d_check(cudaMemcpyAsync(&cost, d_cost, sizeof(float), cudaMemcpyDeviceToHost));
+	return cost;
+}
 void d_NetTrainer::CalcCost() {
 	d_calcCost(cache.d_cost, &cache.d_dZ.back(),
 		&trainParams.d_W, GetRegMultiplier(), GetCoeff(), float(trainParams.trainExamplesCount)); d_catchErr();
