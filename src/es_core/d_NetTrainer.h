@@ -50,8 +50,8 @@ public:
 	void Visualization(int *buffer, int m, int k, bool discrete);
 	void RefreshHostNetwork() const;
 	void TrainSingleEpoch();
-	float CalcCost(const d_Matrix& Test, const d_Matrix& Source) const;
-	d_Matrix Forward(d_Matrix Input) const;
+	d_Matrix Forward(const d_Matrix &Input) const;
+	float CalcCost(const d_Matrix& Test, const d_Matrix& Labels) const;
 	float GetCost() {
 		return GetCache().cost;
 	}

@@ -93,13 +93,15 @@ void d_NetTrainer::Visualization(int *buffer, const int m, const int k, const bo
 	d_check(cudaMemcpyAsync(buffer, d_Buffer, m*k * sizeof(int), cudaMemcpyDeviceToHost, cuda_stream));
 	); //d_profile
 }
-d_Matrix d_NetTrainer::Forward(d_Matrix Input) const
-{
+d_Matrix d_NetTrainer::Forward(const d_Matrix &Input) const {
+	d_Matrix PreviousLayer = Input;
 	for (int i = 0; i < network->GetDepth(); ++i) {
-		d_forwardLayer(&Input, &trainParams.d_W[i], &Input, &trainParams.d_b[i]);
-		d_activate(&Input, network->GetParams().layerActivations[i]);
+		d_Matrix Layer(trainParams.d_W[i].rows(), PreviousLayer.cols() );
+		d_forwardLayer(&Layer, &trainParams.d_W[i], &PreviousLayer, &trainParams.d_b[i]);
+		d_activate(&Layer, network->GetParams().layerActivations[i]);
+		PreviousLayer = Layer;
 	}
-	return Input;
+	return PreviousLayer;
 }
 void d_NetTrainer::ForwardTrain() {
 	for (int i = 0; i < network->GetDepth(); ++i) {
@@ -108,12 +110,12 @@ void d_NetTrainer::ForwardTrain() {
 		d_transpose(&cache.d_AT[i + 1], &cache.d_A[i + 1]);
 	}
 }
-float d_NetTrainer::CalcCost(const d_Matrix& Test, const d_Matrix& Source) const {
+float d_NetTrainer::CalcCost(const d_Matrix& Test, const d_Matrix& Labels) const {
 	float *d_cost;
 	float cost;
 	d_check(cudaMalloc(&d_cost, sizeof(float)));
 	d_Matrix Error = Test;
-	d_subtract_elem(&Error, Source, d_trainLabels);
+	d_subtract_elem(&Error, Test, Labels);
 	d_calcCost(d_cost, &Error, &trainParams.d_W, GetRegMultiplier(), GetCoeff(), float(trainParams.trainExamplesCount)); d_catchErr();
 	d_check(cudaMemcpyAsync(&cost, d_cost, sizeof(float), cudaMemcpyDeviceToHost));
 	return cost;
