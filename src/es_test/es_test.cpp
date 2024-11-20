@@ -232,6 +232,27 @@ testResult testBackProp(Net &nn, const int dataCount) {
 	const MatrixXf test = d_NetTrainer::to_host(d_trainer.GetDerivatives().d_dW[0]);
 	return GetOutcome(control.sum(), test.sum(), dataCount * nn.GetNodeCount() * thresholdMultiplier);
 }
+testResult testCalcCost(Net &nn, const int dataCount) {
+	const testData test = testData(nn.GetOutputSize(), dataCount);
+	const testData labels = testData(nn.GetOutputSize(), dataCount);
+	nn.RandomInit(0.15f);
+	NetTrainer h_trainer = NetTrainer(&nn, test.host, labels.host, 1.f, 0.25f, 0.f);
+	const float control = h_trainer.CalcCost(test.host, labels.host);
+	d_NetTrainer d_trainer = d_NetTrainer(&nn, test.host, labels.host, 1.f, 0.25f, 0.f);
+	const float result = d_trainer.CalcCost(test.device, labels.device);
+	return GetOutcome(control, result, dataCount * thresholdMultiplier);
+}
+testResult testForward(Net &nn, const int dataCount) {
+	const testData data = testData(nn.GetInputSize(), dataCount);
+	const testData labels = testData(nn.GetOutputSize(), dataCount);
+	nn.RandomInit(0.15f);
+	NetTrainer h_trainer = NetTrainer(&nn, data.host, labels.host, 1.f, 0.25f, 0.f);
+	const d_NetTrainer d_trainer = d_NetTrainer(&nn, data.host, labels.host, 1.f, 0.25f, 0.f);
+	const MatrixXf control = nn.ForwardPropagation(data.host);
+	const d_Matrix result = d_trainer.Forward(data.device);
+	const MatrixXf test = d_NetTrainer::to_host(result);
+	return GetOutcome(control.sum(), test.sum(), dataCount * nn.GetNodeCount() * thresholdMultiplier);
+}
 testResult testForwardTrain(Net &nn, const int dataCount) {
 	const MatrixXf data = MatrixXf::Random(nn.GetInputSize(), dataCount);
 	const MatrixXf labels = MatrixXf::Random(nn.GetOutputSize(), dataCount);

@@ -82,7 +82,7 @@ void d_NetTrainer::ForwardTrain() {
 		d_transpose(&cache.d_AT[i + 1], &cache.d_A[i + 1]);
 	}
 }
-float d_NetTrainer::CalcCost(const d_Matrix& Test, const d_Matrix& Source) const {
+float d_NetTrainer::CalcCost(const d_Matrix& Test, const d_Matrix& Labels) const {
 	float *d_cost;
 	float cost;
 	d_check(cudaMalloc(&d_cost, sizeof(float)));

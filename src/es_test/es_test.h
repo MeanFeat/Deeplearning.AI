@@ -56,4 +56,6 @@ testResult testReLU(int m, int k);
 testResult testLReLU(int m, int k);
 testResult testSine(int m, int k);
 testResult testBackProp(Net &nn, int dataCount);
+testResult testCalcCost(Net &nn, int dataCount);
+testResult testForward(Net &nn, int dataCount);
 testResult testForwardTrain(Net &nn, int dataCount);
