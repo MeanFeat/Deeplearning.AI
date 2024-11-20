@@ -75,6 +75,16 @@ void d_NetTrainer::AddLayer(int A, int B) {
 	momentumSqr.d_dW.emplace_back(A, B);
 	momentumSqr.d_db.emplace_back(A, 1);
 }
+d_Matrix d_NetTrainer::Forward(const d_Matrix &Input) const {
+	d_Matrix PreviousLayer = Input;
+	for (int i = 0; i < network->GetDepth(); ++i) {
+		d_Matrix Layer(trainParams.d_W[i].rows(), PreviousLayer.cols() );
+		d_forwardLayer(&Layer, &trainParams.d_W[i], &PreviousLayer, &trainParams.d_b[i]);
+		d_activate(&Layer, network->GetParams().layerActivations[i]);
+		PreviousLayer = Layer;
+	}
+	return PreviousLayer;
+}
 void d_NetTrainer::ForwardTrain() {
 	for (int i = 0; i < network->GetDepth(); ++i) {
 		d_forwardLayer(&cache.d_A[i + 1], &trainParams.d_W[i], &cache.d_A[i], &trainParams.d_b[i]);
@@ -87,18 +97,10 @@ float d_NetTrainer::CalcCost(const d_Matrix& Test, const d_Matrix& Labels) const
 	float cost;
 	d_check(cudaMalloc(&d_cost, sizeof(float)));
 	d_Matrix Error = Test;
-	d_subtract_elem(&Error, Test, Source);
+	d_subtract_elem(&Error, Test, Labels);
 	d_calcCost(d_cost, &Error, &trainParams.d_W, GetRegMultiplier(), GetCoeff(), float(trainParams.trainExamplesCount)); d_catchErr();
 	d_check(cudaMemcpyAsync(&cost, d_cost, sizeof(float), cudaMemcpyDeviceToHost));
 	return cost;
-}
-d_Matrix d_NetTrainer::Forward(d_Matrix Input) const
-{
-	for (int i = 0; i < network->GetDepth(); ++i) {
-		d_forwardLayer(&Input, &trainParams.d_W[i], &Input, &trainParams.d_b[i]);
-		d_activate(&Input, network->GetParams().layerActivations[i]);
-	}
-	return Input;
 }
 void d_NetTrainer::CalcCost() {
 	d_calcCost(cache.d_cost, &cache.d_dZ.back(),
