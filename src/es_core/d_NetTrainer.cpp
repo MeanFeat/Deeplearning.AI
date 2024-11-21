@@ -13,7 +13,7 @@ MatrixXf d_NetTrainer::to_host(d_Matrix d_matrix) {
 	d_check(cudaMemcpyAsync(out.data(), d_matrix.d_data(), d_matrix.memSize(), cudaMemcpyDeviceToHost));
 	return out;
 }
-d_NetTrainer::d_NetTrainer(): network(nullptr), cache(), trainParams(), d_Buffer(nullptr), profiler() {}
+d_NetTrainer::d_NetTrainer(): network(nullptr), cache(), trainParams(), profiler() {}
 d_NetTrainer::~d_NetTrainer()
 {
 	auto FreeLambda = [](std::vector<d_Matrix> &Array)
@@ -29,10 +29,6 @@ d_NetTrainer::~d_NetTrainer()
 	FreeLambda(cache.d_AT);
 	FreeLambda(cache.d_dZ);
 	d_check(cudaFree(cache.d_cost));
-	if (d_Buffer != nullptr)
-	{
-		d_check(cudaFree(d_Buffer));
-	}
 }
 d_NetTrainParameters &d_NetTrainer::GetTrainParams(){
 	return trainParams;
