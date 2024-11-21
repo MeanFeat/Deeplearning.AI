@@ -13,7 +13,7 @@ typedef unsigned int uint;
 
 #define BLOCK_SIZE 16
 #define LRELU_LEAK 0.01f
-
+#define VOID_PTR(t) reinterpret_cast<void**>(t)
 using ptrFunc = float(*)(float, float);
 
 void d_mathInit();

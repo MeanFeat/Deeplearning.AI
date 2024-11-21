@@ -39,10 +39,11 @@ public:
 	d_NetTrainer();
 	d_NetTrainer(Net *net, const Eigen::MatrixXf &data, const Eigen::MatrixXf &labels, float weightScale, float learnRate, float regTerm);
 	~d_NetTrainer();
+	//TODO: Make copy constructor
 	static d_Matrix to_device(MatrixXf matrix);
 	static MatrixXf to_host(d_Matrix d_matrix);
-	d_NetTrainParameters GetTrainParams();
-	d_NetCache GetCache();
+	d_NetTrainParameters &GetTrainParams();
+	d_NetCache &GetCache();
 	const d_NetProfiler *GetProfiler() const;
 	Net *network;
 	d_Matrix d_trainLabels;
@@ -50,7 +51,8 @@ public:
 	void TrainSingleEpoch();
 	d_Matrix Forward(const d_Matrix &Input) const;
 	float CalcCost(const d_Matrix& Test, const d_Matrix& Labels) const;
-	float GetCost() {
+	float GetCost()
+	{
 		return GetCache().cost;
 	}
 	float GetCoeff() const {
