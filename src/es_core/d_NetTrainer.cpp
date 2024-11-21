@@ -28,6 +28,12 @@ d_NetTrainer::~d_NetTrainer()
 	FreeLambda(cache.d_A);
 	FreeLambda(cache.d_AT);
 	FreeLambda(cache.d_dZ);
+	FreeLambda(derivative.d_dW);
+	FreeLambda(derivative.d_db);
+	FreeLambda(momentum.d_dW);
+	FreeLambda(momentum.d_db);
+	FreeLambda(momentumSqr.d_dW);
+	FreeLambda(momentumSqr.d_db);
 	d_check(cudaFree(cache.d_cost));
 }
 d_NetTrainParameters &d_NetTrainer::GetTrainParams(){
