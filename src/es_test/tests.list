@@ -11,7 +11,7 @@ arguments : [
 category : Matrix
 header : Multiply_Transpose_Right
 prefix : mmtr
-functionName : testTransposeRight
+functionName : testTransposeRight 
 arguments : [
 	9999, 85, 11111
 	100, 100, 100
@@ -189,6 +189,30 @@ arguments : [
 	1,1
 ] 
 category : NeuralNet
+header : Feed_Forward
+prefix : fft
+functionName : testForward
+arguments : [
+	Net(555, { 555,354 }, 255, {ReLU, Tanh, Sigmoid }), 555
+	Net(55, { 65,55,35 }, 25, {Tanh,ReLU, Tanh, Sigmoid }), 555
+	Net(15, { 25,15 }, 15, {LReLU, ReLU, Tanh }), 555
+	Net(11, { 19,5 }, 2, {Tanh, Tanh, Tanh }), 555
+	Net(11, { 9,5 }, 2, {Sine, Tanh, Sigmoid }), 555
+	Net(5, { 5,5 }, 1, {Tanh, Tanh, Tanh }), 555
+]
+category : NeuralNet
+header : Calc_Cost
+prefix : cst
+functionName : testCalcCost
+arguments : [
+	Net(555, { 555,355 }, 255, {ReLU, Tanh, Sigmoid }), 555
+	Net(55, { 65,55,35 }, 25, {Tanh,ReLU, Tanh, Sigmoid }), 555
+	Net(15, { 25,15 }, 15, {LReLU, ReLU, Tanh }), 555
+	Net(11, { 19,5 }, 2, {Tanh, Tanh, Tanh }), 555
+	Net(11, { 9,5 }, 2, {Sine, Tanh, Sigmoid }), 555
+	Net(5, { 5,5 }, 1, {Tanh, Tanh, Tanh }), 555
+]
+category : NeuralNet
 header : Back_Prop
 prefix : bpn
 functionName : testBackProp
@@ -201,8 +225,8 @@ arguments : [
 	Net(5, { 5,5 }, 1, {Tanh, Tanh, Tanh }), 555
 ]
 category : NeuralNet
-header : Feed_Forward
-prefix : ffn
+header : Feed_Forward_Train
+prefix : fft
 functionName : testForwardTrain
 arguments : [
 	Net(555, { 555,355 }, 255, {ReLU, Tanh, Sigmoid }), 555

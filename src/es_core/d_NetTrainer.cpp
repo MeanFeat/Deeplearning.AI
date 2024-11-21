@@ -14,11 +14,30 @@ MatrixXf d_NetTrainer::to_host(d_Matrix d_matrix) {
 	return out;
 }
 d_NetTrainer::d_NetTrainer(): network(nullptr), cache(), trainParams(), d_Buffer(nullptr), profiler() {}
-d_NetTrainer::~d_NetTrainer() {}
-d_NetTrainParameters d_NetTrainer::GetTrainParams() {
+d_NetTrainer::~d_NetTrainer()
+{
+	auto FreeLambda = [](std::vector<d_Matrix> &Array)
+	{
+		for (d_Matrix &m : Array)
+		{
+			m.free();
+		}
+	};
+	FreeLambda(trainParams.d_W);
+	FreeLambda(trainParams.d_b);
+	FreeLambda(cache.d_A);
+	FreeLambda(cache.d_AT);
+	FreeLambda(cache.d_dZ);
+	d_check(cudaFree(cache.d_cost));
+	if (d_Buffer != nullptr)
+	{
+		d_check(cudaFree(d_Buffer));
+	}
+}
+d_NetTrainParameters &d_NetTrainer::GetTrainParams(){
 	return trainParams;
 }
-d_NetCache d_NetTrainer::GetCache() {
+d_NetCache &d_NetTrainer::GetCache(){
 	return cache;
 }
 void d_NetTrainer::RefreshHostNetwork() const {
@@ -40,8 +59,8 @@ d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &label
 #endif
 	cudaStreamCreate(&cuda_stream);
 	network = net;
-	cache.d_A.push_back(to_device(data));
-	cache.d_AT.push_back(to_device(data.transpose()));
+	cache.d_A.emplace_back(to_device(data));
+	cache.d_AT.emplace_back(to_device(data.transpose()));
 	d_trainLabels = to_device(labels);
 	trainParams.trainExamplesCount =  uint(data.cols());
 	trainParams.coefficient = 1.f / float(trainParams.trainExamplesCount);
@@ -49,8 +68,10 @@ d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &label
 		network->RandomInit(weightScale);
 	}
 	for (int i = 0; i < network->GetDepth(); ++i) {
-		trainParams.d_W.push_back(to_device(network->GetParams().W[i]));
-		trainParams.d_b.push_back(to_device(network->GetParams().b[i]));
+		MatrixXf& W = network->GetParams().W[i];
+		MatrixXf& b = network->GetParams().b[i];
+		trainParams.d_W.emplace_back(W.data(), int(W.rows()), int(W.cols()));
+		trainParams.d_b.emplace_back(b.data(), int(b.rows()), int(b.cols()));
 	}
 	trainParams.learnRate = learnRate;
 	trainParams.learnCoeff = 1.f / float(network->GetNodeCount());
@@ -62,7 +83,7 @@ d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &label
 		AddLayer((int)network->GetParams().layerSizes[h], (int)network->GetParams().layerSizes[h - 1]);
 	}
 	d_check(cudaMalloc(&cache.d_cost, sizeof(float)));
-	d_check(cudaMallocHost(reinterpret_cast<void**>(&cache.cost), sizeof(float)));
+	d_check(cudaMallocHost(VOID_PTR(&cache.cost), sizeof(float)));
 }
 void d_NetTrainer::AddLayer(int A, int B) {
 	cache.d_A.emplace_back(A, GetTrainExamplesCount());

@@ -1,29 +1,38 @@
-@echo off &setlocal
+@echo off
+setlocal enabledelayedexpansion
+
 IF NOT EXIST tests_cpp.generated goto Create
 IF NOT EXIST tests_unit.generated goto Create
 
-Set orig=tests.list
-Set gen=tests_cpp.generated
+Set "orig=tests.list"
+Set "gen=tests_cpp.generated"
 
-Set orig_ModTime=
-Set gen_ModTime=
+Set "orig_ModDateTime="
+Set "gen_ModDateTime="
 
-set /a Hour = Hour %% 12
-if %Hour%==0 set "Hour=12"
+:: Retrieve the modification date and time of the original file
+for /f "delims=" %%i in ('wmic datafile where name^="%cd:\=\\%\\%orig%" get lastmodified /format:list ^| find "="') do (
+    for /f "tokens=2 delims==" %%j in ("%%i") do set "orig_ModDateTime=%%j"
+)
 
-for /f %%i in ('"forfiles /m %orig% /c "cmd /c echo @ftime" "') do set orig_ModTime=%%i
-for /f %%j in ('"forfiles /m %gen% /c "cmd /c echo @ftime" "') do set gen_ModTime=%%j
+:: Retrieve the modification date and time of the generated file
+for /f "delims=" %%i in ('wmic datafile where name^="%cd:\=\\%\\%gen%" get lastmodified /format:list ^| find "="') do (
+    for /f "tokens=2 delims==" %%j in ("%%i") do set "gen_ModDateTime=%%j"
+)
 
-SET "var1=%orig_ModTime::=%"
-SET "var2=%gen_ModTime::=%"
+:: Display results for verification
+echo Original File: %orig_ModDateTime%
+echo Generated File: %gen_ModDateTime%
 
-if %var1% LSS %var2% goto Message
+:: Compare timestamps
+if "%orig_ModDateTime%" LSS "%gen_ModDateTime%" goto Message
 
 :Create
 echo Generating Files
-type nul > tests_cpp.generated 
-type nul > tests_unit.generated
-start C:\GameDev\ExpertSystems.AI\x64\Release\es_test_app.exe "-b" "C:\GameDev\ExpertSystems.AI\src\es_test\tests.list" "C:\GameDev\ExpertSystems.AI\src\es_test\tests_cpp.generated" "C:\GameDev\ExpertSystems.AI\src\es_test\tests_unit.generated"
+> tests_cpp.generated echo.
+> tests_unit.generated echo.
+start "" "C:\GameDev\ExpertSystems.AI\x64\Release\es_test_app.exe" "-b" "C:\GameDev\ExpertSystems.AI\src\es_test\tests.list" "C:\GameDev\ExpertSystems.AI\src\es_test\tests_cpp.generated" "C:\GameDev\ExpertSystems.AI\src\es_test\tests_unit.generated"
+goto End
 
 :Message
 echo The list has not been modified.

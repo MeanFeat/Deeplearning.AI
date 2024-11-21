@@ -168,13 +168,11 @@ void d_mult_lhsT(d_Matrix* dst, const d_Matrix* srcA, const d_Matrix* srcB) {
 	d_Matrix d_trans = d_Matrix(srcA->cols(), srcA->rows());
 	d_transpose(&d_trans, srcA); d_catchErr();
 	d_mult(dst, &d_trans, srcB); d_catchErr();
-	d_trans.free();
 } /* dst = srcA * srcB.T */
 void d_mult_rhsT(d_Matrix* dst, const d_Matrix *srcA, const d_Matrix *srcB) {
 	d_Matrix d_trans = d_Matrix(srcB->cols(), srcB->rows());
 	d_transpose(&d_trans, srcB); d_catchErr();
 	d_mult(dst, srcA, &d_trans); d_catchErr();
-	d_trans.free();
 }
 void d_sumMatrix(float* dst, const d_Matrix *src) {
 	if (src->size() < 99999999) {
@@ -183,17 +181,13 @@ void d_sumMatrix(float* dst, const d_Matrix *src) {
 		d_set_elem(&ones, 1.f); d_catchErr();
 		d_Matrix result = d_Matrix(1, 1);
 		d_mult(&result, &serial, &ones); d_catchErr();
-		cudaMemcpyAsync((void**)dst, result.d_data(), sizeof(float), cudaMemcpyDeviceToDevice);
-		serial.free();
-		ones.free();
-		result.free();
+		cudaMemcpyAsync(VOID_PTR(dst), result.d_data(), sizeof(float), cudaMemcpyDeviceToDevice);
 	}
 	else {
 		//recursion
 		d_Matrix r = d_Matrix(src->rows(), 1);
 		d_sumRows(&r, src);
 		d_sumMatrix(dst, &r);
-		r.free();
 	}
 }
 __global__
@@ -430,7 +424,6 @@ void d_sumRows(d_Matrix* dst, const d_Matrix* src) {
 	d_Matrix ones = d_Matrix(k, 1);
 	d_set_elem(&ones, 1.f);
 	d_mult(dst, src, &ones);
-	ones.free();
 }
 /* dst = coeff * (srcA.SumOfRows) */
 void d_set_db(d_Matrix* dst, const d_Matrix* d_dZ, const float coefficient) {
@@ -439,14 +432,34 @@ void d_set_db(d_Matrix* dst, const d_Matrix* d_dZ, const float coefficient) {
 	d_catchErr();
 }
 #define BETA1 0.9f
-#define BETA2 (1.f - FLT_EPSILON)
-#if 1
+#define BETA2 (1.f-FLT_EPSILON)
+#if 0
+__global__
+void updateParameterADAM_Kernel(float *dst, const uint N, const float *d_derivative, float *d_momentum, float *d_momentumSqr, const float learn, const uint k) {
+	const uint row = GetRow();
+	const uint col = GetCol();
+	const uint tid = row * k + col;
+	if (tid < N) {
+		d_momentum[tid] = BETA1* (d_momentum[tid]) + (1.f - BETA1) * d_derivative[tid];
+		d_momentumSqr[tid] = (BETA2 * d_momentumSqr[tid]) + ((FLT_EPSILON) * (d_derivative[tid] * d_derivative[tid]));
+		dst[tid] -= learn * (d_momentum[tid] / (1.f - (BETA1 * BETA1)) / (sqrtf(d_momentumSqr[tid] / (1.f - (BETA2 * BETA2))) + FLT_EPSILON));
+	}
+}
+void d_updateParameterADAM(d_Matrix* dst, const d_Matrix* d_derivative, const d_Matrix* d_momentum, const d_Matrix* d_momentumSqr, const float learnRate) {
+	const uint m = dst->rows();
+	const uint k = dst->cols();
+	updateParameterADAM_Kernel << <dimGrid(m, k), dimBlock() >> >
+		(dst->d_data(), dst->size(), d_derivative->d_data(), d_momentum->d_data(), d_momentumSqr->d_data(), learnRate, k);
+	d_catchErr();
+}
+#else
 __global__
 void updateParameterADAM_Kernel(float *dst, const uint N, const float *d_derivative, float *d_momentum, float *d_momentumSqr, const float learn, const uint k) {
 	extern __shared__ float s_data[];
 	float *s_derivative = s_data;
-	float *s_momentum = s_derivative + (blockDim.x * blockDim.y);
-	float *s_momentumSqr = s_momentum + (blockDim.x * blockDim.y);
+	const uint dim = (blockDim.x * blockDim.y);
+	float *s_momentum = s_derivative + dim;
+	float *s_momentumSqr = s_momentum + dim;
 
 	const uint row = GetRow();
 	const uint col = GetCol();
@@ -472,28 +485,9 @@ void updateParameterADAM_Kernel(float *dst, const uint N, const float *d_derivat
 void d_updateParameterADAM(d_Matrix* dst, const d_Matrix* d_derivative, const d_Matrix* d_momentum, const d_Matrix* d_momentumSqr, const float learnRate) {
 	const uint m = dst->rows();
 	const uint k = dst->cols();
-	size_t sharedMemSize = (dimBlock().x * dimBlock().y * sizeof(float)) * 3;
-	updateParameterADAM_Kernel << <dimGrid(m, k), dimBlock(), sharedMemSize>> >
-		(dst->d_data(), dst->size(), d_derivative->d_data(), d_momentum->d_data(), d_momentumSqr->d_data(), learnRate, k);
-	d_catchErr();
-}
-#else
-__global__
-void updateParameterADAM_Kernel(float *dst, const uint N, const float *d_derivative, float *d_momentum, float *d_momentumSqr, const float learn, const uint k) {
-	const uint row = GetRow();
-	const uint col = GetCol();
-	const uint tid = row * k + col;
-	if (tid < N) {
-		d_momentum[tid] = BETA1 * (d_momentum[tid]) + (1.f - BETA1) * d_derivative[tid];
-		d_momentumSqr[tid] = (BETA2 * d_momentumSqr[tid]) + ((1.f - BETA2) * (d_derivative[tid] * d_derivative[tid]));
-		dst[tid] -= learn * (d_momentum[tid] / (1.f - (BETA1 * BETA1)) / (sqrtf(d_momentumSqr[tid] / (1.f - (BETA2 * BETA2))) + FLT_EPSILON));
-	}
-}
-void d_updateParameterADAM(d_Matrix* dst, const d_Matrix* d_derivative, const d_Matrix* d_momentum, const d_Matrix* d_momentumSqr, const float learnRate) {
-	const uint m = dst->rows();
-	const uint k = dst->cols();
-	updateParameterADAM_Kernel << <dimGrid(m, k), dimBlock() >> >
-		(dst->d_data(), dst->size(), d_derivative->d_data(), d_momentum->d_data(), d_momentumSqr->d_data(), learnRate, k);
+	const uint dim = dimBlock().x * dimBlock().y * 3;
+	size_t sharedMemSize = dim * sizeof(float);
+	updateParameterADAM_Kernel << <dimGrid(m, k), dimBlock(), sharedMemSize>> >(dst->d_data(), dst->size(), d_derivative->d_data(), d_momentum->d_data(), d_momentumSqr->d_data(), learnRate, k);
 	d_catchErr();
 }
 #endif
@@ -531,10 +525,6 @@ void d_calcCost(float *dst, const d_Matrix* d_err, const vector<d_Matrix>* d_mod
 		d_square(&d_squared, layerWeights); d_catchErr();
 		d_sumMatrix(d_sqrSum.d_data(), &d_squared); d_catchErr();
 		d_launch_single_thread(pfAdd, d_sqrSumTotal.d_data(), d_sqrSum.d_data()); d_catchErr();
-		d_squared.free();
 	}
 	finalCost_Kernel << <1, 1 >> > (dst, d_sqrSumTotal.d_data(), regMult, trainLabelCount); d_catchErr();
-	d_sqrSumTotal.free();
-	d_sqrSum.free();
-	d_diff->free();
 }

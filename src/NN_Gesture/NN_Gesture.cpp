@@ -39,7 +39,7 @@ float mouseX = WINHALFWIDTH;
 float mouseY = WINHALFHEIGHT;
 
 Net neural;
-d_NetTrainer trainer;
+d_NetTrainer *trainer = nullptr;
 Buffer backBuffer;
 
 void RecordSample(vector<Vector2f> vec, float label) {
@@ -106,7 +106,7 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			break;
 		case 'T':
 			if (isTraining) {
-				trainer.RefreshHostNetwork();
+				trainer->RefreshHostNetwork();
 			}
 			isTraining = !isTraining;
 			break;
@@ -229,10 +229,10 @@ void UpdateWinTitle(int &steps, float &prediciton, HWND window) {
 	char s[255];
 	if (isTraining) {
 		trainingTime = ((float)(clock() - startTime)) / CLOCKS_PER_SEC;
-		sprintf_s(s, "Epoch %d || Time: %0.2f || Eps %0.2f || Cost: %0.10f || ", steps, trainingTime, float(steps) / trainingTime, trainer.GetCache().cost);
+		sprintf_s(s, "Epoch %d || Time: %0.2f || Eps %0.2f || Cost: %0.10f || ", steps, trainingTime, float(steps) / trainingTime, trainer->GetCache().cost);
 	}
 	else {
-		sprintf_s(s, "TrainingTime: %0.1f || Cost: %0.10f || Prediction: %0.10f || ", trainingTime, trainer.GetCache().cost, prediciton);
+		sprintf_s(s, "TrainingTime: %0.1f || Cost: %0.10f || Prediction: %0.10f || ", trainingTime, trainer->GetCache().cost, prediciton);
 		char prompt[255];
 		if (successFade > 0.f) {
 			sprintf_s(prompt, "Great!");
@@ -262,8 +262,8 @@ void ContainVector(vector<Vector2f> &vec, int maxSize) {
 }
 
 void UpdateHistory(vector<float> &hist) {
-	float scale = (1.f - exp(-trainer.GetCache().cost));
-	hist.push_back(min((WINHEIGHT *  scale - trainer.GetCache().cost) + backBuffer.titleOffset + 15, WINHEIGHT));
+	float scale = (1.f - exp(-trainer->GetCache().cost));
+	hist.push_back(min((WINHEIGHT *  scale - trainer->GetCache().cost) + backBuffer.titleOffset + 15, WINHEIGHT));
 	if (hist.size() >= WINWIDTH + WINWIDTH) {
 		for (int i = 1; i < (int)hist.size(); i += 2) {
 			hist.erase(hist.begin() + i);
@@ -304,7 +304,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Tanh,
 			Tanh,
 			Sigmoid });
-		trainer = d_NetTrainer(&neural, readDeltas, readLabels, 1.f, 1.25f, 0.0001f);
+		d_NetTrainer OrigTrainer(&neural, readDeltas, readLabels, 1.f, 1.25f, 0.0001f);
+		trainer = &OrigTrainer;
 		vector<float> history;
 		float h = 0.f;
 		int steps = 0;
@@ -313,7 +314,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Win32ProcessPendingMessages();
 			if (isTraining) {
 				for (int e = 0; e < 1; e++) {
-					trainer.TrainSingleEpoch();
+					trainer->TrainSingleEpoch();
 				}
 				UpdateHistory(history);
 			}

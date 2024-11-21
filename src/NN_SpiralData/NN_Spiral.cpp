@@ -17,7 +17,7 @@ Buffer backBuffer;
 Net neural;
 Net d_neural;
 NetTrainer h_trainer;
-d_NetTrainer d_trainer;
+d_NetTrainer *d_trainer = nullptr;
 global_variable float GraphZoom = 1.f;
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam) {
 	LRESULT Result = 0;
@@ -35,19 +35,19 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			break;
 		case 'W':
 			h_trainer.ModifyLearningRate(0.02f);
-			d_trainer.ModifyLearningRate(0.02f);
+			d_trainer->ModifyLearningRate(0.02f);
 			break;
 		case 'S':
 			h_trainer.ModifyLearningRate(-0.02f);
-			d_trainer.ModifyLearningRate(-0.02f);
+			d_trainer->ModifyLearningRate(-0.02f);
 			break;
 		case 'Q':
 			h_trainer.ModifyRegTerm(0.02f);
-			d_trainer.ModifyRegTerm(0.02f);
+			d_trainer->ModifyRegTerm(0.02f);
 			break;
 		case 'A':
 			h_trainer.ModifyRegTerm(-0.02f);
-			d_trainer.ModifyRegTerm(-0.02f);
+			d_trainer->ModifyRegTerm(-0.02f);
 			break;
 		case 'V':
 			plotData = !plotData;
@@ -137,7 +137,7 @@ void DrawOutputToScreen(const MatrixXf &screenCoords) {
 }
 void UpdateDisplay(MatrixXf X, MatrixXf Y, vector<float> &h_history, vector<float> &d_history, const MatrixXf& screenCoords) {
 	if (globalRunning) {
-		d_trainer.Visualization((int *)backBuffer.memory, backBuffer.width, backBuffer.height, discreteOutput);
+		d_trainer->Visualization((int *)backBuffer.memory, backBuffer.width, backBuffer.height, discreteOutput);
 		//DrawOutputToScreen(screenCoords);
 		if (plotData) {
 			PlotData(X, Y);
@@ -148,7 +148,7 @@ void UpdateDisplay(MatrixXf X, MatrixXf Y, vector<float> &h_history, vector<floa
 }
 float totalTime;
 void UpdateWinTitle(int &steps, HWND window) {
-	const d_NetProfiler *profiler = d_trainer.GetProfiler();
+	const d_NetProfiler *profiler = d_trainer->GetProfiler();
 	float d_time = profiler->forwardTime + profiler->backpropTime + profiler->updateTime + profiler->calcCostTime;// +profiler->visualizationTime;
 	totalTime += d_time;
 	float avgTime = totalTime / float(steps);
@@ -159,7 +159,7 @@ void UpdateWinTitle(int &steps, HWND window) {
 	}
 	else {
 		sprintf_s(s, "SpiralData || Epoch %d | Time: %0.2f | milliseconds %0.10f | d_Cost %0.10f  "
-			, steps++, ((float)(clock() - startTime)) / CLOCKS_PER_SEC, avgTime, d_trainer.GetCache().cost);
+			, steps++, ((float)(clock() - startTime)) / CLOCKS_PER_SEC, avgTime, d_trainer->GetCache().cost);
 	}
 	SetWindowText(window, LPCSTR(s));
 }
@@ -194,13 +194,14 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Tanh });
 		//h_trainer = NetTrainer(&neural, X, Y, 1.f, 2.f, 20.f);
 		d_neural = Net(neural);
-		d_trainer = d_NetTrainer(&d_neural, X, Y, 1.f, 2.f, 20.f);
+		d_NetTrainer d_net_trainer(&d_neural, X, Y, 1.f, 2.f, 20.f);
+		d_trainer = &d_net_trainer;
 		startTime = clock();
 		const HDC deviceContext = GetDC(window);
 		vector<float> h_history;
 		vector<float> d_history;
 		int steps = 0;
-		d_trainer.BuildVisualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height);
+		d_trainer->BuildVisualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height);
 		//Main Loop
 		while ( /*steps < 1500 &&*/ globalRunning) {
 			for (int epoch = 0; epoch < 1; ++epoch) {
@@ -209,9 +210,9 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 					break;
 				}
 				//h_trainer.TrainSingleEpoch();
-				d_trainer.TrainSingleEpoch();
+				d_trainer->TrainSingleEpoch();
 				//UpdateHistory(h_history, h_trainer.GetCache().cost);
-				UpdateHistory(d_history, d_trainer.GetCache().cost);
+				UpdateHistory(d_history, d_trainer->GetCache().cost);
 				UpdateWinTitle(steps, window);
 			}
 			UpdateDisplay(X, Y, h_history, d_history, screenCoords);
