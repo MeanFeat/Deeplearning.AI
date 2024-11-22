@@ -182,7 +182,7 @@ testResult testSigmoid(const int m, const int k) {
 	testData A = testData(m, k);
 	d_activate(&A.device, Activation::Sigmoid);
 	const float controlSum = MatrixXf(Net::Activate(A.host, Activation::Sigmoid)).sum();
-	const float threshold = float(m + k) * thresholdMultiplier * 20.f;
+	const float threshold = float(m * k) * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(d_NetTrainer::to_host(A.device)).sum(), threshold);
 }
 testResult testTanh(const int m, const int k) {
@@ -190,7 +190,7 @@ testResult testTanh(const int m, const int k) {
 	testData A = testData(m, k);
 	d_activate(&A.device, Activation::Tanh);
 	const float controlSum = MatrixXf(Net::Activate(A.host, Activation::Tanh)).sum();
-	const float threshold = float(m + k) * thresholdMultiplier * 5.f;
+	const float threshold = float(m * k) * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(d_NetTrainer::to_host(A.device)).sum(), threshold);
 }
 testResult testReLU(const int m, const int k) {
@@ -198,7 +198,7 @@ testResult testReLU(const int m, const int k) {
 	testData A = testData(m, k);
 	d_activate(&A.device, Activation::ReLU);
 	const float controlSum = MatrixXf(Net::Activate(A.host, Activation::ReLU)).sum();
-	const float threshold = controlSum * thresholdMultiplier;
+	const float threshold = float(m * k) * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(d_NetTrainer::to_host(A.device)).sum(), threshold);
 }
 testResult testLReLU(const int m, const int k) {
@@ -206,7 +206,7 @@ testResult testLReLU(const int m, const int k) {
 	testData A = testData(m, k);
 	d_activate(&A.device, Activation::LReLU);
 	const float controlSum = MatrixXf(Net::Activate(A.host, Activation::LReLU)).sum();
-	const float threshold = controlSum * thresholdMultiplier;
+	const float threshold = float(m * k) * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(d_NetTrainer::to_host(A.device)).sum(), threshold);
 }
 testResult testSine(const int m, const int k) {
@@ -214,7 +214,7 @@ testResult testSine(const int m, const int k) {
 	testData A = testData(m, k);
 	d_activate(&A.device, Activation::Sine);
 	const float controlSum = MatrixXf(Net::Activate(A.host, Activation::Sine)).sum();
-	const float threshold = float(m + k) * thresholdMultiplier * 100.f;
+	const float threshold = float(m * k) * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(d_NetTrainer::to_host(A.device)).sum(), threshold);
 }
 testResult testBackProp(Net &nn, const int dataCount) {

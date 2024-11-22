@@ -81,7 +81,8 @@ float NetTrainer::CalcCost(const MatrixXf &h, const MatrixXf &Y) const {
 	}
 	const float regCost = 0.5f * float((trainParams.regTerm*trainParams.learningMod) * (sumSqrW / (2.f * float(trainLabels.cols()))));
 	MatrixXf diff = Y - h;
-	return ((diff.array() * diff.array()).sum() * coeff) + regCost;
+	const float LocalCoeff = 1.f / float(trainLabels.cols());
+	return ((diff.array() * diff.array()).sum() * LocalCoeff) + regCost;
 }
 
 void NetTrainer::ModifyLearningRate(const float m) {
