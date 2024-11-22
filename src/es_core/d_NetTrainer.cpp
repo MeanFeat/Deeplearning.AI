@@ -14,25 +14,18 @@ MatrixXf d_NetTrainer::to_host(d_Matrix d_matrix) {
 	return out;
 }
 d_NetTrainer::d_NetTrainer(): network(nullptr), cache(), trainParams(), d_Buffer(nullptr), profiler() {}
+void d_NetTrainer::free()
+{
+	trainParams.clear();
+	cache.clear();
+	derivative.clear();
+	momentum.clear();
+	momentumSqr.clear();
+	d_check(cudaFree(cache.d_cost));
+}
 d_NetTrainer::~d_NetTrainer()
 {
-	auto FreeLambda = [](std::vector<d_Matrix> &Array)
-	{
-		for (d_Matrix &m : Array)
-		{
-			m.free();
-		}
-	};
-	FreeLambda(trainParams.d_W);
-	FreeLambda(trainParams.d_b);
-	FreeLambda(cache.d_A);
-	FreeLambda(cache.d_AT);
-	FreeLambda(cache.d_dZ);
-	d_check(cudaFree(cache.d_cost));
-	if (d_Buffer != nullptr)
-	{
-		d_check(cudaFree(d_Buffer));
-	}
+	free();
 }
 d_NetTrainParameters &d_NetTrainer::GetTrainParams(){
 	return trainParams;

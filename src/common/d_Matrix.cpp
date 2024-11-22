@@ -4,6 +4,7 @@ d_Matrix::d_Matrix(): rowCount(0), colCount(0), device_data(nullptr){}
 d_Matrix::d_Matrix(const int rows, const int cols) {
 	this->rowCount = rows;
 	this->colCount = cols;
+	// TODO: Spiral and Radian require managed, but gesture doesn't
 	d_check(cudaMallocManaged(VOID_PTR(&device_data), memSize()));
 	d_catchErr();
 }	

@@ -5,6 +5,11 @@
 #include "d_math.h"
 using namespace Eigen;
 struct d_NetTrainParameters {
+	void clear()
+	{
+		d_W.clear();
+		d_b.clear();
+	}
 	float coefficient;
 	float learnCoeff;
 	float learnMult;
@@ -12,15 +17,26 @@ struct d_NetTrainParameters {
 	float regMod;
 	float regMult;
 	float regTerm;
-	std::vector<d_Matrix> d_b;
 	std::vector<d_Matrix> d_W;
+	std::vector<d_Matrix> d_b;
 	unsigned int trainExamplesCount;
 };
 struct d_NetTrainDerivatives {
+	void clear()
+	{
+		d_dW.clear();
+		d_db.clear();
+	}
 	std::vector<d_Matrix> d_dW;
 	std::vector<d_Matrix> d_db;
 };
 struct d_NetCache {
+	void clear()
+	{
+		d_A.clear();
+		d_AT.clear();
+		d_dZ.clear();
+	}
 	std::vector<d_Matrix> d_A;
 	std::vector<d_Matrix> d_AT;
 	std::vector<d_Matrix> d_dZ;
@@ -37,6 +53,7 @@ struct d_NetProfiler {
 class d_NetTrainer {
 public:
 	d_NetTrainer();
+	void free();
 	d_NetTrainer(Net *net, const Eigen::MatrixXf &data, const Eigen::MatrixXf &labels, float weightScale, float learnRate, float regTerm);
 	~d_NetTrainer();
 	//TODO: Make copy constructor

@@ -240,7 +240,7 @@ testResult testCalcCost(Net &nn, const int dataCount) {
 	const float control = h_trainer.CalcCost(test.host, labels.host);
 	d_NetTrainer d_trainer = d_NetTrainer(&nn, test.host, labels.host, 1.f, 0.25f, 0.f);
 	const float result = d_trainer.CalcCost(test.device, labels.device);
-	return GetOutcome(control, result, dataCount * thresholdMultiplier);
+	return GetOutcome(control, result, dataCount * nn.GetNodeCount() * thresholdMultiplier);
 }
 testResult testForward(Net &nn, const int dataCount) {
 	const testData data = testData(nn.GetInputSize(), dataCount);
