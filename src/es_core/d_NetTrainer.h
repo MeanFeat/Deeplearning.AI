@@ -4,11 +4,22 @@
 #include "d_Matrix.h"
 #include "d_math.h"
 using namespace Eigen;
-struct d_NetTrainParameters {
-	void clear()
+using namespace std;
+struct d_NetBaseStructure {
+	static void flushMat(std::vector<d_Matrix> &matrices)
 	{
-		d_W.clear();
-		d_b.clear();
+		for (d_Matrix &matrix : matrices)
+		{
+			matrix.free();
+		}
+		matrices.clear();
+	}
+};
+struct d_NetTrainParameters : public d_NetBaseStructure {
+    void clear()
+	{
+		flushMat(d_W);
+		flushMat(d_b);
 	}
 	float coefficient;
 	float learnCoeff;
@@ -21,21 +32,21 @@ struct d_NetTrainParameters {
 	std::vector<d_Matrix> d_b;
 	unsigned int trainExamplesCount;
 };
-struct d_NetTrainDerivatives {
+struct d_NetTrainDerivatives : public d_NetBaseStructure{
 	void clear()
 	{
-		d_dW.clear();
-		d_db.clear();
+		flushMat(d_dW);
+		flushMat(d_db);
 	}
 	std::vector<d_Matrix> d_dW;
 	std::vector<d_Matrix> d_db;
 };
-struct d_NetCache {
+struct d_NetCache  : public d_NetBaseStructure {
 	void clear()
 	{
-		d_A.clear();
-		d_AT.clear();
-		d_dZ.clear();
+		flushMat(d_A);
+        flushMat(d_AT);
+        flushMat(d_dZ);
 	}
 	std::vector<d_Matrix> d_A;
 	std::vector<d_Matrix> d_AT;
