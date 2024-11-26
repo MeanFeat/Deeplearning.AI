@@ -31,9 +31,7 @@ if "%orig_ModDateTime%" LSS "%gen_ModDateTime%" goto Message
 echo Generating Files
 > tests_cpp.generated echo.
 > tests_unit.generated echo.
-goto End
-start ..\..\bin\Release\es_test_app.exe "-b" tests.list tests_cpp.generated tests_unit.generated
-
+start ../../bin/Release/es_test_app.exe "-b" tests.list tests_cpp.generated tests_unit.generated
 goto End
 
 :Message
