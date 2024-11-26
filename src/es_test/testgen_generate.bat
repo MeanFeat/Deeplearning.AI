@@ -31,7 +31,7 @@ if "%orig_ModDateTime%" LSS "%gen_ModDateTime%" goto Message
 echo Generating Files
 > tests_cpp.generated echo.
 > tests_unit.generated echo.
-start "" "C:\GameDev\ExpertSystems.AI\x64\Release\es_test_app.exe" "-b" "C:\GameDev\ExpertSystems.AI\src\es_test\tests.list" "C:\GameDev\ExpertSystems.AI\src\es_test\tests_cpp.generated" "C:\GameDev\ExpertSystems.AI\src\es_test\tests_unit.generated"
+start ../../bin/Release/es_test_app.exe "-b" tests.list tests_cpp.generated tests_unit.generated
 goto End
 
 :Message
