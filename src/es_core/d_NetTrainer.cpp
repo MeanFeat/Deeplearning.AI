@@ -25,6 +25,7 @@ void d_NetTrainer::free()
 }
 d_NetTrainer::~d_NetTrainer()
 {
+	cudaStreamDestroy(cuda_stream);
 	free();
 }
 d_NetTrainParameters &d_NetTrainer::GetTrainParams(){
