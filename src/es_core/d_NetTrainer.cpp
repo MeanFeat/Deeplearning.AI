@@ -132,11 +132,12 @@ float d_NetTrainer::CalcCost(const d_Matrix& Test, const d_Matrix& Labels) const
 	d_subtract_elem(&Error, Test, Labels);
 	d_calcCost(d_cost, &Error, &trainParams.d_W, GetRegMultiplier(), 1.f / float(Labels.cols()), float(trainParams.trainExamplesCount)); d_catchErr();
 	d_check(cudaMemcpyAsync(&cost, d_cost, sizeof(float), cudaMemcpyDeviceToHost));
+	d_check(cudaFree(d_cost));
+	Error.free();
 	return cost;
 }
 void d_NetTrainer::CalcCost() {
-	d_calcCost(cache.d_cost, &cache.d_dZ.back(),
-		&trainParams.d_W, GetRegMultiplier(), GetCoeff(), float(trainParams.trainExamplesCount)); d_catchErr();
+	d_calcCost(cache.d_cost, &cache.d_dZ.back(), &trainParams.d_W, GetRegMultiplier(), GetCoeff(), float(trainParams.trainExamplesCount)); d_catchErr();
 	// TODO: Set this to copy in batches
 	d_check(cudaMemcpyAsync(&cache.cost, cache.d_cost, sizeof(float), cudaMemcpyDeviceToHost)); 
 }

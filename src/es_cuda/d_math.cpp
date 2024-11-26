@@ -424,6 +424,7 @@ void d_sumRows(d_Matrix* dst, const d_Matrix* src) {
 	d_Matrix ones = d_Matrix(k, 1);
 	d_set_elem(&ones, 1.f);
 	d_mult(dst, src, &ones);
+	ones.free();
 }
 /* dst = coeff * (srcA.SumOfRows) */
 void d_set_db(d_Matrix* dst, const d_Matrix* d_dZ, const float coefficient) {
@@ -527,4 +528,5 @@ void d_calcCost(float *dst, const d_Matrix* d_err, const vector<d_Matrix>* d_mod
 		d_launch_single_thread(pfAdd, d_sqrSumTotal.d_data(), d_sqrSum.d_data()); d_catchErr();
 	}
 	finalCost_Kernel << <1, 1 >> > (dst, d_sqrSumTotal.d_data(), regMult, trainLabelCount); d_catchErr();
+	d_diff->free();
 }
