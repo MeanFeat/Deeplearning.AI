@@ -43,7 +43,7 @@ void d_NetTrainer::RefreshHostNetwork() const {
 const d_NetProfiler *d_NetTrainer::GetProfiler() const {
 	return &profiler;
 }
-d_NetTrainer::d_NetTrainer(stdNet *net, const MatrixXf &data, const MatrixXf &labels, const float weightScale, const float learnRate, const float regTerm) {
+d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &labels, float weightScale, float learnRate, float regTerm) {
 	assert(net->GetNodeCount());
 	assert(data.size());
 	assert(labels.size());
@@ -58,23 +58,14 @@ d_NetTrainer::d_NetTrainer(stdNet *net, const MatrixXf &data, const MatrixXf &la
 	d_trainLabels = to_device(labels);
 	trainParams.trainExamplesCount =  uint(data.cols());
 	trainParams.coefficient = 1.f / float(trainParams.trainExamplesCount);
-	if (!network->GetIsInitialized()) {
-		for (int i = 0; i < network->GetDepth(); ++i) {
-			const MatrixXf& W = network->GetParams().W[i];
-			const MatrixXf& b = network->GetParams().b[i];
-			trainParams.d_W.emplace_back(int(W.rows()), int(W.cols()));
-			trainParams.d_b.emplace_back(int(b.rows()), int(b.cols()));
-			d_set_elem_rand(&trainParams.d_W.back(), weightScale);
-			d_set_elem(&trainParams.d_b.back(), 0.f);
-		}
+	if (network->GetSumOfWeights() == 0.f) {
+		network->RandomInit(weightScale);
 	}
-	else {
-		for (int i = 0; i < network->GetDepth(); ++i) {
-			MatrixXf& W = network->GetParams().W[i];
-			MatrixXf& b = network->GetParams().b[i];
-			trainParams.d_W.emplace_back(W.data(), int(W.rows()), int(W.cols()));
-			trainParams.d_b.emplace_back(b.data(), int(b.rows()), int(b.cols()));
-		}
+	for (int i = 0; i < network->GetDepth(); ++i) {
+		MatrixXf& W = network->GetParams().W[i];
+		MatrixXf& b = network->GetParams().b[i];
+		trainParams.d_W.emplace_back(W.data(), int(W.rows()), int(W.cols()));
+		trainParams.d_b.emplace_back(b.data(), int(b.rows()), int(b.cols()));
 	}
 	trainParams.learnRate = learnRate;
 	trainParams.learnCoeff = 1.f / float(network->GetNodeCount());
