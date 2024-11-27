@@ -17,7 +17,7 @@ static clock_t startTime;
 float mouseX = WINHALFWIDTH;
 float mouseY = WINHALFHEIGHT + 100;
 Buffer backBuffer;
-stdNet neural;
+Net neural;
 d_NetTrainer trainer;
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam) {
 	LRESULT Result = 0;
@@ -187,7 +187,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
 			WS_OVERLAPPED | WS_SYSMENU | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 			WINWIDTH * WINDOWSTRETCHSCALE, WINHEIGHT * WINDOWSTRETCHSCALE, 0, 0, Instance, 0);
-		neural = stdNet((int)X.rows(), { 32,16 }, (int)Y.rows(), { Tanh,Tanh,Tanh });
+		neural = Net((int)X.rows(), { 32,16 }, (int)Y.rows(), { Tanh,Tanh,Tanh });
 		trainer = d_NetTrainer(&neural, X, Y, 0.15f, 0.5f, 1.0f);
 		HDC deviceContext = GetDC(window);
 		vector<float> history;

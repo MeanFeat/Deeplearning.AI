@@ -181,7 +181,7 @@ testResult testSigmoid(const int m, const int k) {
 	cout << "Testing Sigmoid " << m << "," << k << endl;
 	testData A = testData(m, k);
 	d_activate(&A.device, Activation::Sigmoid);
-	const float controlSum = MatrixXf(stdNet::Activate(A.host, Activation::Sigmoid)).sum();
+	const float controlSum = MatrixXf(Net::Activate(A.host, Activation::Sigmoid)).sum();
 	const float threshold = float(m * k) * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(d_NetTrainer::to_host(A.device)).sum(), threshold);
 }
@@ -189,7 +189,7 @@ testResult testTanh(const int m, const int k) {
 	cout << "Testing Tanh " << m << "," << k << endl;
 	testData A = testData(m, k);
 	d_activate(&A.device, Activation::Tanh);
-	const float controlSum = MatrixXf(stdNet::Activate(A.host, Activation::Tanh)).sum();
+	const float controlSum = MatrixXf(Net::Activate(A.host, Activation::Tanh)).sum();
 	const float threshold = float(m * k) * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(d_NetTrainer::to_host(A.device)).sum(), threshold);
 }
@@ -197,7 +197,7 @@ testResult testReLU(const int m, const int k) {
 	cout << "Testing ReLU " << m << "," << k << endl;
 	testData A = testData(m, k);
 	d_activate(&A.device, Activation::ReLU);
-	const float controlSum = MatrixXf(stdNet::Activate(A.host, Activation::ReLU)).sum();
+	const float controlSum = MatrixXf(Net::Activate(A.host, Activation::ReLU)).sum();
 	const float threshold = float(m * k) * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(d_NetTrainer::to_host(A.device)).sum(), threshold);
 }
@@ -205,7 +205,7 @@ testResult testLReLU(const int m, const int k) {
 	cout << "Testing ReLU " << m << "," << k << endl;
 	testData A = testData(m, k);
 	d_activate(&A.device, Activation::LReLU);
-	const float controlSum = MatrixXf(stdNet::Activate(A.host, Activation::LReLU)).sum();
+	const float controlSum = MatrixXf(Net::Activate(A.host, Activation::LReLU)).sum();
 	const float threshold = float(m * k) * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(d_NetTrainer::to_host(A.device)).sum(), threshold);
 }
@@ -213,15 +213,15 @@ testResult testSine(const int m, const int k) {
 	cout << "Testing Sine " << m << "," << k << endl;
 	testData A = testData(m, k);
 	d_activate(&A.device, Activation::Sine);
-	const float controlSum = MatrixXf(stdNet::Activate(A.host, Activation::Sine)).sum();
+	const float controlSum = MatrixXf(Net::Activate(A.host, Activation::Sine)).sum();
 	const float threshold = float(m * k) * thresholdMultiplier;
 	return GetOutcome(controlSum, MatrixXf(d_NetTrainer::to_host(A.device)).sum(), threshold);
 }
-testResult testBackProp(stdNet &nn, const int dataCount) {
+testResult testBackProp(Net &nn, const int dataCount) {
 	const MatrixXf data = MatrixXf::Random(nn.GetInputSize(), dataCount);
 	const MatrixXf labels = MatrixXf::Random(nn.GetOutputSize(), dataCount);
 	nn.RandomInit(0.15f);
-	stdNet d_nn = (nn);
+	Net d_nn = (nn);
 	NetTrainer h_trainer = NetTrainer(&nn, data, labels, 1.f, 0.25f, 0.f);
 	h_trainer.ForwardTrain();
 	h_trainer.BackwardPropagation();
@@ -232,7 +232,7 @@ testResult testBackProp(stdNet &nn, const int dataCount) {
 	const MatrixXf test = d_NetTrainer::to_host(d_trainer.GetDerivatives().d_dW[0]);
 	return GetOutcome(control.sum(), test.sum(), dataCount * nn.GetNodeCount() * thresholdMultiplier);
 }
-testResult testCalcCost(stdNet &nn, const int dataCount) {
+testResult testCalcCost(Net &nn, const int dataCount) {
 	const testData test = testData(nn.GetOutputSize(), dataCount);
 	const testData labels = testData(nn.GetOutputSize(), dataCount);
 	nn.RandomInit(0.15f);
@@ -242,7 +242,7 @@ testResult testCalcCost(stdNet &nn, const int dataCount) {
 	const float result = d_trainer.CalcCost(test.device, labels.device);
 	return GetOutcome(control, result, dataCount * nn.GetNodeCount() * thresholdMultiplier);
 }
-testResult testForward(stdNet &nn, const int dataCount) {
+testResult testForward(Net &nn, const int dataCount) {
 	const testData data = testData(nn.GetInputSize(), dataCount);
 	const testData labels = testData(nn.GetOutputSize(), dataCount);
 	nn.RandomInit(0.15f);
@@ -253,7 +253,7 @@ testResult testForward(stdNet &nn, const int dataCount) {
 	const MatrixXf test = d_NetTrainer::to_host(result);
 	return GetOutcome(control.sum(), test.sum(), dataCount * nn.GetNodeCount() * thresholdMultiplier);
 }
-testResult testForwardTrain(stdNet &nn, const int dataCount) {
+testResult testForwardTrain(Net &nn, const int dataCount) {
 	const MatrixXf data = MatrixXf::Random(nn.GetInputSize(), dataCount);
 	const MatrixXf labels = MatrixXf::Random(nn.GetOutputSize(), dataCount);
 	nn.RandomInit(0.15f);

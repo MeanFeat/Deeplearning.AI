@@ -18,7 +18,7 @@ struct NetCache {
 class NetTrainer {
 public:
 	NetTrainer();
-	NetTrainer(stdNet *net, const Eigen::MatrixXf &data, const Eigen::MatrixXf &labels, float weightScale, float learnRate, float regTerm);
+	NetTrainer(Net *net, const Eigen::MatrixXf &data, const Eigen::MatrixXf &labels, float weightScale, float learnRate, float regTerm);
 	~NetTrainer();
 
 	Eigen::MatrixXf BackActivation(const Eigen::MatrixXf &dZ, int layerIndex);
@@ -29,7 +29,7 @@ public:
 	Eigen::MatrixXf BackTanh(const Eigen::MatrixXf &wZ, int index);
 	Eigen::MatrixXf ForwardTrain();
 	float CalcCost(const Eigen::MatrixXf &h, const Eigen::MatrixXf &Y) const;
-	stdNet *network;
+	Net *network;
 	NetCache &GetCache();
 	NetTrainParameters &GetTrainParams();
 	void AddLayer(const int A, const int B);
@@ -47,7 +47,7 @@ private:
 	Eigen::MatrixXf trainData;
 	Eigen::MatrixXf trainLabels;
 	NetCache cache;
-	stdNetParameters dropParams;
+	NetParameters dropParams;
 	NetTrainParameters trainParams;
 	NetTrainParameters momentum;
 	NetTrainParameters momentumSqr;

@@ -14,7 +14,6 @@ typedef unsigned int uint;
 #define BLOCK_SIZE 16
 #define LRELU_LEAK 0.01f
 #define VOID_PTR(t) reinterpret_cast<void**>(t)
-#define RAND_SEED 666
 using ptrFunc = float(*)(float, float);
 
 void d_mathInit();
@@ -45,7 +44,6 @@ void d_mult(d_Matrix * dst, const d_Matrix * srcA, const d_Matrix * srcB);
 void d_mult_lhsT(d_Matrix * dst, const d_Matrix * srcA, const d_Matrix * srcB);
 /* dst = srcA * srcB.T */
 void d_mult_rhsT(d_Matrix * dst, const d_Matrix * srcA, const d_Matrix * srcB);
-void d_set_elem_rand(d_Matrix *dst, float scale);
 void d_sumMatrix(float* dst, const d_Matrix* src);
 void d_square(d_Matrix* dst, const d_Matrix* src);
 void d_forwardLayer(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_last, const d_Matrix *d_bias);
