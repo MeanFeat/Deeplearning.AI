@@ -23,7 +23,7 @@ NetTrainer::NetTrainer()
 	, momentumSqr() {
 }
 
-NetTrainer::NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &labels, float weightScale, float learnRate, float regTerm) {
+NetTrainer::NetTrainer(stdNet *net, const MatrixXf &data, const MatrixXf &labels, float weightScale, float learnRate, float regTerm) {
 	assert(net->GetNodeCount());
 	assert(data.size());
 	assert(labels.size());
@@ -68,7 +68,7 @@ MatrixXf NetTrainer::ForwardTrain() {
 	for (int i = 0; i < int(network->GetParams().layerSizes.size()) - 1; ++i) {
 		MatrixXf weighed = network->GetParams().W[i] * lastOutput;
 		cache.Z[i].noalias() = (weighed).colwise() + VectorXf(network->GetParams().b[i]);
-		lastOutput = Net::Activate(cache.Z[i], network->GetParams().layerActivations[i]);
+		lastOutput = stdNet::Activate(cache.Z[i], network->GetParams().layerActivations[i]);
 		cache.A[i].noalias() = lastOutput;
 	}
 	return lastOutput;

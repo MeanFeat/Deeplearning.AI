@@ -65,7 +65,7 @@ class d_NetTrainer {
 public:
 	d_NetTrainer();
 	void free();
-	d_NetTrainer(Net *net, const Eigen::MatrixXf &data, const Eigen::MatrixXf &labels, float weightScale, float learnRate, float regTerm);
+	d_NetTrainer(stdNet *net, const Eigen::MatrixXf &data, const Eigen::MatrixXf &labels, float weightScale, float learnRate, float regTerm);
 	~d_NetTrainer();
 	//TODO: Make copy constructor
 	static d_Matrix to_device(MatrixXf matrix);
@@ -73,7 +73,7 @@ public:
 	d_NetTrainParameters &GetTrainParams();
 	d_NetCache &GetCache();
 	const d_NetProfiler *GetProfiler() const;
-	Net *network;
+	stdNet *network;
 	d_Matrix d_trainLabels;
 	void RefreshHostNetwork() const;
 	void TrainSingleEpoch();
