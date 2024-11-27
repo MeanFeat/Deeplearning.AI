@@ -1,5 +1,6 @@
 #include "d_math.h"
 #include "color.h"
+#include <curand_kernel.h>
 
 using namespace std;
 __device__ ptrFunc d_pfAdd = __fadd_rn;
@@ -173,6 +174,19 @@ void d_mult_rhsT(d_Matrix* dst, const d_Matrix *srcA, const d_Matrix *srcB) {
 	d_Matrix d_trans = d_Matrix(srcB->cols(), srcB->rows());
 	d_transpose(&d_trans, srcB); d_catchErr();
 	d_mult(dst, srcA, &d_trans); d_catchErr();
+}
+__global__
+void set_random_Kernel(float *dst, const float scale, const uint m, const uint k) {
+	const uint row = GetRow();
+	const uint col = GetCol();
+	curandState state;
+	curand_init(RAND_SEED, row * k + col, 0, &state);
+	dst[col + row * k] = (curand_uniform(&state) * 2.f - 1.f) * scale;
+}
+void d_set_elem_rand(d_Matrix *dst, const float scale) {
+	const uint m = dst->rows();
+	const uint k = dst->cols();
+	set_random_Kernel << <dimGrid(m, k), dimBlock() >> > (dst->d_data(), scale, m, k);
 }
 void d_sumMatrix(float* dst, const d_Matrix *src) {
 	if (src->size() < 99999999) {

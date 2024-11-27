@@ -31,34 +31,36 @@ inline Eigen::MatrixXf Log(const Eigen::MatrixXf &in) {
 	return in.array().log();
 }
 
-struct NetParameters {
+struct stdNetParameters {
 	std::vector<int> layerSizes;
 	std::vector<Activation> layerActivations;
 	std::vector<Eigen::MatrixXf> W;
 	std::vector<Eigen::MatrixXf> b;
 };
 
-class Net {
+class stdNet {
 public:
-	Net();
-	Net(int inputSize, const std::vector<int> &hiddenSizes, int outputSize, const std::vector<Activation> &activations);
-	Net(const std::string &fName);
-	~Net();
-	NetParameters &GetParams();
+	stdNet();
+	stdNet(int inputSize, const std::vector<int> &hiddenSizes, int outputSize, const std::vector<Activation> &activations);
+	stdNet(const std::string &fName);
+	~stdNet();
+	void RandomInit(float scale);
 	void SetParams(std::vector<Eigen::MatrixXf> W, std::vector<Eigen::MatrixXf> b);
 	static Eigen::MatrixXf Activate(const Eigen::MatrixXf &In, Activation act);
-	Eigen::MatrixXf ForwardPropagation(const Eigen::MatrixXf &X);
+	Eigen::MatrixXf ForwardPropagation(const Eigen::MatrixXf &X) const;
 	int GetDepth();
-	void RandomInit(float scale);
+	stdNetParameters &GetParams();
 	float GetSumOfWeights();
 	int GetNeuronCount();
-	std::string ToString();
-	void SaveNetwork(const std::string fName);
-	void LoadNetwork(const std::string fName);
-	int GetInputSize();
-	int GetOutputSize();
+	int GetInputSize() const;
+	int GetOutputSize() const;
 	int GetNodeCount();
+	bool GetIsInitialized() const;
+	std::string ToString();
+	void SaveNetwork(const std::string& fName);
+	void LoadNetwork(const std::string& fName);
 private:
 	void AddLayer(int a, int b);
-	NetParameters params;
+	stdNetParameters params;
+	bool IsInitialized = false;
 };

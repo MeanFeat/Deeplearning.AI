@@ -14,8 +14,8 @@ global_variable bool profile = false;
 global_variable int winTitleHeight = 10;
 static clock_t startTime;
 Buffer backBuffer;
-Net neural;
-Net d_neural;
+stdNet neural;
+stdNet d_neural;
 NetTrainer h_trainer;
 d_NetTrainer *d_trainer = nullptr;
 global_variable float GraphZoom = 1.f;
@@ -188,12 +188,12 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		const HWND window = CreateWindowExA(0, winClass.lpszClassName, "NNet||",
 		                                    WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MAXIMIZEBOX | WS_THICKFRAME | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 		                                    WINWIDTH * 2, WINHEIGHT * 2, 0, 0, Instance, 0);
-		neural = Net((int)X.rows(), { 8, 8 }, (int)Y.rows(), {
+		neural = stdNet((int)X.rows(), { 8, 8 }, (int)Y.rows(), {
 			Tanh,
 			Tanh,
 			Tanh });
 		//h_trainer = NetTrainer(&neural, X, Y, 1.f, 2.f, 20.f);
-		d_neural = Net(neural);
+		d_neural = stdNet(neural);
 		d_NetTrainer d_net_trainer(&d_neural, X, Y, 1.f, 2.f, 20.f);
 		d_trainer = &d_net_trainer;
 		startTime = clock();

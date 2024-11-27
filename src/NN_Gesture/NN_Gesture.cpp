@@ -38,7 +38,7 @@ static float trainingTime;
 float mouseX = WINHALFWIDTH;
 float mouseY = WINHALFHEIGHT;
 
-Net neural;
+stdNet neural;
 d_NetTrainer *trainer = nullptr;
 Buffer backBuffer;
 
@@ -300,7 +300,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		vector<Vector2f> mouseTrail;
 		int sampleIndex = 0;
 		//neural = Net("Gesture-Weights.json");
-		neural = Net((int)readDeltas.rows(), { 100,50 }, (int)readLabels.rows(), {
+		neural = stdNet((int)readDeltas.rows(), { 100,50 }, (int)readLabels.rows(), {
 			Tanh,
 			Tanh,
 			Sigmoid });
