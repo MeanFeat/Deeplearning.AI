@@ -54,7 +54,6 @@ d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &label
 	cudaStreamCreate(&cuda_stream);
 	network = net;
 	cache.d_A.emplace_back(to_device(data));
-	cache.d_AT.emplace_back(to_device(data.transpose()));
 	d_trainLabels = to_device(labels);
 	trainParams.trainExamplesCount =  uint(data.cols());
 	trainParams.coefficient = 1.f / float(trainParams.trainExamplesCount);
@@ -81,7 +80,6 @@ d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &label
 }
 void d_NetTrainer::AddLayer(int A, int B) {
 	cache.d_A.emplace_back(A, GetTrainExamplesCount());
-	cache.d_AT.emplace_back(GetTrainExamplesCount(), A);
 	cache.d_dZ.emplace_back(A, GetTrainExamplesCount());
 	derivative.d_dW.emplace_back(A, B);
 	derivative.d_db.emplace_back(A, 1);
@@ -122,7 +120,6 @@ void d_NetTrainer::ForwardTrain() {
 	for (int i = 0; i < network->GetDepth(); ++i) {
 		d_forwardLayer(&cache.d_A[i + 1], &trainParams.d_W[i], &cache.d_A[i], &trainParams.d_b[i]);
 		d_activate(&cache.d_A[i + 1], network->GetParams().layerActivations[i]);
-		d_transpose(&cache.d_AT[i + 1], &cache.d_A[i + 1]);
 	}
 }
 float d_NetTrainer::CalcCost(const d_Matrix& Test, const d_Matrix& Labels) const {
@@ -144,7 +141,9 @@ void d_NetTrainer::CalcCost() {
 }
 void d_NetTrainer::BackwardPropagation() {
 	d_subtract_elem(&cache.d_dZ.back(), cache.d_A.back(), d_trainLabels);
-	d_set_dW(&derivative.d_dW.back(), &cache.d_dZ.back(), &cache.d_AT[cache.d_A.size() - 2], GetCoeff());
+	d_Matrix d_ATLast = d_Matrix(cache.d_A[cache.d_A.size() - 2].cols(), cache.d_A[cache.d_A.size() - 2].rows());
+	d_transpose(&d_ATLast, &cache.d_A[cache.d_A.size() - 2]);
+	d_set_dW(&derivative.d_dW.back(), &cache.d_dZ.back(), &d_ATLast, GetCoeff());
 	d_set_db(&derivative.d_db.back(), &cache.d_dZ.back(), GetCoeff());
 	for (int l = int(network->GetParams().layerActivations.size() - 2); l >= 0; --l) {
 		switch (network->GetParams().layerActivations[l]) {
@@ -167,7 +166,9 @@ void d_NetTrainer::BackwardPropagation() {
 		default:
 			break;
 		}
-		d_set_dW_Reg(&derivative.d_dW[l], &cache.d_dZ[l], &cache.d_AT[l], &trainParams.d_W[l], GetCoeff(), 0.5f * trainParams.regMod);
+		d_Matrix d_AT = d_Matrix(cache.d_A[l].cols(), cache.d_A[l].rows());
+		d_transpose(&d_AT, &cache.d_A[l]);
+		d_set_dW_Reg(&derivative.d_dW[l], &cache.d_dZ[l], &d_AT, &trainParams.d_W[l], GetCoeff(), 0.5f * trainParams.regMod);
 		d_set_db(&derivative.d_db[l], &cache.d_dZ[l], GetCoeff());
 	}
 }
