@@ -45,11 +45,9 @@ struct d_NetCache  : public d_NetBaseStructure {
 	void clear()
 	{
 		flushMat(d_A);
-        flushMat(d_AT);
         flushMat(d_dZ);
 	}
 	std::vector<d_Matrix> d_A;
-	std::vector<d_Matrix> d_AT;
 	std::vector<d_Matrix> d_dZ;
 	float cost;
 	float *d_cost;
