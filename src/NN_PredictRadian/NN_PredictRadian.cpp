@@ -18,7 +18,7 @@ float mouseX = WINHALFWIDTH;
 float mouseY = WINHALFHEIGHT + 100;
 Buffer backBuffer;
 Net neural;
-d_NetTrainer trainer;
+d_NetTrainer *trainer = nullptr;
 internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam) {
 	LRESULT Result = 0;
 	switch (Message) {
@@ -40,16 +40,16 @@ internal LRESULT CALLBACK Win32MainWindowCallback(HWND Window, UINT Message, WPA
 			plotData = !plotData;
 			break;
 		case 'W':
-			trainer.ModifyLearningRate(0.02f);
+			trainer->ModifyLearningRate(0.02f);
 			break;
 		case 'S':
-			trainer.ModifyLearningRate(-0.02f);
+			trainer->ModifyLearningRate(-0.02f);
 			break;
 		case 'Q':
-			trainer.ModifyRegTerm(0.02f);
+			trainer->ModifyRegTerm(0.02f);
 			break;
 		case 'A':
-			trainer.ModifyRegTerm(-0.02f);
+			trainer->ModifyRegTerm(-0.02f);
 			break;
 		default:
 			break;
@@ -94,7 +94,7 @@ void PlotData(MatrixXf X, MatrixXf Y) {
 	}
 }
 void DrawOutputToScreen() {
-	trainer.Visualization((int*)backBuffer.memory, backBuffer.width, backBuffer.height, false);
+	trainer->Visualization((int*)backBuffer.memory, backBuffer.width, backBuffer.height, false);
 }
 void UpdateDisplay(MatrixXf X, MatrixXf Y, vector<float> &history, vector<float> &testHistory, const MatrixXf& screenCoords) {
 	if (globalRunning) {
@@ -121,8 +121,8 @@ void UpdateWinTitle(int &steps, HWND window) {
 	char s[255];
 	sprintf_s(s, "%d|T:%0.2f|C:%0.10f|LR:%0.2f|RT:%0.2f|"
 		, steps, ((float)(clock() - startTime)) / CLOCKS_PER_SEC,
-		trainer.GetCache().cost, trainer.GetTrainParams().learnMult/trainer.GetTrainParams().learnCoeff, 
-		trainer.GetTrainParams().regMod / trainer.GetTrainParams().learnCoeff);
+		trainer->GetCache().cost, trainer->GetTrainParams().learnMult/trainer->GetTrainParams().learnCoeff, 
+		trainer->GetTrainParams().regMod / trainer->GetTrainParams().learnCoeff);
 	char r[255];
 	sprintf_s(r, " |%0.2f|%0.2f| ", atan2((mouseX - WINHALFWIDTH), (mouseY - WINHALFHEIGHT)), predictions[0] * Pi32);
 	strcat_s(s, r);
@@ -139,7 +139,7 @@ MatrixXf BuildRadians(MatrixXf m) {
 	return out;
 }
 void UpdatePrediction() {
-	trainer.RefreshHostNetwork();
+	trainer->RefreshHostNetwork();
 	MatrixXf mouse = MatrixXf(2, 1);
 	mouse(0, 0) = mouseX - WINHALFWIDTH;
 	mouse(1, 0) = mouseY - WINHALFHEIGHT;
@@ -188,7 +188,8 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			WS_OVERLAPPED | WS_SYSMENU | WS_VISIBLE, CW_USEDEFAULT, CW_USEDEFAULT,
 			WINWIDTH * WINDOWSTRETCHSCALE, WINHEIGHT * WINDOWSTRETCHSCALE, 0, 0, Instance, 0);
 		neural = Net((int)X.rows(), { 32,16 }, (int)Y.rows(), { Tanh,Tanh,Tanh });
-		trainer = d_NetTrainer(&neural, X, Y, 0.15f, 0.5f, 1.0f);
+		d_NetTrainer TempTrainer = d_NetTrainer(&neural, X, Y, 0.15f, 0.5f, 1.0f, 2);
+		trainer = &TempTrainer;
 		HDC deviceContext = GetDC(window);
 		vector<float> history;
 		vector<float> testHistory;
@@ -196,14 +197,14 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		setNbThreads(4);
 		cudaStream_t stream;
 		cudaStreamCreate(&stream);
-		trainer.BuildVisualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height);
+		trainer->BuildVisualization(screenCoords, (int *)backBuffer.memory, backBuffer.width, backBuffer.height);
 		int steps = 0;
 		//Main Loop
 		while (globalRunning) {
 			Win32ProcessPendingMessages();
 			if (isTraining) {
-				trainer.TrainSingleEpoch();
-				UpdateHistory(history, trainer.GetCache().cost);
+				trainer->TrainSingleEpoch();
+				UpdateHistory(history, trainer->GetCache().cost);
 				//UpdateHistory(testHistory, trainer.CalcCost(&neural.ForwardPropagation(testX), &testY));
 				steps++;
 			}

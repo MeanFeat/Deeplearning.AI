@@ -300,11 +300,11 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 		vector<Vector2f> mouseTrail;
 		int sampleIndex = 0;
 		//neural = Net("Gesture-Weights.json");
-		neural = Net((int)readDeltas.rows(), { 100,50 }, (int)readLabels.rows(), {
+		neural = Net((int)readDeltas.rows(), { 100, 50 }, (int)readLabels.rows(), {
 			Tanh,
 			Tanh,
 			Sigmoid });
-		d_NetTrainer OrigTrainer(&neural, readDeltas, readLabels, 1.f, 1.25f, 0.0001f);
+		d_NetTrainer OrigTrainer(&neural, readDeltas, readLabels, 1.f, 1.25f, 0.0001f, 2);
 		trainer = &OrigTrainer;
 		vector<float> history;
 		float h = 0.f;
