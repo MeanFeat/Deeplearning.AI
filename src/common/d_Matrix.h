@@ -8,7 +8,7 @@ public:
 	d_Matrix(const d_Matrix& other);
 	d_Matrix& operator=(const d_Matrix& other);
 	~d_Matrix();
-	float* d_data() { return device_data; }
+	float* &d_data() { return device_data; }
 	float* d_data() const { return device_data; }
 	int rows() { return rowCount; }
 	int cols() { return colCount; }
@@ -19,6 +19,7 @@ public:
 	d_Matrix serialize();
 	d_Matrix serialize() const;
 	void serializeInPlace();
+	void setShape(int rows, int cols);
 	size_t memSize() { return size() * sizeof(float); }
 	size_t memSize() const { return size() * sizeof(float); }
 	void free() const;

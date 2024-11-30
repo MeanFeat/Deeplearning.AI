@@ -30,6 +30,7 @@ struct d_NetTrainParameters : public d_NetBaseStructure {
 	float regTerm;
 	std::vector<d_Matrix> d_W;
 	std::vector<d_Matrix> d_b;
+	int batchCount;
 	unsigned int trainExamplesCount;
 };
 struct d_NetTrainDerivatives : public d_NetBaseStructure{
@@ -52,6 +53,16 @@ struct d_NetCache  : public d_NetBaseStructure {
 	float cost;
 	float *d_cost;
 };
+struct d_NetBatchTrainingData {
+	void clear() const
+	{
+		d_Data.free();
+		d_Labels.free();
+	}
+	d_NetBatchTrainingData( const MatrixXf &data, const MatrixXf &labels);
+	d_Matrix d_Data;
+	d_Matrix d_Labels;
+};
 struct d_NetProfiler {
 	float backpropTime;
 	float calcCostTime;
@@ -62,12 +73,14 @@ struct d_NetProfiler {
 class d_NetTrainer {
 public:
 	d_NetTrainer();
-	void free();
-	d_NetTrainer(Net *net, const Eigen::MatrixXf &data, const Eigen::MatrixXf &labels, float weightScale, float learnRate, float regTerm);
+	d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &labels, float weightScale, float learnRate, float regTerm, int batchCount = 1);
 	~d_NetTrainer();
+	void free();
 	//TODO: Make copy constructor
 	static d_Matrix to_device(MatrixXf matrix);
 	static MatrixXf to_host(d_Matrix d_matrix);
+	void CreateBatchData(const MatrixXf &data, const MatrixXf &labels);
+	void LoadBatchData(const int batchIndex);
 	d_NetTrainParameters &GetTrainParams();
 	d_NetCache &GetCache();
 	const d_NetProfiler *GetProfiler() const;
@@ -110,7 +123,7 @@ public:
 	void ForwardTrain();
 	void BackwardPropagation();
 private:
-	void CalcCost();
+	void CalcCost() const;
 	d_NetCache cache;
 	d_NetTrainParameters trainParams;
 	d_NetTrainDerivatives derivative;
@@ -120,4 +133,5 @@ private:
 	void AddLayer(int A, int B);
 	void UpdateParameters();
 	void UpdateParametersADAM();
+	std::vector<d_NetBatchTrainingData> batchData;
 };

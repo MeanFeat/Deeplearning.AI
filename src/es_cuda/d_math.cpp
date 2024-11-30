@@ -11,19 +11,15 @@ namespace {
 	ptrFunc pfMult;
 	ptrFunc pfSet;
 }
-
-#define setFunctionPointer( h_ptr, d_ptr ) cudaMemcpyFromSymbol(&(h_ptr), d_ptr, sizeof(ptrFunc));
-
+#define setFunctionPointer(h_ptr, d_ptr) cudaMemcpyFromSymbol(&(h_ptr), d_ptr, sizeof(ptrFunc));
 __device__
 uint GetRow(){
 	return blockIdx.y * blockDim.y + threadIdx.y;
 }
-
 __device__
 uint GetCol() {
 	return blockIdx.x * blockDim.x + threadIdx.x;
 }
-
 void d_mathInit() {
 	if (!isInitialized) {
 		cublasCreate(&cublasHandle); d_catchErr();
@@ -85,12 +81,14 @@ void d_launch2D_elem(const ptrFunc func, d_Matrix *dst, const float * srcA, cons
 /* dst = a */
 void d_set_elem(float *dst, const float a) {
 	d_launch_single_thread(pfSet, dst, a);
+	d_catchErr();
 }
 /* dst = a */
 void d_set_elem(d_Matrix *dst, const float a) {
 	const uint m = dst->rows();
 	const uint k = dst->cols();
 	launch_elem_broad_Kernel << <dimGrid(m, k), dimBlock() >> > (pfSet, dst->d_data(), dst->d_data(), a, m, k);
+	d_catchErr();
 }
 /* dst = srcA (+) srcB */
 void d_add_elem(d_Matrix *dst, const d_Matrix &srcA, const d_Matrix &srcB) {
@@ -383,16 +381,15 @@ void d_set_dW_Reg(d_Matrix* dst, const d_Matrix* d_dZ, const d_Matrix* d_AT, con
 }
 void d_sumRows(d_Matrix* dst, const d_Matrix* src) {
 	const int k = src->cols();
-	d_Matrix ones = d_Matrix(k, 1);
-	d_set_elem(&ones, 1.f);
-	d_mult(dst, src, &ones);
-	ones.free();
+	d_Matrix ones = d_Matrix(k, 1);d_catchErr();
+	d_set_elem(&ones, 1.f); d_catchErr();
+	d_mult(dst, src, &ones); d_catchErr();
+	ones.free(); d_catchErr();
 }
 /* dst = coeff * (srcA.SumOfRows) */
 void d_set_db(d_Matrix* dst, const d_Matrix* d_dZ, const float coefficient) {
-	d_sumRows(dst, d_dZ);
-	d_mult_scalar(dst, coefficient);
-	d_catchErr();
+	d_sumRows(dst, d_dZ); d_catchErr();
+	d_mult_scalar(dst, coefficient); d_catchErr();
 }
 #define BETA1 0.9f
 #define BETA2 (1.f-FLT_EPSILON)
