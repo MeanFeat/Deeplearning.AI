@@ -22,7 +22,7 @@ d_NetBatchTrainingData::d_NetBatchTrainingData(const MatrixXf& data, const Matri
 	d_check(cudaMemcpyAsync(d_Data.d_data(), data.data(), d_Data.memSize(), cudaMemcpyHostToHost, cuda_stream_load));
 	d_check(cudaMemcpyAsync(d_Labels.d_data(), labels.data(), d_Labels.memSize(), cudaMemcpyHostToHost, cuda_stream_load));
 }
-d_NetTrainer::d_NetTrainer(): network(nullptr), cache(), trainParams(), d_Buffer(nullptr), profiler() {
+d_NetTrainer::d_NetTrainer(): network(nullptr), cache(), trainParams(), profiler() {
 	d_mathInit();
 }
 d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &labels, float weightScale, float learnRate, float regTerm, int batchCount) {
