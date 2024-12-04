@@ -162,30 +162,43 @@ void d_mult(d_Matrix* dst, const d_Matrix* srcA, const d_Matrix* srcB) {
 	d_catchErr();
 } /*dst = srcA.T * srcB */
 void d_mult_lhsT(d_Matrix* dst, const d_Matrix* srcA, const d_Matrix* srcB) {
-	d_Matrix d_trans = d_Matrix(srcA->cols(), srcA->rows());
-	d_transpose(&d_trans, srcA); d_catchErr();
-	d_mult(dst, &d_trans, srcB); d_catchErr();
+	constexpr float alpha = 1.f;
+	constexpr float beta = 0.f;
+	const int m = srcA->cols();
+	const int n = srcB->cols();
+	const int k = srcA->rows();
+	cublasSgemm(cublasHandle,
+		CUBLAS_OP_T, CUBLAS_OP_N,
+		m, n, k,
+		&alpha,
+		srcA->d_data(), k,
+		srcB->d_data(), k,
+		&beta,
+		dst->d_data(), m);
+	d_catchErr();
 } /* dst = srcA * srcB.T */
 void d_mult_rhsT(d_Matrix* dst, const d_Matrix *srcA, const d_Matrix *srcB) {
-	d_Matrix d_trans = d_Matrix(srcB->cols(), srcB->rows());
-	d_transpose(&d_trans, srcB); d_catchErr();
-	d_mult(dst, srcA, &d_trans); d_catchErr();
+	constexpr float alpha = 1.f;
+	constexpr float beta = 0.f;
+	const int m = srcA->rows();
+	const int n = srcB->rows();
+	const int k = srcB->cols();
+	cublasSgemm(cublasHandle,
+		CUBLAS_OP_N, CUBLAS_OP_T,
+		m, n, k,
+		&alpha,
+		srcA->d_data(), m,
+		srcB->d_data(), m,
+		&beta,
+		dst->d_data(), k);
+	d_catchErr();
 }
 void d_sumMatrix(float* dst, const d_Matrix *src) {
-	if (src->size() < 99999999) {
-		d_Matrix serial = src->serialize(); d_catchErr();
-		d_Matrix ones = d_Matrix(src->size(), 1);
-		d_set_elem(&ones, 1.f); d_catchErr();
-		d_Matrix result = d_Matrix(1, 1);
-		d_mult(&result, &serial, &ones); d_catchErr();
-		cudaMemcpyAsync(VOID_PTR(dst), result.d_data(), sizeof(float), cudaMemcpyDeviceToDevice);
-	}
-	else {
-		//recursion
-		d_Matrix r = d_Matrix(src->rows(), 1);
-		d_sumRows(&r, src);
-		d_sumMatrix(dst, &r);
-	}
+	d_Matrix r = d_Matrix(src->rows(), 1);
+	d_sumRows(&r, src); d_catchErr();
+	r.setShape(1, r.rows());
+	d_sumRows(&r, &r); d_catchErr();
+	cudaMemcpyAsync(VOID_PTR(dst), r.d_data(), sizeof(float), cudaMemcpyDeviceToDevice); d_catchErr();
 }
 __global__
 void add_row_broad_Kernel(float *dst, const float *srcMat, const float *srcVec, const uint m, const uint k) {
@@ -292,12 +305,20 @@ void d_backSigmoid(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, con
 }
 __global__
 void backTanh_Kernel(float *dst, const float *d_A, const uint m, const uint n, const uint k) {
+	extern __shared__ float shared[];
+	float *dst_shared = shared;
+	float *d_A_shared = dst_shared + blockDim.x * blockDim.y;
 	const uint row = GetRow();
 	const uint col = GetCol();
 	if (col < k && row < m) {
 		const uint index = col * m + row;
-		const float x = d_A[index];
-		dst[index] = __fmul_rd(dst[index], __fsub_rd(1.f, __fmul_rd(x, x)));
+		const uint local_index = threadIdx.x * blockDim.y + threadIdx.y;
+		dst_shared[local_index] = dst[index];
+		d_A_shared[local_index] = d_A[index];
+		__syncthreads();
+		const float x = d_A_shared[local_index];
+		dst_shared[local_index] = __fmul_rd(dst_shared[local_index], __fsub_rd(1.f, __fmul_rd(x, x)));
+		dst[index] = dst_shared[local_index];
 	}
 } /* dst = (d_W.T * d_dZ) (*) 1 - d_A^2 */
 void d_backTanh(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A) {
@@ -305,7 +326,8 @@ void d_backTanh(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const 
 	const uint m = d_W->cols(); //reverse for transpose
 	const uint n = d_W->rows(); //reverse for transpose
 	const uint k = d_dZ->cols();
-	backTanh_Kernel << <dimGrid(m, k), dimBlock() >> >
+	auto sharedSize = 2 * BLOCK_SIZE * BLOCK_SIZE * sizeof(float);
+	backTanh_Kernel << <dimGrid(m, k), dimBlock(), sharedSize >> >
 		(dst->d_data(), d_A->d_data(), m, n, k);
 	d_catchErr();
 }
@@ -326,9 +348,9 @@ void d_backReLU(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const 
 	d_catchErr();
 }
 __global__
-void backLReLU_Kernel(float *dst, const float *d_A, uint m, uint n, uint k) {
-	uint row = GetRow();
-	uint col = GetCol();
+void backLReLU_Kernel(float *dst, const float *d_A, const uint m, const uint k) {
+	const uint row = GetRow();
+	const uint col = GetCol();
 	if (col < k && row < m) {
 		dst[row * k + col] *= (d_A[row * k + col] > 0.f ? 1.f : LRELU_LEAK);
 	}
@@ -336,10 +358,9 @@ void backLReLU_Kernel(float *dst, const float *d_A, uint m, uint n, uint k) {
 void d_backLReLU(d_Matrix *dst, const d_Matrix *d_W, const d_Matrix *d_dZ, const d_Matrix *d_A) {
 	d_mult_lhsT(dst, d_W, d_dZ);
 	const uint m = d_W->cols(); //reverse for transpose
-	const uint n = d_W->rows(); //reverse for transpose
 	const uint k = d_dZ->cols();
 	backLReLU_Kernel << <dimGrid(m, k), dimBlock() >> >
-		(dst->d_data(), d_A->d_data(), m, n, k);
+		(dst->d_data(), d_A->d_data(), m, k);
 	d_catchErr();
 }
 __global__
@@ -393,26 +414,6 @@ void d_set_db(d_Matrix* dst, const d_Matrix* d_dZ, const float coefficient) {
 }
 #define BETA1 0.9f
 #define BETA2 (1.f-FLT_EPSILON)
-#if 0
-__global__
-void updateParameterADAM_Kernel(float *dst, const uint N, const float *d_derivative, float *d_momentum, float *d_momentumSqr, const float learn, const uint k) {
-	const uint row = GetRow();
-	const uint col = GetCol();
-	const uint tid = row * k + col;
-	if (tid < N) {
-		d_momentum[tid] = BETA1* (d_momentum[tid]) + (1.f - BETA1) * d_derivative[tid];
-		d_momentumSqr[tid] = (BETA2 * d_momentumSqr[tid]) + ((FLT_EPSILON) * (d_derivative[tid] * d_derivative[tid]));
-		dst[tid] -= learn * (d_momentum[tid] / (1.f - (BETA1 * BETA1)) / (sqrtf(d_momentumSqr[tid] / (1.f - (BETA2 * BETA2))) + FLT_EPSILON));
-	}
-}
-void d_updateParameterADAM(d_Matrix* dst, const d_Matrix* d_derivative, const d_Matrix* d_momentum, const d_Matrix* d_momentumSqr, const float learnRate) {
-	const uint m = dst->rows();
-	const uint k = dst->cols();
-	updateParameterADAM_Kernel << <dimGrid(m, k), dimBlock() >> >
-		(dst->d_data(), dst->size(), d_derivative->d_data(), d_momentum->d_data(), d_momentumSqr->d_data(), learnRate, k);
-	d_catchErr();
-}
-#else
 __global__
 void updateParameterADAM_Kernel(float *dst, const uint N, const float *d_derivative, float *d_momentum, float *d_momentumSqr, const float learn, const uint k) {
 	extern __shared__ float s_data[];
@@ -450,7 +451,6 @@ void d_updateParameterADAM(d_Matrix* dst, const d_Matrix* d_derivative, const d_
 	updateParameterADAM_Kernel << <dimGrid(m, k), dimBlock(), sharedMemSize>> >(dst->d_data(), dst->size(), d_derivative->d_data(), d_momentum->d_data(), d_momentumSqr->d_data(), learnRate, k);
 	d_catchErr();
 }
-#endif
 __global__
 void updateParameter_Kernel(float *dst, const uint N, const float *d_derivative, const float learn) {
 	const uint tid = blockIdx.x;
