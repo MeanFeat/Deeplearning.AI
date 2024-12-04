@@ -6,14 +6,17 @@ using namespace Eigen;
 using namespace std;
 static cudaStream_t cuda_stream_default;
 static cudaStream_t cuda_stream_load;
+static cudaStream_t cuda_stream_cublas;
 cudaEvent_t start, stop;
 d_Matrix d_NetTrainer::to_device(MatrixXf matrix) {
 	d_mathInit();
-	return d_Matrix(matrix.data(), int(matrix.rows()), int(matrix.cols()));
+	d_Matrix d_matrix = d_Matrix(int(matrix.rows()), int(matrix.cols()));
+	d_check(cublasSetMatrixAsync(matrix.rows(), matrix.cols(), sizeof(float), matrix.data(), matrix.rows(), d_matrix.d_data(), matrix.rows(), cuda_stream_load));
+	return d_matrix;
 }
 MatrixXf d_NetTrainer::to_host(d_Matrix d_matrix) {
 	MatrixXf out = MatrixXf(d_matrix.rows(), d_matrix.cols());
-	d_check(cudaMemcpyAsync(out.data(), d_matrix.d_data(), d_matrix.memSize(), cudaMemcpyDeviceToHost, cuda_stream_default));
+	d_check(cublasGetMatrixAsync(d_matrix.rows(), d_matrix.cols(), sizeof(float), d_matrix.d_data(), d_matrix.rows(), out.data(), d_matrix.rows(), cuda_stream_load));
 	return out;
 }
 d_NetBatchTrainingData::d_NetBatchTrainingData(const MatrixXf& data, const MatrixXf& labels) {
@@ -27,6 +30,9 @@ d_NetBatchTrainingData::d_NetBatchTrainingData(const MatrixXf& data, const Matri
 d_NetTrainer::d_NetTrainer(): network(nullptr), cache(), trainParams(), d_Buffer(nullptr), profiler(), batchDataPool()
 {
 	d_mathInit();
+	cudaStreamCreate(&cuda_stream_default);
+	cudaStreamCreate(&cuda_stream_load);
+	cudaStreamCreate(&cuda_stream_cublas);
 }
 d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &labels, float weightScale, float learnRate, float regTerm, int batchCount) {
 	assert(net->GetNodeCount());
@@ -39,6 +45,9 @@ d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &label
 	d_mathInit();
 	cudaStreamCreate(&cuda_stream_default);
 	cudaStreamCreate(&cuda_stream_load);
+	cudaStreamCreate(&cuda_stream_cublas);
+	d_check(cublasSetStream(cublasHandle, cuda_stream_cublas));
+	d_check(cublasSetMathMode(cublasHandle, CUBLAS_TF32_TENSOR_OP_MATH));
 	network = net;
 	trainParams.batchCount = batchCount;
 	trainParams.trainExamplesCount = uint(data.cols());
@@ -115,8 +124,8 @@ void d_NetTrainer::LoadBatchData(const int batchIndex) {
 	else {
 		const int dataRows = cache.d_A[0].rows();
 		const int labelRows = d_trainLabels.rows();
-		d_check(cudaMemcpyAsync(cache.d_A[0].d_data(), batchDataPool.d_Data.d_data() + start_idx * dataRows, dataRows * GetBatchSize() * sizeof(float), cudaMemcpyHostToDevice, cuda_stream_load));
-		d_check(cudaMemcpyAsync(d_trainLabels.d_data(), batchDataPool.d_Labels.d_data() + start_idx * labelRows, labelRows * GetBatchSize() * sizeof(float), cudaMemcpyHostToDevice, cuda_stream_load));
+		d_check(cublasSetMatrixAsync(dataRows, GetBatchSize(), sizeof(float), batchDataPool.d_Data.d_data() + start_idx * dataRows, dataRows, cache.d_A[0].d_data(), dataRows, cuda_stream_load));
+		d_check(cublasSetMatrixAsync(labelRows, GetBatchSize(), sizeof(float), batchDataPool.d_Labels.d_data() + start_idx * labelRows, labelRows, d_trainLabels.d_data(), labelRows, cuda_stream_load));
 	}
 }
 d_NetTrainParameters &d_NetTrainer::GetTrainParams(){
@@ -184,7 +193,7 @@ float d_NetTrainer::CalcCost(const d_Matrix& Test, const d_Matrix& Labels) const
 	d_check(cudaMalloc(&d_cost, sizeof(float)));
 	d_Matrix Error = Test;
 	d_subtract_elem(&Error, Test, Labels);
-	d_calcCost(d_cost, &Error, &trainParams.d_W, GetRegMultiplier(), 1.f / float(Labels.cols()), float(Test.rows())); d_catchErr();
+	d_calcCost(d_cost, &Error, &trainParams.d_W, GetRegMultiplier(), 1.f / float(Labels.cols()), float(Test.cols())); d_catchErr();
 	d_check(cudaMemcpyAsync(&cost, d_cost, sizeof(float), cudaMemcpyDeviceToHost, cuda_stream_default));
 	d_check(cudaFree(d_cost));
 	Error.free();

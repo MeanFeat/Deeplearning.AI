@@ -61,7 +61,7 @@ struct d_NetBatchTrainingData {
 		d_Labels.free();
 	}
 	d_NetBatchTrainingData() = default;
-	d_NetBatchTrainingData( const MatrixXf &data, const MatrixXf &labels);
+	d_NetBatchTrainingData(const MatrixXf &data, const MatrixXf &labels);
 	d_Matrix d_Data;
 	d_Matrix d_Labels;
 };
