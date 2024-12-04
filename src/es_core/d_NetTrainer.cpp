@@ -50,18 +50,18 @@ d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &label
 	network = net;
 	trainParams.batchCount = batchCount;
 	trainParams.trainExamplesCount = uint(data.cols());
+	trainParams.regTerm = regTerm;
 	if (batchCount > 1) {
 		CreateBatchData(data, labels);
 		cache.d_A.emplace_back(int(data.rows()), GetBatchSize());
 		d_trainLabels = d_Matrix(int(labels.rows()), GetBatchSize());
-		trainParams.regTerm = regTerm / float(trainParams.batchCount);
 	}
 	else {
 		cache.d_A.emplace_back(to_device(data));
 		d_trainLabels = to_device(labels);
-		trainParams.regTerm = regTerm;
+		
 	}
-	trainParams.coefficient = 1.f / float(trainParams.trainExamplesCount);
+	trainParams.coefficient = 1.f / float(GetBatchSize());
 	if (network->GetSumOfWeights() == 0.f) {
 		network->RandomInit(weightScale);
 	}
@@ -172,12 +172,11 @@ float d_NetTrainer::CalcCost(const d_Matrix& Test, const d_Matrix& Labels) const
 	float *d_cost;
 	float cost;
 	d_check(cudaMalloc(&d_cost, sizeof(float)));
-	d_Matrix Error = Test;
+	d_Matrix Error = d_Matrix(Test.rows(), Test.cols());
 	d_subtract_elem(&Error, Test, Labels);
-	d_calcCost(d_cost, &Error, &trainParams.d_W, GetRegMultiplier(), 1.f / float(Labels.cols()), float(Test.cols())); d_catchErr();
+	d_calcCost(d_cost, &Error, &trainParams.d_W, GetRegMultiplier(), 1.f/float(Labels.cols()), float(Labels.cols())); d_catchErr();
 	d_check(cudaMemcpyAsync(&cost, d_cost, sizeof(float), cudaMemcpyDeviceToHost, cuda_stream_default));
 	d_check(cudaFree(d_cost));
-	Error.free();
 	return cost;
 }
 void d_NetTrainer::CalcCost() const {
@@ -212,7 +211,7 @@ void d_NetTrainer::BackwardPropagation() {
 		}
 		d_Matrix d_AT = d_Matrix(cache.d_A[l].cols(), cache.d_A[l].rows());
 		d_transpose(&d_AT, &cache.d_A[l]);
-		d_set_dW_Reg(&derivative.d_dW[l], &cache.d_dZ[l], &d_AT, &trainParams.d_W[l], GetCoeff(), 0.5f * trainParams.regMod);
+		d_set_dW_Reg(&derivative.d_dW[l], &cache.d_dZ[l], &d_AT, &trainParams.d_W[l], GetCoeff(), 0.5f * (trainParams.regMod/trainParams.batchCount));
 		d_set_db(&derivative.d_db[l], &cache.d_dZ[l], GetCoeff());
 		d_AT.free();
 	}
