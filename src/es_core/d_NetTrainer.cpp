@@ -65,13 +65,17 @@ void d_NetBatchParams::LoadBatchData(const int batchIndex, d_Matrix& Input, d_Ma
 }
 d_Matrix d_NetTrainer::to_device(MatrixXf matrix) {
 	d_mathInit();
-	d_Matrix d_matrix = d_Matrix(int(matrix.rows()), int(matrix.cols()));
-	cublasSetMatrixAsync(matrix.rows(), matrix.cols(), sizeof(float), matrix.data(), matrix.rows(), d_matrix.d_data(), matrix.rows(), cuda_stream_load); d_catchErr();
+	const int rows = int(matrix.rows());
+	const int cols = int(matrix.cols());
+	d_Matrix d_matrix = d_Matrix(rows, cols);
+	cublasSetMatrixAsync(rows, cols, sizeof(float), matrix.data(), rows, d_matrix.d_data(), rows, cuda_stream_load); d_catchErr();
 	return d_matrix;
 }
 MatrixXf d_NetTrainer::to_host(d_Matrix d_matrix) {
-	MatrixXf out = MatrixXf(d_matrix.rows(), d_matrix.cols());
-	cublasGetMatrixAsync(d_matrix.rows(), d_matrix.cols(), sizeof(float), d_matrix.d_data(), d_matrix.rows(), out.data(), d_matrix.rows(), cuda_stream_load); d_catchErr();
+	const int rows = d_matrix.rows();
+	const int cols = d_matrix.cols();
+	MatrixXf out = MatrixXf(rows, cols);
+	cublasGetMatrixAsync(rows, cols, sizeof(float), d_matrix.d_data(), rows, out.data(), rows, cuda_stream_load); d_catchErr();
 	return out;
 }
 d_NetBatchTrainingData::d_NetBatchTrainingData(const MatrixXf& data, const MatrixXf& labels) {
