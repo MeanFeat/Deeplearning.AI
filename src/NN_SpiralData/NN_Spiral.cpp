@@ -194,7 +194,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, LPSTR CommandLi
 			Tanh });
 		//h_trainer = NetTrainer(&neural, X, Y, 1.f, 2.f, 20.f);
 		d_neural = Net(neural);
-		d_NetTrainer d_net_trainer(&d_neural, X, Y, 1.f, 2.f, 20.f, 2);
+		d_NetTrainer d_net_trainer(&d_neural, X, Y, 1.f, 2.f, 20.f, d_NetBatchParams(2,SlideWindow));
 		d_trainer = &d_net_trainer;
 		startTime = clock();
 		const HDC deviceContext = GetDC(window);

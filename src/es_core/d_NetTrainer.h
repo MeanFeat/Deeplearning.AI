@@ -30,8 +30,6 @@ struct d_NetTrainParameters : public d_NetBaseStructure {
 	float regTerm;
 	std::vector<d_Matrix> d_W;
 	std::vector<d_Matrix> d_b;
-	bool shuffleData = false;
-	int batchCount;
 	unsigned int trainExamplesCount;
 };
 struct d_NetTrainDerivatives : public d_NetBaseStructure{
@@ -54,6 +52,11 @@ struct d_NetCache  : public d_NetBaseStructure {
 	float cost;
 	float *d_cost;
 };
+enum d_NetBatchShuffleType {
+	None,
+	ShuffleRandom,
+	SlideWindow
+};
 struct d_NetBatchTrainingData {
 	void clear() const
 	{
@@ -64,6 +67,35 @@ struct d_NetBatchTrainingData {
 	d_NetBatchTrainingData(const MatrixXf &data, const MatrixXf &labels);
 	d_Matrix d_Data;
 	d_Matrix d_Labels;
+};
+struct d_NetBatchParams {
+	d_NetBatchParams() : slideOffset(0), batchCount(1), shuffleType(None) {};
+	d_NetBatchParams(const int batchCount, const d_NetBatchShuffleType shuffleType = None) : slideOffset(0), batchCount(batchCount), shuffleType(shuffleType) {}
+	~d_NetBatchParams() {
+		batchDataPool.clear();
+	};
+	int GetBatchSize() const {
+		assert(batchCount > 0);
+		return int(GetTotalTrainingExamples() / batchCount);
+	}
+	int GetBatchCount() const {
+		return batchCount;
+	}
+	int GetTotalTrainingExamples() const {
+		return batchDataPool.d_Labels.cols();
+	}
+	void CreateBatchData(const MatrixXf &data, const MatrixXf &labels);
+	void ShuffleData();
+	void LoadBatchData(const int batchIndex, d_Matrix& Input, d_Matrix& Output);
+	d_NetBatchShuffleType GetShuffleType() const {
+		return shuffleType;
+	}
+	int slideOffset;
+private:
+	int batchCount;
+	d_NetBatchShuffleType shuffleType; 
+	d_NetBatchTrainingData batchDataPool;
+	std::vector<int> shuffledBatchIndices;
 };
 struct d_NetProfiler {
 	float backpropTime;
@@ -76,15 +108,12 @@ struct d_NetProfiler {
 class d_NetTrainer {
 public:
 	d_NetTrainer();
-	d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &labels, float weightScale, float learnRate, float regTerm, int batchCount = 1);
+	d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &labels, float weightScale, float learnRate, float regTerm, const d_NetBatchParams& batchParameters = d_NetBatchParams());
 	~d_NetTrainer();
 	void free();
 	//TODO: Make copy constructor
 	static d_Matrix to_device(MatrixXf matrix);
 	static MatrixXf to_host(d_Matrix d_matrix);
-	void CreateBatchData(const MatrixXf &data, const MatrixXf &labels);
-	void ShuffleData();
-	void LoadBatchData(const int batchIndex);
 	d_NetTrainParameters &GetTrainParams();
 	d_NetCache &GetCache();
 	const d_NetProfiler *GetProfiler() const;
@@ -96,8 +125,7 @@ public:
 	void TrainSingleEpoch();
 	d_Matrix Forward(const d_Matrix &Input) const;
 	float CalcCost(const d_Matrix& Test, const d_Matrix& Labels) const;
-	float GetCost()
-	{
+	float GetCost()	{
 		return GetCache().cost;
 	}
 	float GetCoeff() const {
@@ -119,10 +147,6 @@ public:
 	unsigned int GetTotalTrainingExamples() const {
 		return trainParams.trainExamplesCount;
 	}
-	int GetBatchSize() const {
-		assert(trainParams.batchCount>0);
-		return int(GetTotalTrainingExamples() / trainParams.batchCount);
-	}
 	d_NetTrainDerivatives GetDerivatives() {
 		return derivative;
 	}
@@ -132,6 +156,7 @@ private:
 	void CalcCost() const;
 	d_NetCache cache;
 	d_NetTrainParameters trainParams;
+	d_NetBatchParams batchParams;
 	d_NetTrainDerivatives derivative;
 	d_NetTrainDerivatives momentum;
 	d_NetTrainDerivatives momentumSqr;
@@ -141,6 +166,4 @@ private:
 	void AddLayer(int A, int B);
 	void UpdateParameters();
 	void UpdateParametersADAM();
-	d_NetBatchTrainingData batchDataPool;
-	std::vector<int> shuffledBatchIndices;
 };
