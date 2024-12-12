@@ -116,7 +116,7 @@ d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &label
 		d_trainLabels = to_device(labels);
 		trainParams.regTerm = regTerm;
 	}
-	trainParams.coefficient = 1.f / float(trainParams.trainExamplesCount);
+	trainParams.coefficient = 1.f / float(batchParams.GetBatchSize());
 	if (network->GetSumOfWeights() == 0.f) {
 		network->RandomInit(weightScale);
 	}
