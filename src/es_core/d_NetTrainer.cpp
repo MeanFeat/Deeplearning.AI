@@ -98,6 +98,7 @@ d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &label
 	assert(net->GetNodeCount());
 	assert(data.size());
 	assert(labels.size());
+	assert(batchParams.GetBatchCount() > 0);
 #if _PROFILE
 	cudaEventCreate(&start);
 	cudaEventCreate(&stop);
@@ -109,18 +110,13 @@ d_NetTrainer::d_NetTrainer(Net *net, const MatrixXf &data, const MatrixXf &label
 	cublasSetStream(cublasHandle, cuda_stream_cublas);
 	cublasSetMathMode(cublasHandle, CUBLAS_TF32_TENSOR_OP_MATH);
 	trainParams.trainExamplesCount = uint(data.cols());
-	if (batchParams.GetBatchCount() > 1) {
-		batchParams.CreateBatchData(data, labels);
-		cache.d_A.emplace_back(int(data.rows()), batchParams.GetBatchSize());
-		d_trainLabels = d_Matrix(int(labels.rows()), batchParams.GetBatchSize());
-		trainParams.regTerm = regTerm / float(batchParams.GetBatchCount());
-	}
-	else {
-		cache.d_A.emplace_back(to_device(data));
-		d_trainLabels = to_device(labels);
-		
-	}
+	
+	batchParams.CreateBatchData(data, labels);
+	cache.d_A.emplace_back(int(data.rows()), batchParams.GetBatchSize());
+	d_trainLabels = d_Matrix(int(labels.rows()), batchParams.GetBatchSize());
+	trainParams.regTerm = regTerm / float(batchParams.GetBatchCount());
 	trainParams.coefficient = 1.f / float(batchParams.GetBatchSize());
+	
 	if (network->GetSumOfWeights() == 0.f) {
 		network->RandomInit(weightScale);
 	}
@@ -257,32 +253,23 @@ void d_NetTrainer::UpdateParametersADAM() {
 	}
 }
 void d_NetTrainer::TrainSingleEpoch() {
-	if (batchParams.GetBatchCount() > 1)	{
-		float totalCost = 0.f;
-		for (int i = 0; i < batchParams.GetBatchCount(); ++i) {
-			float batchCost = 0.f;
-			d_profile(start, stop, &profiler.loadBatchData, batchParams.LoadBatchData(i, cache.d_A[0], d_trainLabels));	d_catchErr();
-			d_profile(start, stop, &profiler.forwardTime,	ForwardTrain());			d_catchErr();
-			d_profile(start, stop, &profiler.backpropTime,	BackwardPropagation());		d_catchErr();
-			d_profile(start, stop, &profiler.updateTime,	UpdateParametersADAM());	d_catchErr();
-			d_profile(start, stop, &profiler.calcCostTime,	CalcCost());				d_catchErr();
-			d_check(cudaMemcpyAsync(&batchCost, cache.d_cost, sizeof(float), cudaMemcpyDeviceToHost, cuda_stream_default));
-			totalCost += batchCost;
-		}
-		if (batchParams.GetShuffleType() == SlideWindow) {
-			const int randStep = 1 + rand() % batchParams.GetBatchSize();
-			batchParams.slideOffset = (batchParams.slideOffset + randStep) % GetTotalTrainingExamples();
-		}
-		else if (batchParams.GetShuffleType() == ShuffleRandom) {
-			batchParams.ShuffleData();
-		}
-		cache.cost = totalCost / float(batchParams.GetBatchCount());
-	}
-	else {
+	float totalCost = 0.f;
+	for (int i = 0; i < batchParams.GetBatchCount(); ++i) {
+		float batchCost = 0.f;
+		d_profile(start, stop, &profiler.loadBatchData, batchParams.LoadBatchData(i, cache.d_A[0], d_trainLabels));	d_catchErr();
 		d_profile(start, stop, &profiler.forwardTime,	ForwardTrain());			d_catchErr();
 		d_profile(start, stop, &profiler.backpropTime,	BackwardPropagation());		d_catchErr();
 		d_profile(start, stop, &profiler.updateTime,	UpdateParametersADAM());	d_catchErr();
 		d_profile(start, stop, &profiler.calcCostTime,	CalcCost());				d_catchErr();
-		d_check(cudaMemcpyAsync(&cache.cost, cache.d_cost, sizeof(float), cudaMemcpyDeviceToHost, cuda_stream_default)); 
+		d_check(cudaMemcpyAsync(&batchCost, cache.d_cost, sizeof(float), cudaMemcpyDeviceToHost, cuda_stream_default));
+		totalCost += batchCost;
 	}
+	if (batchParams.GetShuffleType() == SlideWindow) {
+		const int randStep = 1 + rand() % batchParams.GetBatchSize();
+		batchParams.slideOffset = (batchParams.slideOffset + randStep) % GetTotalTrainingExamples();
+	}
+	else if (batchParams.GetShuffleType() == ShuffleRandom) {
+		batchParams.ShuffleData();
+	}
+	cache.cost = totalCost / float(batchParams.GetBatchCount());
 }
